@@ -1,0 +1,11 @@
+# CODEOWNERS - CommunityLab
+# Rox aprueba TODO porque es la más experimentada
+# emanuelperacchia configura GitHub y documentación
+
+# Rox aprueba código fuente
+/src/              @Rox-0864
+/tests/            @Rox-0864
+
+# emanuelperacchia configura GitHub y documentación
+/.github/          @emanuelperacchia
+/docs/             @emanuelperacchia
