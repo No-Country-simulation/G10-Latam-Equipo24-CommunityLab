@@ -18,10 +18,18 @@ lista_palabras_preguntas = [
 ]
 
 def limpiarHTML(textoHtml: str) -> str:
-
     if not textoHtml:
         return ""
     texto = re.sub(r"</p>|<br\s*/>", "\n", textoHtml)
     texto = re.sub(r"<[^>]+>", "", texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
     return texto
+
+def calificarTipo(texto: str) -> str:
+    t = texto.lower()
+    if any(p in t for p in lista_palabras_testmonio):
+        return "testimonio"
+    if any(p in t for p in lista_palabras_preguntas):
+        return "pregunta tecnica"
+    return "comentario general"
+
