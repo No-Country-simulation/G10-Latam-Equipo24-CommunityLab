@@ -17,3 +17,11 @@ lista_palabras_preguntas = [
     "ayuda", "como puedo",
 ]
 
+def limpiarHTML(textoHtml: str) -> str:
+
+    if not textoHtml:
+        return ""
+    texto = re.sub(r"</p>|<br\s*/>", "\n", textoHtml)
+    texto = re.sub(r"<[^>]+>", "", texto)
+    texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
+    return texto
