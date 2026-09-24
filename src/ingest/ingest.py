@@ -71,7 +71,17 @@ def ofertaLaboral(p: dict, texto: str) -> bool:
     t = texto.lower()
     return any(f in t for f in palabra_oferta)
 
-
+def relevante(p: dict, tipo: str | None) -> bool:
+    if p.get("account", {}).get("bot"):
+        return False
+    texto = limpiarHTML(p.get("content", ""))
+    if not texto or len(texto) > MAX_CHARS:
+        return False
+    if ofertaLaboral(p, texto):
+        return False
+    if tipo and calificarTipo(texto) != tipo:
+        return False
+    return True
 
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
 def obtenerPosts(instancia: str, hashtag: str, limite: int) -> list[dict]:
