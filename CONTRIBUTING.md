@@ -56,10 +56,12 @@ NUNCA se trabaja directamente en main
    $ git push origin feat/mi-tarea
 
 4. Abrir Pull Request (PR) en GitHub
-   → Asignar al Backend Developer como reviewer
-   → Si es cambio arquitectónico → asignar también al Tech Lead
+   → Asignar a un CODEOWNER que NO sea el autor del PR.
+   → Si el PR lo abre @Rox-0864, lo aprueba @emanuelperacchia.
+   → Si el PR lo abre @emanuelperacchia, lo aprueba @Rox-0864.
+   → Si es cambio arquitectónico, pedir también revisión al Tech Lead.
 
-5. Esperar aprobación → merge a main
+5. Esperar aprobación de un CODEOWNER distinto al autor → merge a main
 ```
 
 ---
@@ -148,16 +150,22 @@ git commit -m "wip"
 ```
 
 ### Reglas de review
+
+GitHub **no permite que el autor apruebe su propio PR**. Por eso `CODEOWNERS` tiene 2 personas por carpeta: si el autor es uno de los CODEOWNERS, el otro debe aprobar.
+
 | Quién review | Qué revisa |
 |--------------|------------|
-| **Backend Developer** | Conflictos, estructura, que no rompa CI/CD |
-| **Tech Lead** | Que se alinee con la arquitectura, calidad, que no se meta en ramas que no le corresponden |
+| **@Rox-0864** | Código fuente, tests, arquitectura técnica |
+| **@emanuelperacchia** | GitHub, docs, configuración y alternate para código/tests |
+| **Tech Lead** | Que se alinee con la arquitectura, calidad y límites de cada persona |
 | **Par del mismo área** | Que el código sea legible y siga convenciones |
 
 ### Merge
-- Mínimo **1 aprobación** para merge
-- Si es cambio grande → **2 aprobaciones**
-- El Tech Lead tiene **veto** en decisiones arquitectónicas
+- Mínimo **1 aprobación de un CODEOWNER que no sea el autor** para merge.
+- Si el PR lo abre `@Rox-0864`, lo aprueba `@emanuelperacchia`.
+- Si el PR lo abre `@emanuelperacchia`, lo aprueba `@Rox-0864`.
+- Si es cambio grande → **2 aprobaciones**.
+- El Tech Lead tiene **veto** en decisiones arquitectónicas.
 - **Nunca** hacer force push a main
 
 ---
@@ -221,7 +229,7 @@ git tag -a v1.0.0 -m "Release: demo listo para presentar"
 ✅ SIEMPRE crear branch antes de trabajar
 ✅ Commits con formato: tipo(scope): descripción
 ✅ Abrir PR antes de merge
-✅ Mínimo 1 review antes de merge
+✅ Mínimo 1 review de CODEOWNER que no sea autor antes de merge
 ✅ Actualizar tu branch con main diariamente
 
 ❌ NUNCA tocar main directamente

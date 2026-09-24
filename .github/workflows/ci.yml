@@ -26,8 +26,8 @@ jobs:
       
       - name: Run tests
         run: |
-          pytest tests/ -v || echo "No tests yet, skipping..."
+          pytest tests/ -v
       
       - name: Run linting
         run: |
-          flake8 src/ --max-line-length=100 --ignore=E501,E303,W291,W293 || echo "Linting issues found but not blocking merge..."
+          flake8 src/ --max-line-length=100 --ignore=E501,E303,W291,W293
