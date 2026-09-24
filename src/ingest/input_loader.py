@@ -7,9 +7,9 @@ from src.domain.models import InputBatch, InputMessage
 
 
 class JSONInputLoader:
-    """Carga un lote de interacciones desde un JSON con el formato del contrato.
+    """Loads a batch of interactions from a JSON file (contract format).
 
-    Formato esperado (contrato del desafío):
+    Expected format (contract):
     {
       "origen_comunidad": "...",
       "periodo_referencia": "...",
@@ -18,11 +18,11 @@ class JSONInputLoader:
     """
 
     def load(self, source: str) -> List[InputMessage]:
-        """Devuelve la lista de interacciones (compatible con DataLoader)."""
+        """Returns the list of interactions (compatible with DataLoader)."""
         return self.load_batch(source).interacciones
 
     def load_batch(self, source: str) -> InputBatch:
-        """Devuelve el lote completo (InputBatch), preservando el sobre."""
+        """Returns the full batch (InputBatch), preserving the envelope."""
         path = Path(source)
         if not path.exists():
             raise FileNotFoundError(f"Source not found: {source}")
@@ -31,7 +31,7 @@ class JSONInputLoader:
         if not isinstance(data, dict):
             raise ValueError("Invalid JSON format: expected an object")
 
-        # El contrato usa "interacciones" (español). Toleramos "interactions".
+        # The contract uses "interacciones" (Spanish). We tolerate "interactions".
         if "interacciones" not in data:
             if "interactions" in data:
                 data = {**data, "interacciones": data.pop("interactions")}

@@ -1,15 +1,15 @@
-"""Normalizer: convierte datos crudos de cualquier fuente al contrato."""
+"""Normalizer: converts raw data from any source into the contract."""
 from typing import Any, Dict, Optional
 
 from src.domain.models import InputMessage
 
 
 class InputNormalizer:
-    """Convierte un mensaje crudo en un InputMessage del contrato.
+    """Converts a raw message into a contract InputMessage.
 
-    Acepta tanto los nombres del contrato (autor/canal/tipo/texto) como los
-    alternativos en inglés (author/channel/content), y deriva `tipo` cuando la
-    fuente no lo trae explícito.
+    Accepts both the contract field names (autor/canal/tipo/texto) and the
+    English alternatives (author/channel/content), and derives `tipo` when the
+    source does not provide it explicitly.
     """
 
     def normalize(

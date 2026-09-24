@@ -1,4 +1,4 @@
-"""Tests for domain models (contrato)."""
+"""Tests for domain models (contract)."""
 from src.domain.models import (
     InputMessage,
     InputBatch,
@@ -8,23 +8,23 @@ from src.domain.models import (
 )
 
 
-def test_input_message_acepta_campos_del_contrato():
-    """InputMessage usa los campos del contrato: autor/canal/tipo/texto."""
+def test_input_message_accepts_contract_fields():
+    """InputMessage uses the contract fields: autor/canal/tipo/texto."""
     data = {
         "autor": "Mariana Souza",
         "canal": "#logros-y-empleos",
         "tipo": "testimonio",
-        "texto": "Conseguí mi primer trabajo como dev.",
+        "texto": "Consegui mi primer trabajo como dev.",
     }
     msg = InputMessage(**data)
     assert msg.autor == "Mariana Souza"
     assert msg.canal == "#logros-y-empleos"
     assert msg.tipo == "testimonio"
-    assert msg.texto.startswith("Conseguí")
+    assert msg.texto.startswith("Consegui")
 
 
-def test_input_message_campos_opcionales():
-    """id y timestamp NO son obligatorios (el ejemplo del PDF no los trae)."""
+def test_input_message_optional_fields():
+    """`id` and `timestamp` are NOT required (the PDF example lacks them)."""
     msg = InputMessage(
         autor="a",
         canal="#c",
@@ -36,7 +36,7 @@ def test_input_message_campos_opcionales():
     assert msg.id == "msg-1"
     assert msg.timestamp == "2026-09-15T14:30:00Z"
 
-    # sin id/timestamp también vale
+    # without id/timestamp is also valid
     msg2 = InputMessage(autor="a", canal="#c", tipo="t", texto="t")
     assert msg2.id is None
     assert msg2.timestamp is None
@@ -68,8 +68,8 @@ def test_sentiment_result():
     assert result.sentiment == SentimentType.POSITIVO
 
 
-def test_output_batch_usa_claves_del_contrato():
-    """OutputBatch usa las claves exactas del contrato."""
+def test_output_batch_uses_contract_keys():
+    """OutputBatch uses the exact contract keys."""
     batch = OutputBatch(
         status="exito",
         resumen_comunidad={

@@ -1,11 +1,11 @@
-"""Test del contrato de datos — CommunityLab.
+"""Data contract tests — CommunityLab.
 
-Este archivo es LA red de seguridad del proyecto: verifica que los modelos
-aceptan EXACTAMENTE el ejemplo de entrada/salida del desafío (PDF).
+This file is THE safety net of the project: it verifies that the models accept
+EXACTLY the input/output example of the challenge (PDF).
 
-Si este test falla, algo rompió el contrato y NO se debe mergear.
+If this test fails, something broke the contract and it must NOT be merged.
 
-Se ejecuta desde la raíz del repo:
+Run from the repo root:
     python3 -m pytest tests/test_contract.py -q
 """
 from src.domain.models import (
@@ -14,7 +14,8 @@ from src.domain.models import (
 )
 
 # ---------------------------------------------------------------------------
-# El ejemplo LITERAL del PDF (Desafío 3 - CommunityLab)
+# The LITERAL example from the PDF (Desafio 3 - CommunityLab).
+# NOTE: this is test DATA (the contract example), so it stays in Spanish.
 # ---------------------------------------------------------------------------
 
 ENTRADA_EJEMPLO = {
@@ -81,26 +82,26 @@ SALIDA_EJEMPLO = {
 
 
 # ---------------------------------------------------------------------------
-# Tests de ENTRADA
+# INPUT tests
 # ---------------------------------------------------------------------------
 
-def test_entrada_acepta_ejemplo_literal():
-    """El ejemplo de entrada del PDF debe parsear SIN error de validación."""
+def test_input_accepts_literal_example():
+    """The PDF input example must parse without validation errors."""
     batch = InputBatch(**ENTRADA_EJEMPLO)
     assert batch.origen_comunidad == "Discord_Grupo_ONE_G10"
     assert batch.periodo_referencia == "Semana_04"
     assert len(batch.interacciones) == 2
 
 
-def test_tipo_se_conserva():
-    """El campo `tipo` NO se puede perder: es la señal del motor de decisiones."""
+def test_tipo_is_preserved():
+    """`tipo` must not be lost: it is the decision engine's routing signal."""
     batch = InputBatch(**ENTRADA_EJEMPLO)
     tipos = [i.tipo for i in batch.interacciones]
     assert tipos == ["testimonio", "pregunta_tecnica"]
 
 
-def test_campos_del_contrato_presentes():
-    """Los campos `autor`, `canal` y `texto` se leen con sus nombres del PDF."""
+def test_contract_fields_present():
+    """`autor`, `canal` and `texto` are read with their PDF names."""
     batch = InputBatch(**ENTRADA_EJEMPLO)
     m = batch.interacciones[0]
     assert m.autor == "Mariana Souza"
@@ -108,19 +109,19 @@ def test_campos_del_contrato_presentes():
     assert m.texto.startswith("Comunidad, quede seleccionada")
 
 
-def test_campos_opcionales_no_son_obligatorios():
-    """El ejemplo del PDF NO trae id ni timestamp → deben ser opcionales."""
+def test_optional_fields_not_required():
+    """The PDF example has no `id` or `timestamp`, so they must be optional."""
     batch = InputBatch(**ENTRADA_EJEMPLO)
     assert batch.interacciones[0].id is None
     assert batch.interacciones[0].timestamp is None
 
 
 # ---------------------------------------------------------------------------
-# Tests de SALIDA
+# OUTPUT tests
 # ---------------------------------------------------------------------------
 
-def test_salida_valida_contra_ejemplo():
-    """El ejemplo de salida del PDF debe validar contra OutputBatch."""
+def test_output_validates_example():
+    """The PDF output example must validate against OutputBatch."""
     out = OutputBatch(**SALIDA_EJEMPLO)
     assert out.status == "exito"
     assert out.resumen_comunidad.total_interacciones_procesadas == 2
@@ -129,8 +130,8 @@ def test_salida_valida_contra_ejemplo():
     assert out.almacenamiento_oci.status == "guardado_con_exito"
 
 
-def test_salida_claves_exactas_del_contrato():
-    """Las claves top-level de la salida deben ser EXACTAMENTE las del PDF."""
+def test_output_exact_contract_keys():
+    """The output top-level keys must be EXACTLY those of the PDF."""
     out = OutputBatch(**SALIDA_EJEMPLO)
     claves = set(out.model_dump().keys())
     assert claves == {

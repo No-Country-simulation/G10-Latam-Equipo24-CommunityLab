@@ -1,25 +1,24 @@
-"""Cliente común para proveedores LLM — CommunityLab.
+"""Common LLM provider client for CommunityLab.
 
-Convención (declarada en el README de la propuesta):
+Convention (declared in the README):
+    - Every module (analysis, generators, decisions) talks to the LLM ONLY
+      through this interface. NEVER import google.generativeai, openai, etc.
+      outside this file.
+    - The backend is selected via the COMMUNITYLAB_LLM_BACKEND env var:
+        "gemini"      -> GeminiClient
+        "openai"      -> OpenAIClient
+        "ollama"      -> OllamaClient
+        "rule_based"  -> RuleBasedClient (deterministic, no API key; demo/tests/CI)
 
-    - Todos los módulos (análisis, generadores, decisiones) hablan con el LLM
-      SOLO a través de esta interfaz. NUNCA importes google.generativeai,
-      openai, etc. fuera de este archivo.
-    - El backend se elige con la variable de entorno COMMUNITYLAB_LLM_BACKEND:
-        "gemini"      → GeminiClient
-        "openai"      → OpenAIClient
-        "rule_based"  → RuleBasedClient (determinista, sin API key; demo/tests/CI)
-
-Uso típico desde un generador:
+Typical usage from a generator:
 
     from src.utils.llm import get_llm_client
-
     client = get_llm_client()
-    texto = client.generate(prompt_linkedin, temperature=0.7)
-    resultado = parsear(texto)  # ← validar contra el modelo Pydantic del contrato
+    text = client.generate(prompt_linkedin, temperature=0.7)
+    result = parse(text)  # -> validate against the contract Pydantic model
 
-El cliente devuelve TEXTO crudo. Parsear/validar contra el contrato es
-responsabilidad de quien llama: así el cliente queda agnóstico del dominio.
+The client returns RAW text. Parsing/validating against the contract is the
+caller's responsibility: that keeps the client domain-agnostic.
 """
 from abc import ABC, abstractmethod
 from typing import Any, Optional
@@ -29,52 +28,52 @@ import os
 
 
 class LLMError(Exception):
-    """Error base para fallas del proveedor LLM (timeout, rate limit, key inválida)."""
+    """Base error for LLM provider failures (timeout, rate limit, invalid key)."""
 
 
 class LLMClient(ABC):
-    """Interfaz única para cualquier proveedor LLM."""
+    """Single interface for any LLM provider."""
 
     @abstractmethod
     def generate(self, prompt: str, **kwargs: Any) -> str:
-        """Devuelve la respuesta del modelo como texto crudo (normalmente JSON).
+        """Returns the model's response as raw text (usually JSON).
 
-        `kwargs` admite opciones comunes como `temperature`, con la salvedad de
-        que cada proveedor las mapea a su API (ver comentarios en cada cliente).
+        `kwargs` accepts common options like `temperature`; each provider maps
+        them to its own API (see comments in each client).
         """
         raise NotImplementedError
 
 
 # ---------------------------------------------------------------------------
-# Backend determinista (demo / tests / CI, sin API key)
+# Deterministic backend (demo / tests / CI, no API key)
 # ---------------------------------------------------------------------------
 
 class RuleBasedClient(LLMClient):
-    """Backend determinista que simula al LLM con reglas simples.
+    """Deterministic backend that simulates the LLM with simple rules.
 
-    No llama a ninguna API y devuelve siempre el mismo resultado para el mismo
-    prompt, lo que lo hace ideal para tests y CI. El resultado NO es un análisis
-    real: es un placeholder para que el pipeline corra de punta a punta sin
-    credenciales. Cuando se implementen las reglas reales (keyword matching por
-    tipo, etc.), este método devolverá el resultado simulado correcto.
+    It never calls an API and always returns the same result for the same
+    prompt, which makes it ideal for tests and CI. The result is NOT a real
+    analysis: it is a placeholder so the pipeline can run end-to-end without
+    credentials. When real rules are implemented, this method returns the
+    correct simulated result.
     """
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         return json.dumps(
             {
                 "simulado": True,
-                "nota": "respuesta rule_based (sin LLM real)",
+                "nota": "rule_based response (no real LLM)",
             },
             ensure_ascii=False,
         )
 
 
 # ---------------------------------------------------------------------------
-# Google Gemini (principal)
+# Google Gemini (primary)
 # ---------------------------------------------------------------------------
 
 class GeminiClient(LLMClient):
-    """Cliente de Google Gemini. Lee GEMINI_API_KEY del entorno."""
+    """Google Gemini client. Reads GEMINI_API_KEY from the environment."""
 
     def __init__(self, model: str = "gemini-2.5-flash") -> None:
         self.model = model
@@ -84,30 +83,30 @@ class GeminiClient(LLMClient):
             import google.generativeai as genai
         except ImportError as exc:  # pragma: no cover
             raise LLMError(
-                "google-generativeai no está instalado. Corré: pip install google-generativeai"
+                "google-generativeai is not installed. Run: pip install google-generativeai"
             ) from exc
 
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise LLMError("Falta la variable de entorno GEMINI_API_KEY.")
+            raise LLMError("Missing GEMINI_API_KEY environment variable.")
 
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(self.model)
         try:
-            # NOTA: en Gemini, `temperature` se pasa vía generation_config, no
-            # como kwarg suelto. El implementador final ajusta esto.
+            # NOTE: in Gemini, `temperature` is passed via generation_config,
+            # not as a bare kwarg. The final implementer adjusts this.
             response = model.generate_content(prompt, **kwargs)
             return response.text
         except Exception as exc:
-            raise LLMError(f"Gemini falló: {exc}") from exc
+            raise LLMError(f"Gemini failed: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
-# OpenAI (respaldo)
+# OpenAI (fallback)
 # ---------------------------------------------------------------------------
 
 class OpenAIClient(LLMClient):
-    """Cliente de OpenAI (respaldo). Lee OPENAI_API_KEY del entorno."""
+    """OpenAI client (fallback). Reads OPENAI_API_KEY from the environment."""
 
     def __init__(self, model: str = "gpt-4o-mini") -> None:
         self.model = model
@@ -117,12 +116,12 @@ class OpenAIClient(LLMClient):
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover
             raise LLMError(
-                "openai no está instalado. Corré: pip install openai"
+                "openai is not installed. Run: pip install openai"
             ) from exc
 
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise LLMError("Falta la variable de entorno OPENAI_API_KEY.")
+            raise LLMError("Missing OPENAI_API_KEY environment variable.")
 
         client = OpenAI(api_key=api_key)
         try:
@@ -133,19 +132,19 @@ class OpenAIClient(LLMClient):
             )
             return response.choices[0].message.content or ""
         except Exception as exc:
-            raise LLMError(f"OpenAI falló: {exc}") from exc
+            raise LLMError(f"OpenAI failed: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
-# Ollama (local, sin API key)
+# Ollama (local, no API key)
 # ---------------------------------------------------------------------------
 
 class OllamaClient(LLMClient):
-    """Cliente de Ollama (modelos locales). Sin API key ni internet.
+    """Ollama client (local models). No API key or internet needed.
 
-    Requiere Ollama corriendo en localhost. Modelos recomendados:
-    llama3.1, mistral, qwen2.5, gemma2. Usa la variable OLLAMA_MODEL para
-    elegir el modelo (default: llama3.1).
+    Requires Ollama running on localhost. Recommended models: llama3.1,
+    mistral, qwen2.5, gemma2. Use the OLLAMA_MODEL env var to pick the model
+    (default: llama3.1).
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
@@ -156,7 +155,7 @@ class OllamaClient(LLMClient):
             import ollama
         except ImportError as exc:  # pragma: no cover
             raise LLMError(
-                "ollama no está instalado. Corré: pip install ollama"
+                "ollama is not installed. Run: pip install ollama"
             ) from exc
 
         try:
@@ -168,7 +167,7 @@ class OllamaClient(LLMClient):
             return response["message"]["content"]
         except Exception as exc:
             raise LLMError(
-                f"Ollama falló (¿está corriendo `ollama serve`?): {exc}"
+                f"Ollama failed (is `ollama serve` running?): {exc}"
             ) from exc
 
 
@@ -185,15 +184,15 @@ _BACKENDS = {
 
 
 def get_llm_client(backend: Optional[str] = None) -> LLMClient:
-    """Devuelve el cliente LLM activo según COMMUNITYLAB_LLM_BACKEND.
+    """Returns the active LLM client based on COMMUNITYLAB_LLM_BACKEND.
 
-    Si `backend` no se pasa, lee la variable de entorno; si tampoco está,
-    usa "rule_based" (seguro, sin credenciales).
+    If `backend` is not passed, reads the env var; if neither, uses
+    "rule_based" (safe, no credentials).
     """
     name = backend or os.getenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
     client_cls = _BACKENDS.get(name)
     if client_cls is None:
         raise LLMError(
-            f"Backend LLM desconocido: {name!r}. Opciones válidas: {sorted(_BACKENDS)}."
+            f"Unknown LLM backend: {name!r}. Valid options: {sorted(_BACKENDS)}."
         )
     return client_cls()
