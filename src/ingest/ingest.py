@@ -1,6 +1,7 @@
 #Imports
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -21,6 +22,20 @@ lista_palabras_preguntas = [
     "ayuda", "como puedo",
 ]
 
+#Descarta el ruido
+MAX_CHARS = 1000
+
+hashstag_oferta = {
+    "hiring", "nowhiring", "jobs", "jobalert", "jobopening",
+    "remotejobs", "vacante", "ofertalaboral", "ofertadeempleo", 
+}
+
+palabra_oferta = [
+    "is hiring", "are hiring", "we're hiring", "job details",
+    "apply now", "estamos contratando", "oferta laboral", "oferta de empleo",
+    "vacante", "postúlante", "postulate",
+]
+
 #Funciones
 
 def limpiarHTML(textoHtml: str) -> str:
@@ -28,16 +43,35 @@ def limpiarHTML(textoHtml: str) -> str:
         return ""
     texto = re.sub(r"</p>|<br\s*/>", "\n", textoHtml)
     texto = re.sub(r"<[^>]+>", "", texto)
+    texto = html.unescape(texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
     return texto
 
+def _contiene(texto: str, palabras: list[str]) -> bool:
+    for p in "?":
+        if p == "?":
+            if "?" in texto:
+                return True
+            elif re.search(r"\b" + re.scape(p), texto):
+                return True
+        return False
+
 def calificarTipo(texto: str) -> str:
-    t = texto.lower()
-    if any(p in t for p in lista_palabras_testmonio):
+    t = re.sub(r"https?://\S+", "", texto.lower())
+    if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
-    if any(p in t for p in lista_palabras_preguntas):
+    if _contiene(t,lista_palabras_preguntas):
         return "pregunta tecnica"
     return "comentario general"
+
+def ofertaLaboral(p: dict, texto: str) -> bool:
+    tags = {t["name"].lower() for t in p.get("tags", [])}
+    if tags & hashstag_oferta:
+        return True
+    t = texto.lower()
+    return any(f in t for f in palabra_oferta)
+
+
 
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
 def obtenerPosts(instancia: str, hashtag: str, limite: int) -> list[dict]:
