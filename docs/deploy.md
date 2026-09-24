@@ -341,7 +341,7 @@ Debe mostrar el dashboard de CommunityLab.
 ### Paso 5.1: Repo (ya configurado)
 - Repo: github.com/emanuelperacchia/communitylab
 - Branch Protection: configurado en main
-- CODEOWNERS: configurado (Rox revisa código)
+- CODEOWNERS: configurado con `@Rox-0864` y `@emanuelperacchia`; GitHub no permite auto-aprobación
 - CI/CD: .github/workflows/ci.yml
 
 ### Paso 5.2: Invitar equipo

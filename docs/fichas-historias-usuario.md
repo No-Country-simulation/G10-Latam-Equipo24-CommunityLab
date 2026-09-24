@@ -291,7 +291,7 @@ El sistema debe generar este formato:
 - [ ] Carpeta `data/raw/` y `data/processed/`
 - [ ] Carpeta `docs/` con documentación
 - [ ] `.github/ISSUE_TEMPLATE/` creado
-- [ ] `.github/CODEOWNERS` configurado
+- [ ] `.github/CODEOWNERS` configurado con `@Rox-0864` y `@emanuelperacchia`; GitHub no permite auto-aprobación
 - [ ] Mockup básico de UI en Figma/boceto (preparación para Sprint 4)
 
 **Tareas técnicas:**
