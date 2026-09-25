@@ -52,7 +52,7 @@ def _contiene(texto: str, palabras: list[str]) -> bool:
         if p == "?":
             if "?" in texto:
                 return True
-            elif re.search(r"\b" + re.scape(p), texto):
+            elif re.search(r"\b" + re.escape(p), texto):
                 return True
         return False
 
@@ -84,13 +84,21 @@ def relevante(p: dict, tipo: str | None) -> bool:
     return True
 
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
-def obtenerPosts(instancia: str, hashtag: str, limite: int) -> list[dict]:
+def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10) -> list[dict]:
     url = f"https://{instancia}/api/v1/timelines/tag/{hashtag}"
     posts: list[dict] = []
     max_id = None
 
-    while len(posts) < limite:
-        params = {"limit": min(40, limite - len(posts))}
+    # while len(posts) < limite:
+    #     params = {"limit": min(40, limite - len(posts))}
+    #     if max_id:
+    #         params["max_id"] = max_id
+
+    for _ in range(max_paginas):
+        if len(posts) >= limite:
+            break
+
+        params = {"limit": 40}
         if max_id:
             params["max_id"] = max_id
 
@@ -130,6 +138,8 @@ def main():
     parser.add_argument("--hashtag", required=True, help="Hashtag a consultar sin '#' (ej: ia, python)")
     parser.add_argument("--instance", default="mastodon.social", help="instancia de Mastodon (default: mastodon.social)")
     parser.add_argument("--limit", type=int, default=40, help='Cantidad máxima de post a traer (default: 40)')
+    parser.add_argument("--tipo", choices=["testimonio", "pregunta tecnica", "comentario general"], default=None,
+                        help="Conservar unicamente este tipo de interacción")
     parser.add_argument("--origen", default=None, help="Valor de 'origen_comunidad' en el JSON de salida")
     parser.add_argument("--out", default="data/sample/mastodon_interacciones.json", help="Ruta del archivo de salida")
     args = parser.parse_args()
@@ -140,7 +150,7 @@ def main():
     print(f"Consulta a https://{args.instance}/api/v1/timelines/tag/{args.hashtag}", file=sys.stderr)
 
     try:
-        posts = obtenerPosts(args.instance, args.hashtag, args.limit)
+        posts = obtenerPosts(args.instance, args.hashtag, args.limit, args.tipo)
     except requests.RequestException as err: #err => Error
         print(f"Error consultando Mastodon: {err}", file=sys.stderr)
         sys.exit(1)
