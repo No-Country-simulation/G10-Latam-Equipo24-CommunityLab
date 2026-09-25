@@ -1,32 +1,52 @@
 import time
 
 import streamlit as st
+from src.domain.models import (
+    CommunitySummary,
+    DistributionAssets,
+    FAQSuggestion,
+    LinkedInPost,
+    NewsletterHighlight,
+    OCIStorage,
+    OutputBatch,
+)
 
 
 def simulate_llm_processing(data):
-    """
-    Simula la llamada al backend (LangChain/n8n + LLM)
-    Aquí irá la integración real de la API.
-    """
+    """Simula la llamada al backend. TODO: conectar con get_llm_client()."""
     time.sleep(2)
 
-    return {
-        "status": "listo",
-        "resumen_comunidad": {
-            "total_interacciones_procesadas": 142,
-            "sentimiento_predominante": "Positivo (85%)",
-            "temas_principales": ["Serverless", "CI/CD", "Observabilidad"],
-        },
-        "activos_distribucion_generados": {
-            "post_linkedin": "🚀 ¡Nuestra comunidad sigue creciendo e innovando!\n\nEsta semana, vimos un interés masivo en arquitecturas Serverless y pipelines de CI/CD. Es inspirador ver cómo se comparten conocimientos y se resuelven problemas complejos colaborativamente.\n\n👉 Destacamos el aporte de [Nombre de Usuario] sobre Observabilidad en entornos distribuidos. ¡Lectura recomendada!\n\n¿Tú qué herramientas estás utilizando para monitorizar tus servicios? Déjalo en los comentarios 👇\n\n#CommunityLab #Serverless #DevOps #Comunidad",
-            "destaque_newsletter_semanal": "🔥 Lo Mejor de CommunityLab: Serverless en el Centro de la Escena\n\nTitular: La adopción Serverless domina la conversación comunitaria.\n\nResumen: Durante la última semana, analizamos más de 140 interacciones clave. El debate se centró fuertemente en los desafíos y beneficios de migrar a arquitecturas sin servidor. Además, compartimos casos de éxito sobre automatización de despliegues (CI/CD) que redujeron los tiempos de salida a producción en un 40%.\n\nLee el reporte completo aquí: [Enlace]",
-            "sugerencia_contenido_faq": "**Pregunta detectada recurrentemente:**\n¿Cuáles son las mejores prácticas para manejar secretos y variables de entorno en despliegues automatizados (CI/CD)?\n\n**Borrador de Respuesta Sugerida:**\nPara manejar secretos de forma segura en CI/CD, recomendamos:\n1. Nunca almacenar secretos en texto plano en el repositorio (usar `.gitignore`).\n2. Utilizar un Gestor de Secretos (como OCI Vault, AWS Secrets Manager, etc.).\n3. Inyectar los secretos en tiempo de ejecución de la pipeline a través de variables de entorno de la plataforma de CI/CD, asegurando que estén enmascaradas en los logs.",
-        },
-        "almacenamiento_oci": {
-            "bucket": "communitylab-activos-marketing",
-            "estado": "pendiente",
-        },
-    }
+    return OutputBatch(
+        status="exito",
+        resumen_comunidad=CommunitySummary(
+            total_interacciones_procesadas=142,
+            sentimiento_predominante="Positivo",
+            temas_principales=["Serverless", "CI/CD", "Observabilidad"],
+        ),
+        activos_distribucion_generados=DistributionAssets(
+            post_linkedin=LinkedInPost(
+                titulo="De la Comunidad al Mercado",
+                copy="🚀 ¡Nuestra comunidad sigue creciendo e innovando!\n\nEsta semana, vimos un interés masivo en arquitecturas Serverless y pipelines de CI/CD. Es inspirador ver cómo se comparten conocimientos y se resuelven problemas complejos colaborativamente.\n\n👉 Destacamos el aporte de [Nombre de Usuario] sobre Observabilidad en entornos distribuidos. ¡Lectura recomendada!\n\n¿Tú qué herramientas estás utilizando para monitorizar tus servicios? Déjalo en los comentarios 👇\n\n#CommunityLab #Serverless #DevOps #Comunidad",
+                canal_recomendado="LinkedIn Oficial",
+                potencial_engagement="Alto",
+            ),
+            destaque_newsletter_semanal=NewsletterHighlight(
+                seccion="Logro de la Semana",
+                titular="La adopción Serverless domina la conversación",
+                resumen="Durante la última semana, analizamos más de 140 interacciones clave. El debate se centró fuertemente en los desafíos y beneficios de migrar a arquitecturas sin servidor. Además, compartimos casos de éxito sobre automatización de despliegues (CI/CD) que redujeron los tiempos de salida a producción en un 40%.",
+            ),
+            sugerencia_contenido_faq=FAQSuggestion(
+                tema="Manejo de secretos en CI/CD",
+                origen="Duda recurrente de la comunidad",
+                status="derivado_a_mentoria",
+            ),
+        ),
+        almacenamiento_oci=OCIStorage(
+            bucket="communitylab-activos-marketing",
+            ruta_objeto="activos/2026-semana-39/paquete-distribucion.json",
+            status="guardado_con_exito",
+        ),
+    ).model_dump()
 
 
 def init_session_state():
@@ -95,17 +115,17 @@ def main():
 
         with tab1:
             st.info("Revisa y ajusta el copy antes de aprobar.")
-            linkedin_edited = st.text_area("Contenido del Post:", value=assets["post_linkedin"], height=250, key="linkedin_edit")
+            linkedin_edited = st.text_area("Contenido del Post:", value=assets["post_linkedin"]["copy"], height=250, key="linkedin_edit")
             linkedin_approve = st.checkbox("✅ Aprobar Post de LinkedIn", value=True, key="linkedin_check")
 
         with tab2:
             st.info("Resumen para incluir en el próximo correo semanal.")
-            newsletter_edited = st.text_area("Contenido Newsletter:", value=assets["destaque_newsletter_semanal"], height=200, key="news_edit")
+            newsletter_edited = st.text_area("Contenido Newsletter:", value=assets["destaque_newsletter_semanal"]["resumen"], height=200, key="news_edit")
             newsletter_approve = st.checkbox("✅ Aprobar Newsletter", value=True, key="news_check")
 
         with tab3:
             st.info("Pregunta frecuente detectada automáticamente para la base de conocimiento.")
-            faq_edited = st.text_area("Entrada FAQ:", value=assets["sugerencia_contenido_faq"], height=200, key="faq_edit")
+            faq_edited = st.text_area("Entrada FAQ:", value=assets["sugerencia_contenido_faq"]["tema"], height=200, key="faq_edit")
             faq_approve = st.checkbox("✅ Aprobar Sugerencia FAQ", value=True, key="faq_check")
 
         payload_to_save = {
