@@ -52,9 +52,9 @@ def _contiene(texto: str, palabras: list[str]) -> bool:
         if p == "?":
             if "?" in texto:
                 return True
-            elif re.search(r"\b" + re.escape(p), texto):
+        elif re.search(r"\b" + re.escape(p), texto):
                 return True
-        return False
+    return False
 
 def calificarTipo(texto: str) -> str:
     t = re.sub(r"https?://\S+", "", texto.lower())
