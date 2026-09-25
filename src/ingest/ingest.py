@@ -112,9 +112,6 @@ def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = N
         max_id = lote[-1]["id"]
         posts.extend(p for p in lote if relevante(p, tipo))
 
-        posts.extend(lote)
-        max_id = lote[-1]["id"]
-
         #Ya no hay más páginas
         if len(lote) < params["limit"]:
             break 
