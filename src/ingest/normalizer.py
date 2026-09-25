@@ -8,8 +8,8 @@ class InputNormalizer:
     """Converts a raw message into a contract InputMessage.
 
     Accepts both the contract field names (autor/canal/tipo/texto) and the
-    English alternatives (author/channel/content), and derives `tipo` when the
-    source does not provide it explicitly.
+    English alternatives (author/channel/content), and normalizes `tipo` to the
+    canonical form (lowercase, spaces replaced by underscores).
     """
 
     def normalize(
@@ -25,9 +25,20 @@ class InputNormalizer:
         return InputMessage(
             autor=raw.get("autor") or raw.get("author") or "",
             canal=raw.get("canal") or raw.get("channel") or f"#{source}",
-            tipo=tipo or raw.get("tipo") or "otro",
+            tipo=tipo or self._normalize_tipo(raw.get("tipo")),
             texto=raw.get("texto") or raw.get("content") or "",
             id=raw.get("id"),
             timestamp=raw.get("timestamp") or raw.get("fecha"),
             metadata=metadata,
         )
+
+    @staticmethod
+    def _normalize_tipo(raw_tipo: Optional[str]) -> str:
+        """Normalizes a raw `tipo` value to the canonical form.
+
+        Example: "pregunta tecnica" -> "pregunta_tecnica",
+        "Comentario General" -> "comentario_general".
+        """
+        if not raw_tipo:
+            return "otro"
+        return str(raw_tipo).strip().lower().replace(" ", "_")
