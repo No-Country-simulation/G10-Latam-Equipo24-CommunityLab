@@ -62,6 +62,55 @@ flowchart TB
 
 > **Estado actual**: pipeline implementado end-to-end (ingesta webhook asíncrona → análisis → decisiones → generadores). Integración con OCI Object Storage en curso (pendiente cuenta/credenciales reales).
 
+## 🤖 Proveedores de IA
+
+CommunityLab no debe quedar limitado a un único modelo. El pipeline debe comunicarse con un **proveedor de IA** mediante una interfaz común, tanto para el análisis como para la generación de contenidos. De esta manera, el mismo flujo puede usar Gemini, OpenAI, OpenRouter u otro modelo compatible sin modificar la lógica de análisis, decisiones ni generación.
+
+### Selección rápida del proveedor
+
+El proveedor se elige configurando `LLM_BACKEND` en el archivo `.env`:
+
+```env
+# Gemini
+LLM_BACKEND=gemini
+GEMINI_API_KEY=tu_api_key_gemini
+
+# OpenAI u otro endpoint compatible con la API de OpenAI
+LLM_BACKEND=openai
+OPENAI_API_KEY=tu_api_key_openai
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+
+# OpenRouter
+LLM_BACKEND=openrouter
+OPENROUTER_API_KEY=tu_api_key_openrouter
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=modelo/seleccionado
+
+# Demo sin API externa
+LLM_BACKEND=rule_based
+```
+
+Con esta separación:
+
+- `src/analysis/` solo pide el resultado del análisis al proveedor.
+- `src/generators/` solo recibe el contexto y el tipo de activo que debe generar.
+- Los prompts se mantienen en `src/prompts/`.
+- Cambiar de proveedor no debería requerir modificar el orquestador, las reglas de decisión ni los formatos de salida.
+
+### Contrato mínimo de un proveedor
+
+Todo proveedor nuevo debe exponer dos capacidades:
+
+```text
+analyze(message) → sentimiento, categorías y relevancia
+generate(asset_type, context) → contenido del activo
+```
+
+El proveedor puede ser Gemini, OpenAI, OpenRouter o un servidor local compatible con la API de OpenAI. Para modelos propios, basta con implementar ese contrato y registrar el proveedor en la configuración.
+
+> **Estado actual:** el repositorio aún no incluye las implementaciones concretas de estos proveedores. Esta sección documenta el contrato y la forma de selección prevista para que la integración sea reemplazable sin acoplar el pipeline a un modelo específico.
+
 ---
 
 ## 📁 Estructura del proyecto
@@ -127,6 +176,7 @@ cp .env.example .env
 # Para demo sin credenciales, activá el backend offline:
 echo "COMMUNITYLAB_LLM_BACKEND=rule_based" >> .env
 ```
+
 
 ### 🖥️ Opción A — Dashboard Streamlit (recomendado para la demo)
 

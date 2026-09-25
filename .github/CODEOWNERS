@@ -1,11 +1,12 @@
 # CODEOWNERS - CommunityLab
-# Rox aprueba TODO porque es la más experimentada
-# emanuelperacchia configura GitHub y documentación
+# Regla anti-bloqueo: GitHub no cuenta la aprobación del autor del PR.
+# Por eso cada carpeta tiene al menos 2 CODEOWNERS para evitar PRs bloqueados.
+#
+# @Rox-0864 aprueba código fuente y tests.
+# @emanuelperacchia aprueba configuración/docs y actúa como alternate para código/tests.
 
-# Rox aprueba código fuente
-/src/              @Rox-0864
-/tests/            @Rox-0864
+/src/              @Rox-0864 @emanuelperacchia
+/tests/            @Rox-0864 @emanuelperacchia
 
-# emanuelperacchia configura GitHub y documentación
-/.github/          @emanuelperacchia
-/docs/             @emanuelperacchia
+/.github/          @emanuelperacchia @Rox-0864
+/docs/             @emanuelperacchia @Rox-0864
