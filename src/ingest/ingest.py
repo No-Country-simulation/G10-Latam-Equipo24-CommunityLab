@@ -48,7 +48,7 @@ def limpiarHTML(textoHtml: str) -> str:
     return texto
 
 def _contiene(texto: str, palabras: list[str]) -> bool:
-    for p in "?":
+    for p in palabras:
         if p == "?":
             if "?" in texto:
                 return True
@@ -109,6 +109,9 @@ def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = N
         if not lote:
             break
 
+        max_id = lote[-1]["id"]
+        posts.extend(p for p in lote if relevante(p, tipo))
+
         posts.extend(lote)
         max_id = lote[-1]["id"]
 
@@ -116,7 +119,7 @@ def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = N
         if len(lote) < params["limit"]:
             break 
 
-        return posts
+    return posts
 
 def mapearPosts(posts: list[dict], canal:str) -> list[dict]:
     interaccion = []
