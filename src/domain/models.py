@@ -1,11 +1,14 @@
-"""Modelos de dominio de CommunityLab.
+"""CommunityLab domain models.
 
-IMPORTANTE — estos modelos reflejan EXACTAMENTE el contrato de datos del
-desafío (Desafío 3 - CommunityLab). El contrato está documentado en el README
-y en docs/contract.md.
+IMPORTANT — these models mirror EXACTLY the data contract of the challenge
+("Desafio 3 - CommunityLab"). The contract is documented in the README and
+in docs/fuentes-de-datos.md.
 
-Regla de oro: NO agregues campos obligatorios que el ejemplo del PDF no tenga,
-porque entonces el sistema rechazará la entrada real del jurado.
+Golden rule: do NOT add required fields that the PDF example does not have,
+or the system will reject the grader's real input.
+
+Convention: class names and comments are in English, but the FIELD names are
+in Spanish because they are the exact JSON keys of the contract.
 """
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -18,18 +21,18 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class SentimentType(str, Enum):
-    """Sentimiento de un mensaje individual (análisis interno)."""
+    """Sentiment of a single message (internal analysis)."""
     POSITIVO = "positivo"
     NEGATIVO = "negativo"
     NEUTRO = "neutral"
 
 
 class InteractionType(str, Enum):
-    """Tipos de interacción que vienen en el campo `tipo` del contrato.
+    """Interaction types that come in the `tipo` field of the contract.
 
-    El PDF muestra explícitamente `testimonio` y `pregunta_tecnica`.
-    El resto son extensiones razonables. El motor de decisiones debe manejar
-    un valor desconocido con un fallback, NO reventar.
+    The PDF explicitly shows `testimonio` and `pregunta_tecnica`.
+    The rest are reasonable extensions. The decision engine must handle
+    unknown values with a fallback, NOT crash.
     """
     TESTIMONIO = "testimonio"
     PREGUNTA_TECNICA = "pregunta_tecnica"
@@ -60,20 +63,20 @@ class ActionType(str, Enum):
 
 
 # ---------------------------------------------------------------------------
-# ENTRADA — contrato (lo que el sistema recibe)
+# INPUT — contract (what the system receives)
 # ---------------------------------------------------------------------------
 
 class InputMessage(BaseModel):
-    """Una interacción individual, tal como llega en el contrato.
+    """A single interaction, exactly as it arrives in the contract.
 
-    Campos OBLIGATORIOS (vienen en el ejemplo del PDF):
-        autor   — nombre de la persona
-        canal   — canal de origen (ej. "#logros-y-empleos")
-        tipo    — tipo de interacción (ej. "testimonio", "pregunta_tecnica")
-        texto   — contenido del mensaje
+    Required fields (present in the PDF example):
+        autor   — person's name
+        canal   — source channel (e.g. "#logros-y-empleos")
+        tipo    — interaction type (e.g. "testimonio", "pregunta_tecnica")
+        texto   — message content
 
-    Campos OPCIONALES (NO están en el ejemplo del PDF; se agregan para
-    soportar datos reales): id, timestamp, metadata.
+    Optional fields (NOT in the PDF example; added for real data):
+        id, timestamp, metadata.
     """
     autor: str
     canal: str
@@ -85,14 +88,14 @@ class InputMessage(BaseModel):
 
 
 class InputBatch(BaseModel):
-    """El sobre (envelope) de entrada: un lote completo de interacciones."""
+    """The input envelope: a full batch of interactions."""
     origen_comunidad: str
     periodo_referencia: str
     interacciones: List[InputMessage]
 
 
 # ---------------------------------------------------------------------------
-# ANÁLISIS — interno (resultados intermedios del pipeline)
+# ANALYSIS — internal (intermediate pipeline results)
 # ---------------------------------------------------------------------------
 
 class SentimentResult(BaseModel):
@@ -116,7 +119,7 @@ class RelevanceResult(BaseModel):
 
 
 class AnalysisComplete(BaseModel):
-    """Resultado consolidado del análisis de un mensaje."""
+    """Consolidated analysis result for a single message."""
     message_id: str
     sentiment: Optional[SentimentResult] = None
     categorization: Optional[CategorizationResult] = None
@@ -124,55 +127,59 @@ class AnalysisComplete(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# SALIDA — contrato (lo que el sistema produce)
+# OUTPUT — contract (what the system produces)
 # ---------------------------------------------------------------------------
 
-class ResumenComunidad(BaseModel):
+class CommunitySummary(BaseModel):
+    """Maps to the JSON key `resumen_comunidad`."""
     total_interacciones_procesadas: int
     sentimiento_predominante: str
     temas_principales: List[str] = Field(default_factory=list)
 
 
-class PostLinkedIn(BaseModel):
+class LinkedInPost(BaseModel):
+    """Maps to the JSON key `post_linkedin`."""
     titulo: str
     copy: str
     canal_recomendado: str = ""
     potencial_engagement: str = ""
 
 
-class DestaqueNewsletter(BaseModel):
+class NewsletterHighlight(BaseModel):
+    """Maps to the JSON key `destaque_newsletter_semanal`."""
     seccion: str
     titular: str
     resumen: str
 
 
-class SugerenciaFAQ(BaseModel):
+class FAQSuggestion(BaseModel):
+    """Maps to the JSON key `sugerencia_contenido_faq`."""
     tema: str
     origen: str = ""
     status: str = ""
 
 
-class ActivosDistribucion(BaseModel):
-    """Activos generados. Cada uno es opcional porque no todo lote produce
-    los tres tipos (ej. un lote sin dudas no genera FAQ)."""
-    post_linkedin: Optional[PostLinkedIn] = None
-    destaque_newsletter_semanal: Optional[DestaqueNewsletter] = None
-    sugerencia_contenido_faq: Optional[SugerenciaFAQ] = None
+class DistributionAssets(BaseModel):
+    """Generated assets. Each is optional: not every batch produces all three."""
+    post_linkedin: Optional[LinkedInPost] = None
+    destaque_newsletter_semanal: Optional[NewsletterHighlight] = None
+    sugerencia_contenido_faq: Optional[FAQSuggestion] = None
 
 
-class AlmacenamientoOCI(BaseModel):
+class OCIStorage(BaseModel):
+    """Maps to the JSON key `almacenamiento_oci`."""
     bucket: str
     ruta_objeto: str
     status: str
 
 
 class OutputBatch(BaseModel):
-    """La salida completa que el sistema debe producir (contrato).
+    """The full output the system must produce (contract).
 
-    Las claves top-level son EXACTAMENTE las del PDF:
+    The top-level keys are EXACTLY those of the PDF:
     status, resumen_comunidad, activos_distribucion_generados, almacenamiento_oci.
     """
     status: str
-    resumen_comunidad: ResumenComunidad
-    activos_distribucion_generados: ActivosDistribucion
-    almacenamiento_oci: AlmacenamientoOCI
+    resumen_comunidad: CommunitySummary
+    activos_distribucion_generados: DistributionAssets
+    almacenamiento_oci: OCIStorage

@@ -1,4 +1,4 @@
-"""Tests for JSON input loader."""
+"""Tests for the JSON input loader."""
 import json
 
 import pytest
@@ -16,7 +16,7 @@ def test_load_valid_json(tmp_path):
                 "autor": "Mariana Souza",
                 "canal": "#logros-y-empleos",
                 "tipo": "testimonio",
-                "texto": "Conseguí mi primer trabajo como dev.",
+                "texto": "Consegui mi primer trabajo como dev.",
             }
         ],
     }
@@ -30,7 +30,7 @@ def test_load_valid_json(tmp_path):
     assert isinstance(msgs[0], InputMessage)
 
 
-def test_load_batch_preserva_el_sobre(tmp_path):
+def test_load_batch_preserves_envelope(tmp_path):
     sample = {
         "origen_comunidad": "Mastodon_mastodon.social_python",
         "periodo_referencia": "Semana_39_2026",
@@ -46,8 +46,8 @@ def test_load_batch_preserva_el_sobre(tmp_path):
     assert batch.periodo_referencia == "Semana_39_2026"
 
 
-def test_load_tolera_interactions_ingles(tmp_path):
-    """Acepta 'interactions' (inglés) como fallback, sin romper."""
+def test_load_tolerates_english_interactions(tmp_path):
+    """Accepts 'interactions' (English) as a fallback without breaking."""
     sample = {
         "origen_comunidad": "x",
         "periodo_referencia": "y",
@@ -68,7 +68,7 @@ def test_load_missing_file():
 
 
 def test_load_invalid_json(tmp_path):
-    invalid = {"origen_comunidad": "x"}  # falta "interacciones"
+    invalid = {"origen_comunidad": "x"}  # missing "interacciones"
     file = tmp_path / "bad.json"
     file.write_text(json.dumps(invalid))
     with pytest.raises(ValueError):

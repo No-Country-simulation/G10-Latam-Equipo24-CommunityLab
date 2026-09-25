@@ -1,39 +1,39 @@
-"""Tests for input normalizer."""
+"""Tests for the input normalizer."""
 from src.domain.models import InputMessage
 from src.ingest.normalizer import InputNormalizer
 
 
-def test_normalize_campos_del_contrato():
+def test_normalize_contract_fields():
     raw = {
         "autor": "alice",
         "canal": "#testimonios",
         "tipo": "testimonio",
-        "texto": "Excelente sesión",
+        "texto": "Excelente sesion",
     }
     msg = InputNormalizer().normalize("mastodon", raw)
     assert isinstance(msg, InputMessage)
     assert msg.autor == "alice"
     assert msg.canal == "#testimonios"
     assert msg.tipo == "testimonio"
-    assert msg.texto == "Excelente sesión"
+    assert msg.texto == "Excelente sesion"
 
 
-def test_normalize_acepta_nombres_en_ingles():
-    raw = {"author": "bob", "content": "duda de python", "channel": "#dudas"}
+def test_normalize_accepts_english_names():
+    raw = {"author": "bob", "content": "python question", "channel": "#dudas"}
     msg = InputNormalizer().normalize("discord", raw)
     assert msg.autor == "bob"
-    assert msg.texto == "duda de python"
+    assert msg.texto == "python question"
     assert msg.canal == "#dudas"
-    assert msg.tipo == "otro"  # sin tipo explícito
+    assert msg.tipo == "otro"  # no explicit tipo
 
 
-def test_normalize_tipo_explicito_gana():
+def test_normalize_explicit_tipo_wins():
     raw = {"autor": "c", "texto": "t", "tipo": "pregunta_tecnica"}
     msg = InputNormalizer().normalize("mastodon", raw, tipo="testimonio")
     assert msg.tipo == "testimonio"
 
 
-def test_normalize_preserva_url_en_metadata():
+def test_normalize_preserves_url_in_metadata():
     raw = {
         "autor": "d",
         "texto": "t",
