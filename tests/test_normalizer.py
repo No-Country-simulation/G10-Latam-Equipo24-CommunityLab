@@ -33,6 +33,19 @@ def test_normalize_explicit_tipo_wins():
     assert msg.tipo == "testimonio"
 
 
+def test_normalize_tipo_with_spaces():
+    """Raw values with spaces are normalized to underscores."""
+    raw = {"autor": "e", "texto": "t", "tipo": "pregunta tecnica"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.tipo == "pregunta_tecnica"
+
+
+def test_normalize_tipo_case_and_spaces():
+    raw = {"autor": "f", "texto": "t", "tipo": "Comentario General"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.tipo == "comentario_general"
+
+
 def test_normalize_preserves_url_in_metadata():
     raw = {
         "autor": "d",
