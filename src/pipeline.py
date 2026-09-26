@@ -7,6 +7,8 @@ NOTE: the analysis, decisions and generators steps are STUBS for now. They will
 be replaced by the real modules (src/analysis, src/decisions, src/generators)
 once those are implemented.
 """
+from dotenv import load_dotenv
+
 from src.domain.models import (
     AnalysisComplete,
     CategorizationResult,
@@ -29,6 +31,10 @@ from src.utils.llm import get_llm_client
 
 def run_pipeline(source: str) -> OutputBatch:
     """Runs the full pipeline on a JSON file and returns the contract output."""
+    # 0. Load environment variables from `.env` (if present) BEFORE any client
+    # reads COMMUNITYLAB_LLM_BACKEND / *_API_KEY.
+    load_dotenv()
+
     # 1. Ingest
     batch: InputBatch = JSONInputLoader().load_batch(source)
 
