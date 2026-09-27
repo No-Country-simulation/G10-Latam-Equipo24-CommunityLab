@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 from src.domain.models import InputBatch, InputMessage
+from src.ingest.normalizer import InputNormalizer
 
 
 class JSONInputLoader:
@@ -22,7 +23,11 @@ class JSONInputLoader:
         return self.load_batch(source).interacciones
 
     def load_batch(self, source: str) -> InputBatch:
-        """Returns the full batch (InputBatch), preserving the envelope."""
+        """Returns the full batch (InputBatch), preserving the envelope.
+
+        Each interaction is normalized at the boundary via InputNormalizer:
+        `tipo` becomes canonical, and `fecha`/`url` map to `timestamp`/`metadata`.
+        """
         path = Path(source)
         if not path.exists():
             raise FileNotFoundError(f"Source not found: {source}")
@@ -37,5 +42,12 @@ class JSONInputLoader:
                 data = {**data, "interacciones": data.pop("interactions")}
             else:
                 raise ValueError("Invalid JSON format: missing 'interacciones' key")
+
+        # Normalize each interaction once, at the boundary.
+        normalizer = InputNormalizer()
+        data["interacciones"] = [
+            normalizer.normalize(path.stem, msg)
+            for msg in data["interacciones"]
+        ]
 
         return InputBatch(**data)
