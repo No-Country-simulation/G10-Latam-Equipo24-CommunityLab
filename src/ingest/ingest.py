@@ -1,4 +1,4 @@
-#Imports
+# Imports
 
 import argparse
 import html
@@ -22,12 +22,14 @@ lista_palabras_preguntas = [
     "ayuda", "como puedo",
 ]
 
-#Descarta el ruido
+# Descarta el ruido
+
 MAX_CHARS = 1000
+
 
 hashstag_oferta = {
     "hiring", "nowhiring", "jobs", "jobalert", "jobopening",
-    "remotejobs", "vacante", "oferta_laboral", "ofertadeempleo", 
+    "remotejobs", "vacante", "oferta_laboral", "ofertadeempleo",
 }
 
 palabra_oferta = [
@@ -36,7 +38,8 @@ palabra_oferta = [
     "vacante", "postúlante", "postulate",
 ]
 
-#Funciones
+# Funciones
+
 
 def limpiar_html(textoHtml: str) -> str:
     if not textoHtml:
@@ -47,29 +50,33 @@ def limpiar_html(textoHtml: str) -> str:
     texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
     return texto
 
+
 def _contiene(texto: str, palabras: list[str]) -> bool:
     for p in palabras:
         if p == "?":
             if "?" in texto:
                 return True
         elif re.search(r"\b" + re.escape(p), texto):
-                return True
+            return True
     return False
+
 
 def calificar_tipo(texto: str) -> str:
     t = re.sub(r"https?://\S+", "", texto.lower())
     if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
-    if _contiene(t,lista_palabras_preguntas):
+    if _contiene(t, lista_palabras_preguntas):
         return "pregunta tecnica"
     return "comentario general"
 
-def oferta_Laboral(p: dict, texto: str) -> bool:
+
+def oferta_laboral(p: dict, texto: str) -> bool:
     tags = {t["name"].lower() for t in p.get("tags", [])}
     if tags & hashstag_oferta:
         return True
     t = texto.lower()
     return any(f in t for f in palabra_oferta)
+
 
 def relevante(p: dict, tipo: str | None) -> bool:
     if p.get("account", {}).get("bot"):
@@ -77,13 +84,16 @@ def relevante(p: dict, tipo: str | None) -> bool:
     texto = limpiar_html(p.get("content", ""))
     if not texto or len(texto) > MAX_CHARS:
         return False
-    if oferta_Laboral(p, texto):
+    if oferta_laboral(p, texto):
         return False
     if tipo and calificar_tipo(texto) != tipo:
         return False
     return True
 
+
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
+
+
 def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10) -> list[dict]:
     url = f"https://{instancia}/api/v1/timelines/tag/{hashtag}"
     posts: list[dict] = []
@@ -100,18 +110,21 @@ def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = 
         respuesta = requests.get(url, params=params, timeout=15)
         respuesta.raise_for_status()
         lote = respuesta.json()
-        #Si no hay mas resultados
+        # Si no hay mas resultados
         if not lote:
             break
 
         max_id = lote[-1]["id"]
         posts.extend(p for p in lote if relevante(p, tipo))
+        if len(posts) > limite:
+            posts = posts[:limite]
 
-        #Ya no hay más páginas
+        # Ya no hay más páginas
         if len(lote) < params["limit"]:
-            break 
+            break
 
     return posts
+
 
 def mapear_posts(posts: list[dict], canal: str) -> list[dict]:
     interaccion = []
@@ -127,6 +140,7 @@ def mapear_posts(posts: list[dict], canal: str) -> list[dict]:
             "url": p.get("url"),
         })
     return interaccion
+
 
 def main():
     parser = argparse.ArgumentParser(description="Ingesta de Mastodon para CommunityLab")
@@ -146,7 +160,7 @@ def main():
 
     try:
         posts = obtener_posts(args.instance, args.hashtag, args.limit, args.tipo)
-    except requests.RequestException as err: #err => Error
+    except requests.RequestException as err:  # err => Error
         print(f"Error consultando Mastodon: {err}", file=sys.stderr)
         sys.exit(1)
 
@@ -169,8 +183,9 @@ def main():
     for i in interactuar:
         tipos[i["tipo"]] = tipos.get(i["tipo"], 0) + 1
 
-    print(f"Guardado: {out_path} ({len(interactuar)} interaciones)", file=sys.stderr)
+    print(f"Guardado: {out_path} ({len(interactuar)} interacciones)", file=sys.stderr)
     print(f"Los tipos de distribuyen como: {tipos}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
