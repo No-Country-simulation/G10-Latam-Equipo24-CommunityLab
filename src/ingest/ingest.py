@@ -27,7 +27,7 @@ MAX_CHARS = 1000
 
 hashstag_oferta = {
     "hiring", "nowhiring", "jobs", "jobalert", "jobopening",
-    "remotejobs", "vacante", "ofertalaboral", "ofertadeempleo", 
+    "remotejobs", "vacante", "oferta_laboral", "ofertadeempleo", 
 }
 
 palabra_oferta = [
@@ -38,7 +38,7 @@ palabra_oferta = [
 
 #Funciones
 
-def limpiarHTML(textoHtml: str) -> str:
+def limpiar_html(textoHtml: str) -> str:
     if not textoHtml:
         return ""
     texto = re.sub(r"</p>|<br\s*/>", "\n", textoHtml)
@@ -56,7 +56,7 @@ def _contiene(texto: str, palabras: list[str]) -> bool:
                 return True
     return False
 
-def calificarTipo(texto: str) -> str:
+def calificar_tipo(texto: str) -> str:
     t = re.sub(r"https?://\S+", "", texto.lower())
     if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
@@ -64,7 +64,7 @@ def calificarTipo(texto: str) -> str:
         return "pregunta tecnica"
     return "comentario general"
 
-def ofertaLaboral(p: dict, texto: str) -> bool:
+def oferta_Laboral(p: dict, texto: str) -> bool:
     tags = {t["name"].lower() for t in p.get("tags", [])}
     if tags & hashstag_oferta:
         return True
@@ -74,31 +74,26 @@ def ofertaLaboral(p: dict, texto: str) -> bool:
 def relevante(p: dict, tipo: str | None) -> bool:
     if p.get("account", {}).get("bot"):
         return False
-    texto = limpiarHTML(p.get("content", ""))
+    texto = limpiar_html(p.get("content", ""))
     if not texto or len(texto) > MAX_CHARS:
         return False
-    if ofertaLaboral(p, texto):
+    if oferta_Laboral(p, texto):
         return False
-    if tipo and calificarTipo(texto) != tipo:
+    if tipo and calificar_tipo(texto) != tipo:
         return False
     return True
 
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
-def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10) -> list[dict]:
+def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10) -> list[dict]:
     url = f"https://{instancia}/api/v1/timelines/tag/{hashtag}"
     posts: list[dict] = []
     max_id = None
-
-    # while len(posts) < limite:
-    #     params = {"limit": min(40, limite - len(posts))}
-    #     if max_id:
-    #         params["max_id"] = max_id
 
     for _ in range(max_paginas):
         if len(posts) >= limite:
             break
 
-        params = {"limit": 40}
+        params = {"limit": min(40, limite - len(posts))}
         if max_id:
             params["max_id"] = max_id
 
@@ -118,17 +113,17 @@ def obtenerPosts(instancia: str, hashtag: str, limite: int, tipo: str | None = N
 
     return posts
 
-def mapearPosts(posts: list[dict], canal:str) -> list[dict]:
+def mapear_posts(posts: list[dict], canal: str) -> list[dict]:
     interaccion = []
     for p in posts:
-        texto = limpiarHTML(p.get("content", ""))
+        texto = limpiar_html(p.get("content", ""))
         interaccion.append({
             "id": p["id"],
             "canal": canal,
             "autor": p["account"]["acct"],
             "fecha": p["created_at"],
             "texto": texto,
-            "tipo": calificarTipo(texto),
+            "tipo": calificar_tipo(texto),
             "url": p.get("url"),
         })
     return interaccion
@@ -150,14 +145,14 @@ def main():
     print(f"Consulta a https://{args.instance}/api/v1/timelines/tag/{args.hashtag}", file=sys.stderr)
 
     try:
-        posts = obtenerPosts(args.instance, args.hashtag, args.limit, args.tipo)
+        posts = obtener_posts(args.instance, args.hashtag, args.limit, args.tipo)
     except requests.RequestException as err: #err => Error
         print(f"Error consultando Mastodon: {err}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"{len(posts)} los pots han sido recibidos y se estan mapando al fomado de CommunityLab", file=sys.stderr)
+    print(f"{len(posts)} posts recibidos, mapeando al formato de CommunityLab", file=sys.stderr)
 
-    interactuar = mapearPosts(posts, canal_label)
+    interactuar = mapear_posts(posts, canal_label)
 
     payload = {
         "origen_comunidad": origen,
@@ -174,7 +169,7 @@ def main():
     for i in interactuar:
         tipos[i["tipo"]] = tipos.get(i["tipo"], 0) + 1
 
-    print(f"Ha sido guardado!!!: {out_path} ({len(interactuar)} interaciones)", file=sys.stderr)
+    print(f"Guardado: {out_path} ({len(interactuar)} interaciones)", file=sys.stderr)
     print(f"Los tipos de distribuyen como: {tipos}", file=sys.stderr)
 
 if __name__ == "__main__":
