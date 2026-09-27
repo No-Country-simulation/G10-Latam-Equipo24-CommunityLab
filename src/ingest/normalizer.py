@@ -25,7 +25,7 @@ class InputNormalizer:
         return InputMessage(
             autor=raw.get("autor") or raw.get("author") or "",
             canal=raw.get("canal") or raw.get("channel") or f"#{source}",
-            tipo=tipo or self._normalize_tipo(raw.get("tipo")),
+            tipo=tipo or self.normalize_tipo(raw.get("tipo")),
             texto=raw.get("texto") or raw.get("content") or "",
             id=raw.get("id"),
             timestamp=raw.get("timestamp") or raw.get("fecha"),
@@ -33,12 +33,15 @@ class InputNormalizer:
         )
 
     @staticmethod
-    def _normalize_tipo(raw_tipo: Optional[str]) -> str:
+    def normalize_tipo(raw_tipo: Optional[str]) -> str:
         """Normalizes a raw `tipo` value to the canonical form.
 
         Example: "pregunta tecnica" -> "pregunta_tecnica",
         "Comentario General" -> "comentario_general".
+
+        Empty, None, or whitespace-only values fall back to "otro".
         """
         if not raw_tipo:
             return "otro"
-        return str(raw_tipo).strip().lower().replace(" ", "_")
+        normalized = str(raw_tipo).strip().lower().replace(" ", "_")
+        return normalized or "otro"

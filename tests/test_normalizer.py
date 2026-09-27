@@ -55,3 +55,24 @@ def test_normalize_preserves_url_in_metadata():
     }
     msg = InputNormalizer().normalize("mastodon", raw)
     assert msg.metadata.get("url") == "https://mastodon.social/example"
+
+
+def test_normalize_tipo_empty_string():
+    """An empty string `tipo` falls back to "otro"."""
+    raw = {"autor": "g", "texto": "t", "tipo": ""}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.tipo == "otro"
+
+
+def test_normalize_tipo_none_explicit():
+    """An explicit None `tipo` falls back to "otro"."""
+    raw = {"autor": "h", "texto": "t", "tipo": None}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.tipo == "otro"
+
+
+def test_normalize_tipo_whitespace_only():
+    """Whitespace-only `tipo` falls back to "otro" (was a silent bug)."""
+    raw = {"autor": "i", "texto": "t", "tipo": "   "}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.tipo == "otro"

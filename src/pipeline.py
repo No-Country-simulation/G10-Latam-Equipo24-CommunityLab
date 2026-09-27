@@ -26,6 +26,7 @@ from src.domain.models import (
     SentimentType,
 )
 from src.ingest.input_loader import JSONInputLoader
+from src.ingest.normalizer import InputNormalizer
 from src.utils.llm import get_llm_client
 
 
@@ -100,8 +101,8 @@ def _decide(msg: InputMessage, analysis: AnalysisComplete) -> str:
 
     TODO: replace with the real decision engine.
     """
-    # Normalize (the data can have spaces; the contract uses underscores).
-    tipo = msg.tipo.strip().lower().replace(" ", "_")
+    # `tipo` normalization lives in ONE place: InputNormalizer.normalize_tipo.
+    tipo = InputNormalizer.normalize_tipo(msg.tipo)
     if tipo == "testimonio":
         return "post_linkedin"
     if tipo == "pregunta_tecnica":
@@ -117,6 +118,10 @@ def _generate(results, llm) -> DistributionAssets:
     """
     has_linkedin = any(d == "post_linkedin" for _, _, d in results)
     has_faq = any(d == "faq" for _, _, d in results)
+    # The newsletter highlight is decoupled from LinkedIn: it appears whenever
+    # there is any non-discarded interaction (testimonio OR pregunta). The real
+    # criterion (e.g. engagement) will replace this placeholder later.
+    has_newsletter_content = any(d != "descartar" for _, _, d in results)
 
     return DistributionAssets(
         post_linkedin=(
@@ -135,7 +140,7 @@ def _generate(results, llm) -> DistributionAssets:
                 titular="Placeholder highlight",
                 resumen="Placeholder newsletter summary.",
             )
-            if has_linkedin
+            if has_newsletter_content
             else None
         ),
         sugerencia_contenido_faq=(
