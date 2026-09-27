@@ -73,3 +73,27 @@ def test_load_invalid_json(tmp_path):
     file.write_text(json.dumps(invalid))
     with pytest.raises(ValueError):
         JSONInputLoader().load(str(file))
+
+
+def test_load_normalizes_tipo_and_maps_fecha_url(tmp_path):
+    """The loader normalizes `tipo` and maps `fecha`/`url` via InputNormalizer."""
+    sample = {
+        "origen_comunidad": "Mastodon_mastodon.social_python",
+        "periodo_referencia": "Semana_39_2026",
+        "interacciones": [
+            {
+                "autor": "eisenmenger",
+                "canal": "#python@mastodon.social",
+                "tipo": "pregunta tecnica",
+                "texto": "alguien sabe como...",
+                "fecha": "2026-09-25T15:59:57Z",
+                "url": "https://mastodon.social/@eisenmenger/123",
+            }
+        ],
+    }
+    file = tmp_path / "sample.json"
+    file.write_text(json.dumps(sample))
+    msg = JSONInputLoader().load(str(file))[0]
+    assert msg.tipo == "pregunta_tecnica"
+    assert msg.timestamp == "2026-09-25T15:59:57Z"
+    assert msg.metadata.get("url") == "https://mastodon.social/@eisenmenger/123"
