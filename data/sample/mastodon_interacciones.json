@@ -3,589 +3,355 @@
   "periodo_referencia": "Semana_39_2026",
   "interacciones": [
     {
-      "id": "117332508529371231",
+      "id": "117344908799864655",
       "canal": "#python@mastodon.social",
-      "autor": "eisenmenger",
-      "fecha": "2026-09-25T15:59:57.826Z",
-      "texto": "Neue VHS-Kurse im 4. Quartal 2026!\nVon Oktober bis Dezember geht es in meinen Kursen u. a. um 🐧 Linux & Open Source, 🤖 KI mit ChatGPT und Mistral Le Chat, 🐍 Python, Netzwerke, VirtualBox und macOS.\nOnline und in Präsenz – praxisnah und auch für Einsteiger.\nAlle Termine und Infos:\nhttps://www.eisenmenger.training/meine-kurse/\n#VHS #Linux #OpenSource #KI #Python #Weiterbildung",
-      "tipo": "testimonio",
-      "url": "https://mastodon.social/@eisenmenger/117332508529371231"
-    },
-    {
-      "id": "117332403424831647",
-      "canal": "#python@mastodon.social",
-      "autor": "d1cor@mstdn.io",
-      "fecha": "2026-09-25T15:33:11.000Z",
-      "texto": "Editando!\nSe viene contenido nuevo en el canal de #youtube de #JuncoTIC, y más clases para el curso de Hardening Linux que estoy preparando.\nLos invito a suscribirse para no perderse las novedades!\n(Claro, si les interesan temas de #gnu #linux, #ciberseguridad, #criptografia #tcpip #python #ssh #nmap y otras cositas 😜)\nLos/as espero!\nhttps://www.youtube.com/juncotic?sub_confirmation=1",
+      "autor": "Ai_Lab",
+      "fecha": "2026-09-27T20:33:30.938Z",
+      "texto": "OCI Python SDK・CLIで新機能を試すとき、AttributeErrorや未認識コマンドが出たら何を確認する？ 必要なバージョンからIAM権限、モデルの提供リージョンまで順に切り分ける手順をまとめました。手順はこちら：https://tips.jp/u/ai-lab/a/C5Al0Qnd #AI #Oracle #Python",
       "tipo": "comentario general",
-      "url": "https://mstdn.io/@d1cor/117332403278432672"
+      "url": "https://mastodon.social/@Ai_Lab/117344908799864655"
     },
     {
-      "id": "117332391428618308",
-      "canal": "#python@mastodon.social",
-      "autor": "Reuven@fosstodon.org",
-      "fecha": "2026-09-25T15:30:08.000Z",
-      "texto": "Coming to #Python #Pandas from NumPy? You'll reach for np.isnan:\ns = Series([10, np.nan, 30])s.loc[ ~np.isnan(s) ] # returns 10, 30\nUnfortunately, this works. Better, use s.isna (or s.isnull).\nBut the best way to drop NaN? Use dropna:\ns.dropna()  # returns 10, 30",
-      "tipo": "pregunta tecnica",
-      "url": "https://fosstodon.org/@Reuven/117332391293047743"
-    },
-    {
-      "id": "117332373226283269",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T15:25:33.266Z",
-      "texto": "Alright here is a good sign and a big win. I constructed a paper called \"What you need\" in response to \"All you need is attention\" I go into all the flaws with the current infrastructure and the incompleteness of the softmax formula plaguing current AI pipelines. It has almost 1100 views in 4 days. I am also putting up the continuation of that upload today. This is about #science #research #data and the pursuit of #knowledge https://doi.org/10.5281/zenodo.22882089\n#python #physics #zenodo",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117332373226283269"
-    },
-    {
-      "id": "117332301847715533",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T15:07:24.119Z",
-      "texto": "Im not all research. I have the goods when it comes to #coding This is mostly in #python so that it is easier to test. Python is used as scaffolding to prove the underlying C and assembly code. The python code is strict. No float math. Bit exact. Forwards and backwards. Must run and pass a test to work even 20 years later on any computer system. Go test the code out. The research came secondary to the actual work. https://codeberg.org/Dragolich_Research_Labs_LLC\n#AI #research #science #physics #mathematics #assembly #C",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117332301847715533"
-    },
-    {
-      "id": "117332277621775954",
-      "canal": "#python@mastodon.social",
-      "autor": "mikerspencer@mastodon.scot",
-      "fecha": "2026-09-25T15:01:13.000Z",
-      "texto": "Proud family moment! This is the Ada service my brother's team built and maintains for scientists to use for analysis:\nFowler‐Wright, P., Mason‐Williams, G., Spencer, J., Demir, M. A., Jones, M. L., Darrow, M. C., & Winn, M. D. (2026). From developer to microscopist: Improving the accessibility of volume electron microscopy software. Journal of Microscopy. https://doi.org/10.1111/jmi.70177\n#Linux #RSE #Python",
-      "tipo": "comentario general",
-      "url": "https://mastodon.scot/@mikerspencer/117332277577909387"
-    },
-    {
-      "id": "117332199732570529",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T14:41:21.000Z",
-      "texto": "Steve Piercy explains How to maintain Python packages to attract free and open source software contributors\nhttps://2026.ploneconf.org/schedule/talks/how-to-maintain-python-packages-to-attract-free-and-open-source-software-contributors\n#plone #python #documentation #opensource #ploneconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117332199415359005"
-    },
-    {
-      "id": "117332183559683716",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T14:37:12.000Z",
-      "texto": "Karel Calitz of https://juizi.com asks Why Wouldn't You?\nhttps://2026.ploneconf.org/schedule/talks/why-wouldnt-you\n#plone #react #python #opensource #ploneconf2026",
-      "tipo": "pregunta tecnica",
-      "url": "https://plone.social/@plone/117332183145244210"
-    },
-    {
-      "id": "117332155218917806",
+      "id": "117344698801606387",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-25T14:30:06.735Z",
-      "texto": "159 lines, intermediate: wrap HuggingFace tokenizers and models for text generation. Run it with any model and prompt.\nhttps://www.valtersit.com/python/huggingface-tokenizer-and-inference-wrapper/\n#ai #python #transformers",
+      "fecha": "2026-09-27T19:40:06.628Z",
+      "texto": "195 lines of Python to create, list, and delete Linode/Akamai instances from the CLI. For sysadmins automating cloud work without the web console. Intermediate. https://www.valtersit.com/python/linodeakamai-cloud-instance-manager/ #python #cloud #linode",
       "tipo": "comentario general",
-      "url": "https://mastodon.social/@hugovalters/117332155218917806"
+      "url": "https://mastodon.social/@hugovalters/117344698801606387"
     },
     {
-      "id": "117332034106898084",
+      "id": "117344679832626433",
       "canal": "#python@mastodon.social",
-      "autor": "mortn",
-      "fecha": "2026-09-25T13:59:18.714Z",
-      "texto": "Yes, #neovim is really nice and all, but the combo of #Byobu and #Vim is just at a whole different level. Now with #Pi or #OpenCode running in its own window too 🤩\nWhether we're wrangling #Python, #Node, or #Rust apps, or mangling cloud and data center infra in #OpenTofu, #Terraform, or #Ansible - it always starts and ends with a Linux host running Byobu and Vim 🤓\nBonus when running an agent harness: when I disconnect, it also loses its SSH key and so all access to #git or SSH to other hosts🔒",
+      "autor": "rhettallain",
+      "fecha": "2026-09-27T19:35:17.180Z",
+      "texto": "Here is part 2: using #python to solve the #3bodyproblem #physics\nhttps://youtu.be/ZaeNPoaA0Tk",
       "tipo": "comentario general",
-      "url": "https://mastodon.social/@mortn/117332034106898084"
+      "url": "https://mastodon.social/@rhettallain/117344679832626433"
     },
     {
-      "id": "117331992986447497",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T13:48:51.266Z",
-      "texto": "Implementing #lean4 coding with #python and #C code pipeline for #AI coherence and decoherence modeling. The #mathematics and #geomety of the the #data makes it hallucination proof. It can not lie to you because it physically can't give you a bs answer. The #sorry mechanism built into lean 4 coding is used in my #ternary compilier. The question. It is a trit strand +1 0 -1. This also allows us to divide by 0. Phase transitions in the shape itself. It is a glass box. https://doi.org/10.5281/zenodo.22848548",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117331992986447497"
-    },
-    {
-      "id": "117331909093297654",
-      "canal": "#python@mastodon.social",
-      "autor": "DSLCvids@fosstodon.org",
-      "fecha": "2026-09-25T13:27:30.000Z",
-      "texto": "From the @DSLC :rstats:​chives:\n:rstats: R for Data Science: Joins https://youtu.be/QaIVKd5hWdA #RStats\n:rstats: SMLTAR: Dense neural networks Part 2 https://youtu.be/z6LlhOX4G4I #RStats\n:python: ISLP: Resampling Methods https://youtu.be/qsshBRQJO3g #pydata #python #machineLearning\nSupport the Data Science Learning Community at https://patreon.com/DSLC",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@DSLCvids/117331909034335677"
-    },
-    {
-      "id": "117331845707350411",
-      "canal": "#python@mastodon.social",
-      "autor": "swat@fosstodon.org",
-      "fecha": "2026-09-25T13:11:22.000Z",
-      "texto": "Undertime - pick a #meeting time ( https://gitlab.com/anarcat/undertime )\nNeed to convert/view/compare your #time / #timezone with others, because you work with people all around the globe? This #terminal tool will help you out.\nFound this terminal #Python gem, because I was looking for an open source and offline alternative. It is quick, to the point and copyleft licensed (AGPLv3).\nNote: Before I was using TimeAndDate.com ( https://www.timeanddate.com/ ).",
-      "tipo": "pregunta tecnica",
-      "url": "https://fosstodon.org/@swat/117331845619497344"
-    },
-    {
-      "id": "117331841282694315",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T13:10:09.000Z",
-      "texto": "Roland Fasching of https://cloud19.at presents Painting Plone Live: Runtime Bootstrap Theming for Plone Blicca with plone.palette\nhttps://2026.ploneconf.org/schedule/talks/painting-plone-live-runtime-bootstrap-theming-for-plone-blicca-with-plone-palette\n#plone #python #bootstrap #blicca #ploneconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331840810066817"
-    },
-    {
-      "id": "117331832253063376",
+      "id": "117344640887165627",
       "canal": "#python@mastodon.social",
       "autor": "teeeeeeeee",
-      "fecha": "2026-09-25T13:07:58.679Z",
-      "texto": "Custom errors for cross-validation using crossval::crossval_ml\nhttps://thierrymoudiki.github.io/blog/2020/05/08/r/misc/crossval-custom-errors\n#Python #DataScience #MachineLearning #rstats #Techtonique",
-      "tipo": "pregunta tecnica",
-      "url": "https://mastodon.social/@teeeeeeeee/117331832253063376"
-    },
-    {
-      "id": "117331819137576390",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T13:04:31.000Z",
-      "texto": "Armin Stroß-Radschinski - Managing Public Relation Campaigns with content over decades using Plone and AI Agentic Workflows\nhttps://2026.ploneconf.org/schedule/talks/managing-public-relation-campaigns-with-content-over-decades-using-plone-and-ai-agentic-workflows\n#plone #ai #agentic #python #ploneconf2026",
+      "fecha": "2026-09-27T19:25:22.918Z",
+      "texto": "mlsauce's `v0.18.2`: various examples and benchmarks with dimension reduction\nhttps://thierrymoudiki.github.io/blog/2024/05/06/python/r/lsboost/lsboost-feature-reduction\n#Python #DataScience #MachineLearning #rstats #Techtonique",
       "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331818680319737"
+      "url": "https://mastodon.social/@teeeeeeeee/117344640887165627"
     },
     {
-      "id": "117331792113032914",
+      "id": "117344612794913313",
       "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:57:45.000Z",
-      "texto": "plann 1.2.0 released\nplann is a command-line Python CalDAV client, making it possible to add calendar events, browse an agenda, and perform task management.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by @nlnet.\nChange loghttps://github.com/pycalendar/plann/blob/master/CHANGELOG.md\nPyPIhttps://pypi.org/project/plann\nGitHub repohttps://github.com/pycalendar/plann/\nIssueshttps://github.com/pycalendar/plann/issues\n#caldav #calendaring #pycal #cli #plann #python #FOSS",
+      "autor": "hschneider66",
+      "fecha": "2026-09-27T19:18:14.260Z",
+      "texto": "📌 Flet 1.0 ist da: Python Desktop Apps für alle Plattformen, jetzt bereit für die Produktion \nVor gut 4 Jahren ist Flet mit einer einfachen Idee gestartet: Wenn du Python kannst, sollst du plattformübergreifende Apps bauen können. Ohne Umweg über Dart, Swift oder Kotlin. Jetzt ist Flet 1.0 erschienen, und das Team gibt ein klares Versprechen: […] ... https://marketmix.com/de/flet-production-ready/\n#flet #flutter #python",
       "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331792065665568"
+      "url": "https://mastodon.social/@hschneider66/117344612794913313"
     },
     {
-      "id": "117331783847647979",
-      "canal": "#python@mastodon.social",
-      "autor": "mvu@sunny.garden",
-      "fecha": "2026-09-25T12:55:37.000Z",
-      "texto": "Sat down for 10 minutes of #FireEmblem (Shadows of Valentia) before work and this guy popped up.I can't wait to meet his partner Rusty, who's opening line will be \"Stay safe\".\n#python #programmer_humor",
-      "tipo": "comentario general",
-      "url": "https://sunny.garden/@mvu/117331783682293793"
-    },
-    {
-      "id": "117331781306738568",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T12:54:55.000Z",
-      "texto": "Johannes Raggam explains How Blicca came to be: Renaming Classic UI\nhttps://2026.ploneconf.org/schedule/talks/how-blicca-came-to-be-renaming-classic-ui\n#plone #zope #blicca #python #plonconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331780901898939"
-    },
-    {
-      "id": "117331771181619726",
-      "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:52:25.000Z",
-      "texto": "caldav-server-tester 1.3.0 released\nThis release contains lots of new probes, and works with caldav 3.3.1.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by @nlnet.\nChange loghttps://github.com/python-caldav/caldav-server-tester/blob/main/CHANGELOG.md\nPyPIhttps://pypi.org/project/caldav-server-tester\nGitHub repohttps://github.com/python-caldav/caldav-server-tester\nIssueshttps://github.com/python-caldav/caldav-server-tester/issues\n#caldav-server-tester #caldav #calendaring #pycal #Python #FOSS",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331771115625156"
-    },
-    {
-      "id": "117331762763770284",
+      "id": "117344344676800551",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-25T12:50:18.350Z",
-      "texto": "Pull Cloudflare analytics via GraphQL with 199 lines of Python. For devs and ops, intermediate level. Run: python3 cf_analytics.py --days 30\nhttps://www.valtersit.com/python/cloudflare-analytics-collector-via-graphql/\n#python #infra #cloudflare",
+      "fecha": "2026-09-27T18:10:03.103Z",
+      "texto": "259 lines of Python that queries 8.8.8.8, 1.1.1.1 and others to see where your DNS change has landed. Beginner-friendly, uses dnspython. Handy before you switch MX or renew SSL.\nhttps://www.valtersit.com/python/dns-propagation-checker-across-resolvers/\n#python #dns #devops",
       "tipo": "comentario general",
-      "url": "https://mastodon.social/@hugovalters/117331762763770284"
+      "url": "https://mastodon.social/@hugovalters/117344344676800551"
     },
     {
-      "id": "117331742032577578",
+      "id": "117344261993013013",
       "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:45:01.000Z",
-      "texto": "caldav 3.3.1 released\ncaldav is a CalDAV (RFC4791) client library for Python.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by NLnet. Learn more at the NLnet project page (https://nlnet.nl/project/Python-Webcalendaring/) and the PCE website (https://pycal.org).\nChange loghttps://github.com/python-caldav/caldav/blob/master/CHANGELOG.md\nPyPIhttps://pypi.org/project/caldav/\nGitHub repohttps://github.com/python-caldav/caldav\nIssueshttps://github.com/python-caldav/caldav/issues\n@nlnet \n#caldav #calendaring #pycal #python #foss",
+      "autor": "treyhunner",
+      "fecha": "2026-09-27T17:49:01.450Z",
+      "texto": "“The reproducibility of pseudorandom numbers is useful for automated tests and for debugging.”\nRead more 👉 https://pym.dev/random-numbers/\n#Python",
       "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331741994560577"
+      "url": "https://mastodon.social/@treyhunner/117344261993013013"
     },
     {
-      "id": "117331668513146554",
+      "id": "117344174791301532",
       "canal": "#python@mastodon.social",
-      "autor": "Reuven@fosstodon.org",
-      "fecha": "2026-09-25T12:26:18.000Z",
-      "texto": "It's easy to write #Python with AI.\nBut it's not as easy to build maintainable, well-engineered applications.\nOn Wednesday, I'm giving my advanced Claude Code workshop, 4 hours of hands-on practice with everything from custom skills to testing to telemetry.\nEven if you've been using Claude Code for months, you'll get a lot out of this.\nJoin me: More info at: https://lernerpython.com/code-with-claude/",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@Reuven/117331668393013540"
-    },
-    {
-      "id": "117331667489424389",
-      "canal": "#python@mastodon.social",
-      "autor": "f800gecko@mastodon.online",
-      "fecha": "2026-09-25T12:26:04.000Z",
-      "texto": "Have a look at the 'Short Answer' in this stackoverflow on 'chunksize' in Python multiprocessing, then appreciate the sublime humour of the following comment to be found some 15-20 pages down...\n'This is one of the most epic answers on SO. You only need to look here to see that multiprocessing is super easy, barely an inconvenience.' \nhttps://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize\n#it #technology #python #programming",
-      "tipo": "comentario general",
-      "url": "https://mastodon.online/@f800gecko/117331667464589444"
-    },
-    {
-      "id": "117331653011042196",
-      "canal": "#python@mastodon.social",
-      "autor": "corpsmoderne@mamot.fr",
-      "fecha": "2026-09-25T12:22:23.000Z",
-      "texto": "People using #python with #uv how do you handle different ways to install deps in different environnements? (in my case: a dev laptop and Ci).\nLocally I want to install a private dep from git+ssh\nIn CI I'd like to install it with git+https (+github token)\nIs that possible? The alternative would be to make the CI use an ssh key but is there a canonical solution to this problem?",
+      "autor": "M100",
+      "fecha": "2026-09-27T17:26:50.856Z",
+      "texto": "Looking to build a custom #ActivityPub bot or consume an external RSS feed in your Mastodon timeline? 🤖\nYou don't have to do it all by yourself. We have a network of elite Python, Go, and Ruby developers ready to create sleek, minimal open-source software and bots for activity streams.\nHire professional clean-code developers on Fiverr:(https://go.fiverr.com/visit/?bta=1174784&brand=fiverrmarketplace&landingPage=https%253A%252F%252Fwww.fiverr.com%252Fcategories%252Fprogramming-tech%252Fsoftware-development%253Fsource%253Ddrop_down_filters%2526ref%253Dseller_level%25253Atop_rated_seller%25252Clevel_two_seller)\nCW : sponsored\n #indiedev #tech #technology #OpenSource #Python #Coding #Ad",
       "tipo": "pregunta tecnica",
-      "url": "https://mamot.fr/@corpsmoderne/117331652971026719"
+      "url": "https://mastodon.social/@M100/117344174791301532"
     },
     {
-      "id": "117332530718202515",
+      "id": "117344067665038258",
       "canal": "#python@mastodon.social",
-      "autor": "jobsfordevelopers@mastodon.world",
-      "fecha": "2026-09-25T16:05:35.000Z",
-      "texto": "ClickHouse is hiring Senior Software Engineer (Typescript / FrontEnd) - AI/ML\n🔧 #typescript #javascript #python #react #api #aws #azure #gcp #seniorengineer🌎 Canada⏰ Full-time🏢 ClickHouse\nJob details https://jobsfordevelopers.com/jobs/senior-software-engineer-typescript-frontend-ai-ml-at-clickhouse-com-may-19-2026-46e3fd?utm_source=mastodon.world&utm_medium=social&utm_campaign=posting#jobalert #jobsearch #hiring",
+      "autor": "edigonzales@mstdn.social",
+      "fecha": "2026-09-27T16:59:34.000Z",
+      "texto": "#INTERLIS leicht gemacht, Teil 69: IBX - INTERLIS kann auch binär. https://blog.interlis.guru/2026/09/28/interlis-leicht-gemacht-number-69/ #java #python #qgis",
       "tipo": "comentario general",
-      "url": "https://mastodon.world/@jobsfordevelopers/117332530635278981"
+      "url": "https://mstdn.social/@edigonzales/117344067538597166"
     },
     {
-      "id": "117332517776485950",
-      "canal": "#python@mastodon.social",
-      "autor": "habr@zhub.link",
-      "fecha": "2026-09-25T16:02:18.000Z",
-      "texto": "Геометрический бум: как перестать бояться Canvas и начать рисовать интерфейсы\nОбычно такие статьи начинаются с банальных вопросов по типу «Что такое интерфейс», «Что такое разработка», «Что такое проектирование». Суть в том, что это не так важно в рамках данной статьи, и к тому же без того интуитивно понятно. Интуитивно понятно также, как и должен быть понятен хороший пользовательский интерфейс! Из экономики можно подчерпнуть то, что существует три типа реализации продукта/модели взаимодействия на рынке: от бизнеса к бизнесу, от бизнеса к потребителю и от потребителя к потребителю (последнее – допустим, доски объявлений, тот же Авито). По части ПО мы имеем нечто похожее: от программиста к программисту, от программиста к пользователю, от пользователя к пользователю. Например, когда одни программисты создают библиотеку или новый усовершенствованный ЯП – они нацелены прежде всего на аудиторию программистов. А если идёт разработка ПО для создания и редактирования графических объектов (тот же Photoshop) – то главной аудиторией является пользователь в самом широком смысле этого слова. От пользователя к пользователю же – это когда один юзер отправляет другому программу на Visual Basic для анализа чего бы то ни было в Excel (либо других таблицах). Проблема какая, прежде всего: мы любим, когда всё видно, существует логика, последовательность, в общем – когда ПО напоминает больше музыкальный инструмент, а не набор функций (последнее примемлемо только для библиотек Python – но даже они соревнуются в понятности между собой). В общем, никому не нужен инструмент, которым непонятно, как пользоваться. И если в связке программист-программисту это не так страшно (хотя неприятно, те же IDE штука полезная), то создание ПО для массового пользователя без интерфейса – это означает создание ПО, которое не откроют никогда. Ваш автомобиль может быть шикарен в большинстве своём, но если человек не понимает, как открыть дверь и где там вообще руль – это провал. А если вы вдобавок выдадите ему вместо объяснений 200-ти страничный документ – провал вдвойне, опять же, если речь про классического потребителя.\nhttps://habr.com/ru/articles/1086808/\n#python #tkinter #canvas #интерпретатор #ui #gui #replace #прокрутка #холст",
-      "tipo": "comentario general",
-      "url": "https://zhub.link/@habr/117332517742600462"
-    },
-    {
-      "id": "117332508529371231",
-      "canal": "#python@mastodon.social",
-      "autor": "eisenmenger",
-      "fecha": "2026-09-25T15:59:57.826Z",
-      "texto": "Neue VHS-Kurse im 4. Quartal 2026!\nVon Oktober bis Dezember geht es in meinen Kursen u. a. um 🐧 Linux & Open Source, 🤖 KI mit ChatGPT und Mistral Le Chat, 🐍 Python, Netzwerke, VirtualBox und macOS.\nOnline und in Präsenz – praxisnah und auch für Einsteiger.\nAlle Termine und Infos:\nhttps://www.eisenmenger.training/meine-kurse/\n#VHS #Linux #OpenSource #KI #Python #Weiterbildung",
-      "tipo": "testimonio",
-      "url": "https://mastodon.social/@eisenmenger/117332508529371231"
-    },
-    {
-      "id": "117332489614353248",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:33:31.000Z",
-      "texto": "I recently published an RL environment — a reinforcement learning task that scores an agent on what...#python #testing #ai #opensource #software #coding #development #engineering #inclusive #communityI wrote five agents to cheat my own benchmark. They found three holes. Three more found me.",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-e76e0fcb-89abee6ff5395b5b"
-    },
-    {
-      "id": "117332455564074073",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:46:29.000Z",
-      "texto": "If you've ever built email/phone verification into a Django app, there's a good chance your OTP flow...#django #python #security #webdev #software #coding #development #engineering #inclusive #communityDjango OTP Verification: 4 Security Mistakes Most Tutorials Get Wrong",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-ec2b76db-4d3e185c52d583ec"
-    },
-    {
-      "id": "117332409552158267",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:34:47.000Z",
-      "texto": "A lot of \"AI\" in production isn't generation at all. It's a pile of small decisions about a piece...#machinelearning #python #opensource #ai #software #coding #development #engineering #inclusive #communityAsk ten questions, read the text once: making a decision model 6.7x faster",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-55b8a1ce-1a6907c5394c3b13"
-    },
-    {
-      "id": "117332407168325542",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:15:02.000Z",
-      "texto": "How WXRQ moved from a new repository to public radio and television with scripted shows, voices, music, HLS and a Django admin.#python #django #audio #livestreaming #software #coding #development #engineering #inclusive #communityWXRQ turned a production kit into a radio station",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-1ce731c3-7c6196bc5892cf92"
-    },
-    {
-      "id": "117332403424831647",
-      "canal": "#python@mastodon.social",
-      "autor": "d1cor@mstdn.io",
-      "fecha": "2026-09-25T15:33:11.000Z",
-      "texto": "Editando!\nSe viene contenido nuevo en el canal de #youtube de #JuncoTIC, y más clases para el curso de Hardening Linux que estoy preparando.\nLos invito a suscribirse para no perderse las novedades!\n(Claro, si les interesan temas de #gnu #linux, #ciberseguridad, #criptografia #tcpip #python #ssh #nmap y otras cositas 😜)\nLos/as espero!\nhttps://www.youtube.com/juncotic?sub_confirmation=1",
-      "tipo": "comentario general",
-      "url": "https://mstdn.io/@d1cor/117332403278432672"
-    },
-    {
-      "id": "117332395849305994",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:31:18.000Z",
-      "texto": "My journey starts pretty far from tech. After years in scientific research (Biotechnology at UFU,...#data #python #fastapi #career #software #coding #development #engineering #inclusive #communityLabTrack API",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-4838ef9e-7c422b893f9f7c28"
-    },
-    {
-      "id": "117332391428618308",
-      "canal": "#python@mastodon.social",
-      "autor": "Reuven@fosstodon.org",
-      "fecha": "2026-09-25T15:30:08.000Z",
-      "texto": "Coming to #Python #Pandas from NumPy? You'll reach for np.isnan:\ns = Series([10, np.nan, 30])s.loc[ ~np.isnan(s) ] # returns 10, 30\nUnfortunately, this works. Better, use s.isna (or s.isnull).\nBut the best way to drop NaN? Use dropna:\ns.dropna()  # returns 10, 30",
-      "tipo": "pregunta tecnica",
-      "url": "https://fosstodon.org/@Reuven/117332391293047743"
-    },
-    {
-      "id": "117332373226283269",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T15:25:33.266Z",
-      "texto": "Alright here is a good sign and a big win. I constructed a paper called \"What you need\" in response to \"All you need is attention\" I go into all the flaws with the current infrastructure and the incompleteness of the softmax formula plaguing current AI pipelines. It has almost 1100 views in 4 days. I am also putting up the continuation of that upload today. This is about #science #research #data and the pursuit of #knowledge https://doi.org/10.5281/zenodo.22882089\n#python #physics #zenodo",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117332373226283269"
-    },
-    {
-      "id": "117332363584183649",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T15:01:43.000Z",
-      "texto": "A production-shaped, zero-cost Freqtrade setup: self-healing watchdog, P&L logging and a hard drawdown kill switch.#linux #bash #devops #python #software #coding #development #engineering #inclusive #communityKeep any long-running Python process alive on Linux for $0 (the /proc watchdog pattern)",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-98231b55-0b5bdf2192d43c1d"
-    },
-    {
-      "id": "117332301847715533",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T15:07:24.119Z",
-      "texto": "Im not all research. I have the goods when it comes to #coding This is mostly in #python so that it is easier to test. Python is used as scaffolding to prove the underlying C and assembly code. The python code is strict. No float math. Bit exact. Forwards and backwards. Must run and pass a test to work even 20 years later on any computer system. Go test the code out. The research came secondary to the actual work. https://codeberg.org/Dragolich_Research_Labs_LLC\n#AI #research #science #physics #mathematics #assembly #C",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117332301847715533"
-    },
-    {
-      "id": "117332277621775954",
-      "canal": "#python@mastodon.social",
-      "autor": "mikerspencer@mastodon.scot",
-      "fecha": "2026-09-25T15:01:13.000Z",
-      "texto": "Proud family moment! This is the Ada service my brother's team built and maintains for scientists to use for analysis:\nFowler‐Wright, P., Mason‐Williams, G., Spencer, J., Demir, M. A., Jones, M. L., Darrow, M. C., & Winn, M. D. (2026). From developer to microscopist: Improving the accessibility of volume electron microscopy software. Journal of Microscopy. https://doi.org/10.1111/jmi.70177\n#Linux #RSE #Python",
-      "tipo": "comentario general",
-      "url": "https://mastodon.scot/@mikerspencer/117332277577909387"
-    },
-    {
-      "id": "117332240781546889",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T14:35:55.000Z",
-      "texto": "Most \"run a trading bot\" tutorials stop at backtest passed, bot started. That is the easy 20%. The hard 80% is what happens on day 4 at 03:00 when the process is gone and you only notice three weeks later — with a flat equity curve and a dead clock.\nThis post is the part nobody writes: a production-shaped, zero-cost setup where the bot restarts itself, logs its own P&L, and hard-stops on a risk rule you define. Everything below was built and verified in a single afternoon on a $0 budget, using only open-source tooling. The dry-run trades are simulated — no exchange key, no real money, no risk.\n Why a watchdog matters more than the strategy\nA strategy is a hypothesis. A watchdog is what turns a hypothesis into data.\nIf your bot silently dies, every metric you were collecting stops: win rate, drawdown, profit factor. You think you are \"running a 14-day validation\" while in reality the last trade was nine days ago. A watchdog fixes three things cheaply:\nAvailability — the process is restarted automatically.Observability — a P&L snapshot is appended to a log on every cycle, so you have a time series instead of a vibe.Risk — a global rule (e.g. stop if drawdown ≥ 10% of the wallet) is enforced by code, not by willpower.\n Prerequisites\n\nLinux (or WSL2) with ~3 GB RAM.uv for the Python environment. On modern distros pip install into the system Python is blocked by PEP 668, and uv sidesteps that cleanly.curl -LsSf astral.sh/uv/install.sh | shuv venv ~/freqtrade/.venvsource ~/freqtrade/.venv/bin/activateuv pip install freqtrade\n A minimal, sane config\nStart with a cosmetic config and tune later. The important bits for a safe dry-run:\n{ \"max_open_trades\": 3, \"stake_currency\": \"USDT\", \"stake_amount\": 50, \"dry_run\": true, \"dry_run_wallet\": 500, \"trading_mode\": \"spot\", \"exchange\": { \"name\": \"binance\", \"key\": \"\", \"secret\": \"\", \"pair_whitelist\": [\"BTC/USDT\", \"ETH/USDT\", \"SOL/USDT\"] }, \"pairlists\": [{ \"method\": \"StaticPairList\" }], \"api_server\": { \"enabled\": true, \"listen_ip_address\": \"127.0.0.1\", \"listen_port\": 8080, \"username\": \"hermes\", \"password\": \"CHANGE_ME\", \"jwt_secret_key\": \"CHANGE_ME_TOO\", \"ws_token\": \"CHANGE_ME_AS_WELL\" }, \"bot_name\": \"dryrun\", \"initial_state\": \"running\"}\nTwo rules that will save you hours:\nBind the API to 127.0.0.1, never 0.0.0.0. The API exposes order and config operations.Set jwt_secret_key, ws_token and a real password even in dry-run. Empty secrets are a production foot-gun waiting to be copied into live.\n Backtest before you believe anything\nDownload history and backtest several strategies in their native timeframe. A common mistake is backtesting a 5-minute scalp strategy on 1-hour candles and concluding it is bad — you are measuring the timeframe, not the strategy.\nfreqtrade download-data --config config.json --days 200 --timeframes 5m 15m 1h\nfor s in SwingHighToSky BbandRsi UniversalMACD; do freqtrade backtesting --config config.json --strategy \"$s\" \\ --timerange 20260310-20260925 --breakdowndone\nA real result set from a 200-day window (fees included) looked like this:\nstrategytimeframetradeswin%profitprofit factormax drawdownSwingHighToSky15m10868.5%+1.60%5.210.37%BbandRsi1h6274.2%+3.99%1.387.92%UniversalMACD5m6100%+1.48%∞0.00%Read that table honestly. UniversalMACD shows a perfect win rate — on six trades. That is not an edge, that is a sample size. BbandRsi has the highest absolute return but a weak profit factor. SwingHighToSky is the only one passing all three filters (PF > 1.5, drawdown < 15%, win rate > 55%) on a statistically usable sample. Pick on the quality of the evidence, not on the biggest number.\nAlso note: none of them beat buy-and-hold over a window where the market rose ~31%. The dry-run's job is to validate operational behaviour, not to beat the market. Be suspicious of any backtest that does.\n The watchdog (the actually interesting part)\nHere is a working watchdog, designed to run from cron and stay silent unless something is wrong.\n#!/bin/bash# - restarts the bot if the process died# - appends a P&L snapshot to logs/daily_pnl.txt on every run# - SILENT on success; speaks only on restart or risk-limit breachset -uBASE=/home/kali/freqtradeVENV_PY=$(readlink -f \"$BASE/.venv/bin/python\")cd \"$BASE\" || { echo \"watchdog: cannot cd $BASE\"; exit 1; }PY=$BASE/.venv/bin/pythonLOG=$BASE/logs/watchdog.logts() { date -u +\"%Y-%m-%dT%H:%M:%SZ\"; }\n# Print PIDs of the REAL bot processes (empty if none).find_bot() { for p in /proc/[0-9]*; do pid=${p#/proc/} [ -r \"$p/cmdline\" ] || continue cmd=$(tr '\\0' ' ' < \"$p/cmdline\" 2>/dev/null) || continue case \"$cmd\" in *\"freqtrade trade --config\"*) exe=$(readlink -f \"$p/exe\" 2>/dev/null) [ \"$exe\" = \"$VENV_PY\" ] && echo \"$pid\" ;; esac done}\nMSG=\"\"if [ -z \"$(find_bot)\" ]; then echo \"$(ts) bot not running -> restarting\" >> \"$LOG\" nohup \"$BASE/.venv/bin/freqtrade\" trade --config \"$BASE/config.json\" \\ --strategy SwingHighToSky --dry-run >> \"$BASE/logs/trade_stdout.log\" 2>&1 & sleep 30 if [ -n \"$(find_bot)\" ]; then MSG=\"crypto-bot: process was gone, restarted at $(ts).\" else echo \"$(ts) restart FAILED\" >> \"$LOG\" exit 1 fifi\nOUT=$(\"$PY\" \"$BASE/monitor_pnl.py\" 2>&1); RC=$?if [ $RC -eq 2 ]; then # drawdown limit hit for pid in $(find_bot); do kill \"$pid\" 2>/dev/null; done echo \"$(ts) DRAWDOWN LIMIT HIT -> stopping bot\" >> \"$LOG\" echo \"crypto-bot: drawdown >= 10% of wallet. Bot STOPPED by risk rule.\" echo \"$OUT\" exit 2fiecho \"$OUT\" >> \"$LOG\"[ -n \"$MSG\" ] && echo \"$MSG\"exit 0\n The gotcha that cost me an hour\nDo not detect the process with pkill -f freqtrade or pgrep -f freqtrade. That pattern also matches the shell that invoked your script — because the string freqtrade appears in its command line — and the script kills itself. I hit exactly this. Scanning /proc and requiring both the freqtrade trade --config cmdline and an exe pointing into the venv is unambiguous and safe.\n Make it run without babysitting\n# every 15 minutes; quiet unless it acts*/15 * * * * /home/kali/.hermes/scripts/crypto_watchdog.sh\nVerify it end-to-end the first time: kill the bot, run the watchdog, confirm the restart and the P&L line. A watchdog you have never seen fire is a watchdog you do not have.\n The kill switch is the whole point\nThe drawdown rule (>= 10% of the wallet → stop the bot) is enforced outside the strategy, in the watchdog. Strategy-level stoplosses protect a trade; this protects the account. Keeping it in one place — not scattered across strategy parameters — means you can reason about your worst case at a glance.\n Results after the first hours\nwallet=500.10 closed_pnl=+0.000USDT (+0.00%) all_pnl=+0.003USDT (+0.00%) trades=0W/0L open=1\nZero closed trades, one open position, equity essentially flat. That is the correct shape for hour one of a dry-run. The value is not the P&L yet — it is that the clock is now running on a validated, self-healing, risk-capped system, at zero cost.\n What to do next\n\nLet it run for two weeks. Judge the behaviour: did the watchdog ever fire? did the kill switch ever trip? how did it behave around a volatility spike?Hyperopt deliberately — a handful of epochs with a Sharpe-based loss, then re-backtest. Do not hyperopt your way into a curve fit.Only then consider real capital — and only with an amount you are genuinely fine losing.The whole setup costs nothing and removes the two failure modes that kill most hobby bots: a dead process and an unenforced risk rule.\nIf you build on this, the two files worth stealing are the /proc-based process check and the drawdown kill switch. Everything else is configuration.#crypto #python #trading #automation #software #coding #development #engineering #inclusive #communityRun a self-healing crypto trading bot 24/7 for $0 (Freqtrade + watchdog)",
-      "tipo": "pregunta tecnica",
-      "url": "https://www.urbanmind.net/display/f7dd981d-2a596ab4-cfa4fa2f96498d96"
-    },
-    {
-      "id": "117332213840531274",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T14:45:01.000Z",
-      "texto": "Tuần này git-bug lên trang nhất Hacker News. Đây là một bug tracker phân tán, ưu tiên làm việc offline, và lưu toàn bộ issue ngay trong repo Git. Không cần server, không cần database, cũng không phải đồng bộ với Jira. Bạn git push là issue được đẩy lên theo. Lần đầu đọc thì mình nghĩ đó là một hack cho vui. Đọc kỹ source rồi mình mới thấy ý tưởng bên dưới khá hay: Git thực chất là một content-addressable database có sẵn cơ chế replication. Phần lớn developer mới chỉ dùng khoảng 10% khả năng của nó.\nBài này không nhằm giới thiệu git-bug. Mình muốn mổ xẻ kỹ thuật nó dùng, tức là lưu dữ liệu tùy ý vào custom refs, để bạn tự áp dụng cho việc của mình: lưu metadata của CI, review note, audit log, hay cấu hình deploy gắn với từng commit.\n Git bên dưới: một object store cộng với các con trỏ\nTrước hết cần quên git add và git commit đi một chút. Ở tầng dưới, Git chỉ có 4 loại object: blob (nội dung file), tree (danh sách file), commit (tree + parent + message) và tag. Mỗi object được định danh bằng hash của chính nội dung nó (SHA-1, hoặc SHA-256 nếu repo bật --object-format=sha256).\nMột ref chỉ là một file text chứa hash, trỏ tới một commit. refs/heads/main là branch, refs/tags/v1.0 là tag. Điểm mấu chốt là Git không bắt buộc ref phải nằm trong heads hay tags. Bạn tạo refs/issues/123 hay refs/whatever/abc đều được. Những ref này không hiện trong git branch, không làm rối working tree, nhưng vẫn push, fetch và garbage collect như mọi object khác.\ngraph LR A[refs/heads/main] --> C1[commit: code] B[refs/bugs/7f3a] --> C2[commit: op 2] C2 --> C3[commit: op 1] C2 --> T[tree] T --> O[blob: ops.json] C1 --> T2[tree: source code]git-bug làm đúng như vậy. Mỗi bug là một ref refs/bugs/<id>. Mỗi lần có thay đổi như tạo bug, thêm comment hay đổi label, nó sinh ra một commit mới chứa các operation dạng JSON, với parent là commit trước đó. Nói cách khác, mỗi issue là một event log bất biến, và Git gánh luôn phần lưu trữ, dedup lẫn đồng bộ.\n Tự tay làm với plumbing commands\nBạn thử ngay trên một repo bất kỳ (Git 2.30+ là đủ). Cả đoạn dưới đây không đụng tới working tree hay index:\n# 1. Ghi một operation vào object store dưới dạng blobBLOB=$(echo '{\"op\":\"create\",\"title\":\"Login bị timeout\",\"author\":\"andy\"}' \\ | git hash-object -w --stdin)\n# 2. Tạo tree chứa blob đóTREE=$(printf \"100644 blob %s\\tops.json\\n\" \"$BLOB\" | git mktree)\n# 3. Tạo commit (chưa có parent vì đây là event đầu tiên)COMMIT=$(git commit-tree \"$TREE\" -m \"create issue\")\n# 4. Gắn một ref tùy chỉnh vào commitgit update-ref refs/issues/login-timeout \"$COMMIT\"\n# Kiểm tragit for-each-ref refs/issues/git show refs/issues/login-timeout:ops.json\nĐể thêm event thứ hai, bạn tạo commit mới với -p trỏ về commit cũ:\nPARENT=$(git rev-parse refs/issues/login-timeout)BLOB=$(echo '{\"op\":\"comment\",\"body\":\"Repro được trên staging\"}' | git hash-object -w --stdin)TREE=$(printf \"100644 blob %s\\tops.json\\n\" \"$BLOB\" | git mktree)COMMIT=$(git commit-tree \"$TREE\" -p \"$PARENT\" -m \"add comment\")\n# update-ref với old-value để tránh ghi đè race conditiongit update-ref refs/issues/login-timeout \"$COMMIT\" \"$PARENT\"\nTham số thứ ba của update-ref quan trọng hơn bạn nghĩ. Đó là compare-and-swap: nếu ref đã bị process khác đổi thì lệnh fail thay vì âm thầm ghi đè. Tức là bạn có sẵn optimistic locking mà không phải viết thêm dòng nào.\nĐồng bộ với remote cần khai báo refspec rõ ràng, vì mặc định Git chỉ push/fetch heads và tags:\ngit push origin 'refs/issues/*:refs/issues/*'git fetch origin 'refs/issues/*:refs/remotes/origin/issues/*'\n# Hoặc cấu hình một lần cho tiệngit config --add remote.origin.fetch '+refs/issues/*:refs/remotes/origin/issues/*'\nGitHub, GitLab và Gitea đều nhận custom refs, chỉ không hiển thị trên UI. GitHub có dành riêng một số namespace như refs/pull/*, nên bạn nên đặt tên riêng để tránh đụng.\n Viết một mini tracker bằng Python\nCó nền tảng rồi thì bọc lại bằng Python chưa tới 50 dòng. Mình dùng subprocess thuần, không cần thư viện ngoài:\nimport jsonimport subprocess\ndef git(*args, input=None): return subprocess.run( [\"git\", *args], input=input, capture_output=True, text=True, check=True ).stdout.strip()\ndef append_event(issue_id: str, event: dict) -> str: ref = f\"refs/issues/{issue_id}\" try: parent = git(\"rev-parse\", \"--verify\", \"-q\", ref) except subprocess.CalledProcessError: parent = None\n blob = git(\"hash-object\", \"-w\", \"--stdin\", input=json.dumps(event, ensure_ascii=False)) tree = git(\"mktree\", input=f\"100644 blob {blob}\\tops.json\\n\") args = [\"commit-tree\", tree, \"-m\", event[\"op\"]] if parent: args += [\"-p\", parent] commit = git(*args)\n # CAS: nếu parent là None thì yêu cầu ref chưa tồn tại (40 số 0) git(\"update-ref\", ref, commit, parent or \"0\" * 40) return commit\ndef read_issue(issue_id: str) -> list[dict]: ref = f\"refs/issues/{issue_id}\" commits = git(\"rev-list\", \"--reverse\", ref).splitlines() return [json.loads(git(\"show\", f\"{c}:ops.json\")) for c in commits]\nif __name__ == \"__main__\": append_event(\"42\", {\"op\": \"create\", \"title\": \"Memory leak ở worker\"}) append_event(\"42\", {\"op\": \"label\", \"add\": [\"bug\", \"p1\"]}) append_event(\"42\", {\"op\": \"close\"}) for e in read_issue(\"42\"): print(e)\nĐể biết trạng thái hiện tại của issue, bạn replay toàn bộ event từ đầu. Đây chính là event sourcing, nhưng storage engine lại là thứ mọi developer đã cài sẵn.\n Vấn đề thật sự: merge khi offline\nPhần khó nằm ở đây. Giả sử hai người cùng sửa issue #42 khi đang offline, sau đó cùng push. Ref của hai bên đã diverge. Với code thì Git merge theo từng dòng, còn với event log thì bạn phải tự định nghĩa cách merge.\nsequenceDiagram participant A as Dev A (offline) participant R as Remote participant B as Dev B (offline) A->>A: append \"comment X\" B->>B: append \"label p1\" B->>R: push refs/issues/42 A->>R: push (rejected, non-fast-forward) A->>R: fetch refs/issues/42 A->>A: merge 2 nhánh event, sắp theo Lamport clock A->>R: push merge commitgit-bug giải quyết bằng Lamport clock. Mỗi operation mang một logical timestamp, và khi merge thì các event của hai nhánh được sắp xếp lại theo timestamp đó. Nhờ event log chỉ append, không có update hay delete tại chỗ, việc merge gần như luôn thành công. Tệ nhất là hai thao tác đổi title đè lên nhau, và bên có clock cao hơn sẽ thắng.\nNếu tự làm, bạn nên nhớ vài quy tắc sau:\nChỉ append, không sửa: xóa comment cũng là một event delete, không động vào blob cũ.Tạo merge commit có 2 parent (commit-tree -p A -p B) để giữ lại lịch sử của cả hai bên.Không lưu dữ liệu lớn: Git không hợp với file nhị phân lớn thay đổi liên tục. JSON vài KB mỗi event là vừa.Nhớ tới git gc: object không có ref nào trỏ tới sẽ bị dọn sau thời gian gc.pruneExpire (mặc định 2 tuần). Custom ref đã giữ object lại rồi, nhưng blob tạo ra mà chưa kịp gắn ref thì vẫn có thể mất.\n Kết luận\nGit không chỉ là công cụ quản lý source code. Nó là một distributed, content-addressable object store có sẵn CAS, replication và toàn vẹn dữ liệu bằng hash. git-bug là ví dụ tốt cho việc tận dụng điều đó thay vì dựng thêm một service mới.\nMột số việc bạn có thể làm ngay:\nChạy thử 4 lệnh plumbing hash-object, mktree, commit-tree, update-ref trên một repo nháp để thấy Git hoạt động bên dưới ra sao.Dùng custom refs cho metadata gắn với repo: kết quả benchmark của CI, lịch sử deploy, checklist review. Như vậy không cần thêm database và dữ liệu đi theo repo khi clone.Luôn truyền old-value cho update-ref khi có nhiều process cùng ghi, để tránh race condition.Thiết kế dữ liệu dạng event log chỉ append nếu cần sync offline, và sắp thứ tự bằng Lamport clock thay vì wall-clock time.Nhớ khai báo refspec trong remote.origin.fetch. Nếu thiếu, custom refs sẽ không bao giờ tới được máy đồng nghiệp.Lần tới khi định dựng thêm Postgres chỉ để lưu vài trăm record gắn với code, hãy thử xem Git đã làm được việc đó chưa.#git #devtools #architecture #python #software #coding #development #engineering #inclusive #communityGit as a Database: What git-bug Teaches Us About Storing Data in Refs",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-8c88a5f5-15bfd3f0815a566c"
-    },
-    {
-      "id": "117332199732570529",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T14:41:21.000Z",
-      "texto": "Steve Piercy explains How to maintain Python packages to attract free and open source software contributors\nhttps://2026.ploneconf.org/schedule/talks/how-to-maintain-python-packages-to-attract-free-and-open-source-software-contributors\n#plone #python #documentation #opensource #ploneconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117332199415359005"
-    },
-    {
-      "id": "117332183559683716",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T14:37:12.000Z",
-      "texto": "Karel Calitz of https://juizi.com asks Why Wouldn't You?\nhttps://2026.ploneconf.org/schedule/talks/why-wouldnt-you\n#plone #react #python #opensource #ploneconf2026",
-      "tipo": "pregunta tecnica",
-      "url": "https://plone.social/@plone/117332183145244210"
-    },
-    {
-      "id": "117332155218917806",
+      "id": "117343990795619759",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-25T14:30:06.735Z",
-      "texto": "159 lines, intermediate: wrap HuggingFace tokenizers and models for text generation. Run it with any model and prompt.\nhttps://www.valtersit.com/python/huggingface-tokenizer-and-inference-wrapper/\n#ai #python #transformers",
+      "fecha": "2026-09-27T16:40:03.305Z",
+      "texto": "Build a terminal UI in Python with Textual. Advanced, 222 lines. Full walkthrough at valtersit.com/python/interactive-tui-with-textual-framework/ #python #textual #tui",
       "tipo": "comentario general",
-      "url": "https://mastodon.social/@hugovalters/117332155218917806"
+      "url": "https://mastodon.social/@hugovalters/117343990795619759"
     },
     {
-      "id": "117332060378549106",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T13:40:46.000Z",
-      "texto": "REST APIs are an important part of modern web development because they allow different applications...#django #python #restapi #backend #software #coding #development #engineering #inclusive #communityBuilding CRUD REST APIs with Django REST Framework",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-59c5e8f6-3b3a74590a76a0de"
-    },
-    {
-      "id": "117332034106898084",
-      "canal": "#python@mastodon.social",
-      "autor": "mortn",
-      "fecha": "2026-09-25T13:59:18.714Z",
-      "texto": "Yes, #neovim is really nice and all, but the combo of #Byobu and #Vim is just at a whole different level. Now with #Pi or #OpenCode running in its own window too 🤩\nWhether we're wrangling #Python, #Node, or #Rust apps, or mangling cloud and data center infra in #OpenTofu, #Terraform, or #Ansible - it always starts and ends with a Linux host running Byobu and Vim 🤓\nBonus when running an agent harness: when I disconnect, it also loses its SSH key and so all access to #git or SSH to other hosts🔒",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@mortn/117332034106898084"
-    },
-    {
-      "id": "117331992986447497",
-      "canal": "#python@mastodon.social",
-      "autor": "Dragolich_Research_Labs",
-      "fecha": "2026-09-25T13:48:51.266Z",
-      "texto": "Implementing #lean4 coding with #python and #C code pipeline for #AI coherence and decoherence modeling. The #mathematics and #geomety of the the #data makes it hallucination proof. It can not lie to you because it physically can't give you a bs answer. The #sorry mechanism built into lean 4 coding is used in my #ternary compilier. The question. It is a trit strand +1 0 -1. This also allows us to divide by 0. Phase transitions in the shape itself. It is a glass box. https://doi.org/10.5281/zenodo.22848548",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@Dragolich_Research_Labs/117331992986447497"
-    },
-    {
-      "id": "117331909093297654",
-      "canal": "#python@mastodon.social",
-      "autor": "DSLCvids@fosstodon.org",
-      "fecha": "2026-09-25T13:27:30.000Z",
-      "texto": "From the @DSLC :rstats:​chives:\n:rstats: R for Data Science: Joins https://youtu.be/QaIVKd5hWdA #RStats\n:rstats: SMLTAR: Dense neural networks Part 2 https://youtu.be/z6LlhOX4G4I #RStats\n:python: ISLP: Resampling Methods https://youtu.be/qsshBRQJO3g #pydata #python #machineLearning\nSupport the Data Science Learning Community at https://patreon.com/DSLC",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@DSLCvids/117331909034335677"
-    },
-    {
-      "id": "117331853337185251",
-      "canal": "#python@mastodon.social",
-      "autor": "hackaday@www.urbanmind.net",
-      "fecha": "2026-09-25T13:13:20.000Z",
-      "texto": "A list of handles lands in my queue. Half are typos, dead accounts, or impersonations of the account...#python #api #beginners #software #coding #development #engineering #inclusive #communityResolving an Instagram handle during an OSINT lookup, in four lines of Python",
-      "tipo": "comentario general",
-      "url": "https://www.urbanmind.net/display/f7dd981d-67f672a0-2359b0743d3da70f"
-    },
-    {
-      "id": "117331845707350411",
-      "canal": "#python@mastodon.social",
-      "autor": "swat@fosstodon.org",
-      "fecha": "2026-09-25T13:11:22.000Z",
-      "texto": "Undertime - pick a #meeting time ( https://gitlab.com/anarcat/undertime )\nNeed to convert/view/compare your #time / #timezone with others, because you work with people all around the globe? This #terminal tool will help you out.\nFound this terminal #Python gem, because I was looking for an open source and offline alternative. It is quick, to the point and copyleft licensed (AGPLv3).\nNote: Before I was using TimeAndDate.com ( https://www.timeanddate.com/ ).",
-      "tipo": "pregunta tecnica",
-      "url": "https://fosstodon.org/@swat/117331845619497344"
-    },
-    {
-      "id": "117331841282694315",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T13:10:09.000Z",
-      "texto": "Roland Fasching of https://cloud19.at presents Painting Plone Live: Runtime Bootstrap Theming for Plone Blicca with plone.palette\nhttps://2026.ploneconf.org/schedule/talks/painting-plone-live-runtime-bootstrap-theming-for-plone-blicca-with-plone-palette\n#plone #python #bootstrap #blicca #ploneconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331840810066817"
-    },
-    {
-      "id": "117331832253063376",
+      "id": "117343977934391672",
       "canal": "#python@mastodon.social",
       "autor": "teeeeeeeee",
-      "fecha": "2026-09-25T13:07:58.679Z",
-      "texto": "Custom errors for cross-validation using crossval::crossval_ml\nhttps://thierrymoudiki.github.io/blog/2020/05/08/r/misc/crossval-custom-errors\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "fecha": "2026-09-27T16:36:47.057Z",
+      "texto": "RPweave: Unified R + Python + LaTeX System using uv\nhttps://thierrymoudiki.github.io/blog/2025/10/19/r/python/RPweave\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@teeeeeeeee/117343977934391672"
+    },
+    {
+      "id": "117343954342821659",
+      "canal": "#python@mastodon.social",
+      "autor": "krapp@krapp.masto.host",
+      "fecha": "2026-09-27T16:30:36.000Z",
+      "texto": "I rebuilt the #Python script I use to import #Mastodon posts to my blog. It's much improved over the old version, uses pathlib instead of os and proper HTML parsing instead of the string search and replace that kept breaking things. \nIt's public domain if anyone finds it useful. Eventually I'll have everything documented and published it's just all such a mess right now. \nhttps://codeberg.org/krapp/nikola-mastodon-importer",
+      "tipo": "comentario general",
+      "url": "https://krapp.masto.host/@krapp/117343953634797191"
+    },
+    {
+      "id": "117343915652125305",
+      "canal": "#python@mastodon.social",
+      "autor": "bloody_albatross@chaos.social",
+      "fecha": "2026-09-27T16:20:55.000Z",
+      "texto": "Is writing a server in #Python indented servitude? #programminghumor",
       "tipo": "pregunta tecnica",
-      "url": "https://mastodon.social/@teeeeeeeee/117331832253063376"
+      "url": "https://chaos.social/@bloody_albatross/117343915586664196"
     },
     {
-      "id": "117331819137576390",
+      "id": "117343855822907241",
       "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T13:04:31.000Z",
-      "texto": "Armin Stroß-Radschinski - Managing Public Relation Campaigns with content over decades using Plone and AI Agentic Workflows\nhttps://2026.ploneconf.org/schedule/talks/managing-public-relation-campaigns-with-content-over-decades-using-plone-and-ai-agentic-workflows\n#plone #ai #agentic #python #ploneconf2026",
+      "autor": "inautilo",
+      "fecha": "2026-09-27T16:05:43.785Z",
+      "texto": "#Development #Launches\nKev · Small Jev-like decision models you can train yourself https://ilo.im/16gch5\n_____\n#Kev #Qwen #AI #AiModel #LocalAi #OpenSource #Python #Browser #WebDev #Frontend #Backend",
       "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331818680319737"
+      "url": "https://mastodon.social/@inautilo/117343855822907241"
     },
     {
-      "id": "117331815310188719",
+      "id": "117343791738716645",
       "canal": "#python@mastodon.social",
-      "autor": "djangocon@fosstodon.org",
-      "fecha": "2026-09-25T13:03:39.000Z",
-      "texto": "Come learn, connect, and spend five days with the Django community at DjangoCon US 2027.📅 September 13–17📍 Riverside, CaliforniaReserve your place: https://ti.to/defna/djangocon-us-2027#DjangoConUS #Django #Python",
+      "autor": "Cito@fosstodon.org",
+      "fecha": "2026-09-27T15:49:25.000Z",
+      "texto": "Released GraphQL-core 3.3 #GraphQL library for #Python https://github.com/graphql-python/graphql-core/releases/tag/v3.3.0",
       "tipo": "comentario general",
-      "url": "https://fosstodon.org/@djangocon/117331815263133130"
+      "url": "https://fosstodon.org/@Cito/117343791689487567"
     },
     {
-      "id": "117331809986795427",
-      "canal": "#python@mastodon.social",
-      "autor": "habr@zhub.link",
-      "fecha": "2026-09-25T13:02:17.000Z",
-      "texto": "Две недели я собирал данные с трёх маркетплейсов Telegram-подарков, чтобы доказать, что на них нельзя заработать\nИдея выглядела очевидной: на маркетплейсах Telegram-подарков постоянно появляются лоты дешевле рынка, купил дешевле — продал по рынку. Две недели сбора данных с Portals, Tonnel и MRKT: 54 447 лотов, 1.8 млн изменений цен, 4420 подтверждённых сделок с ценой. Ответ: заработать нельзя — и это видно по цифрам. Данные и код открыты. Как это измерено\nhttps://habr.com/ru/articles/1086736/\n#telegram #nft #telegram_gifts #анализ_данных #ton #python #маркетплейсы #ликвидность #отрицательный_результат #парсинг",
-      "tipo": "comentario general",
-      "url": "https://zhub.link/@habr/117331809873683898"
-    },
-    {
-      "id": "117331792113032914",
-      "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:57:45.000Z",
-      "texto": "plann 1.2.0 released\nplann is a command-line Python CalDAV client, making it possible to add calendar events, browse an agenda, and perform task management.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by @nlnet.\nChange loghttps://github.com/pycalendar/plann/blob/master/CHANGELOG.md\nPyPIhttps://pypi.org/project/plann\nGitHub repohttps://github.com/pycalendar/plann/\nIssueshttps://github.com/pycalendar/plann/issues\n#caldav #calendaring #pycal #cli #plann #python #FOSS",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331792065665568"
-    },
-    {
-      "id": "117331783847647979",
-      "canal": "#python@mastodon.social",
-      "autor": "mvu@sunny.garden",
-      "fecha": "2026-09-25T12:55:37.000Z",
-      "texto": "Sat down for 10 minutes of #FireEmblem (Shadows of Valentia) before work and this guy popped up.I can't wait to meet his partner Rusty, who's opening line will be \"Stay safe\".\n#python #programmer_humor",
-      "tipo": "comentario general",
-      "url": "https://sunny.garden/@mvu/117331783682293793"
-    },
-    {
-      "id": "117331781306738568",
-      "canal": "#python@mastodon.social",
-      "autor": "plone@plone.social",
-      "fecha": "2026-09-25T12:54:55.000Z",
-      "texto": "Johannes Raggam explains How Blicca came to be: Renaming Classic UI\nhttps://2026.ploneconf.org/schedule/talks/how-blicca-came-to-be-renaming-classic-ui\n#plone #zope #blicca #python #plonconf2026",
-      "tipo": "comentario general",
-      "url": "https://plone.social/@plone/117331780901898939"
-    },
-    {
-      "id": "117331771181619726",
-      "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:52:25.000Z",
-      "texto": "caldav-server-tester 1.3.0 released\nThis release contains lots of new probes, and works with caldav 3.3.1.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by @nlnet.\nChange loghttps://github.com/python-caldav/caldav-server-tester/blob/main/CHANGELOG.md\nPyPIhttps://pypi.org/project/caldav-server-tester\nGitHub repohttps://github.com/python-caldav/caldav-server-tester\nIssueshttps://github.com/python-caldav/caldav-server-tester/issues\n#caldav-server-tester #caldav #calendaring #pycal #Python #FOSS",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331771115625156"
-    },
-    {
-      "id": "117331762763770284",
-      "canal": "#python@mastodon.social",
-      "autor": "hugovalters",
-      "fecha": "2026-09-25T12:50:18.350Z",
-      "texto": "Pull Cloudflare analytics via GraphQL with 199 lines of Python. For devs and ops, intermediate level. Run: python3 cf_analytics.py --days 30\nhttps://www.valtersit.com/python/cloudflare-analytics-collector-via-graphql/\n#python #infra #cloudflare",
-      "tipo": "comentario general",
-      "url": "https://mastodon.social/@hugovalters/117331762763770284"
-    },
-    {
-      "id": "117331742032577578",
-      "canal": "#python@mastodon.social",
-      "autor": "pycal@fosstodon.org",
-      "fecha": "2026-09-25T12:45:01.000Z",
-      "texto": "caldav 3.3.1 released\ncaldav is a CalDAV (RFC4791) client library for Python.\nThis release is funded through https://nlnet.nl/core and https://nlnet.nl/commons, funds established by NLnet. Learn more at the NLnet project page (https://nlnet.nl/project/Python-Webcalendaring/) and the PCE website (https://pycal.org).\nChange loghttps://github.com/python-caldav/caldav/blob/master/CHANGELOG.md\nPyPIhttps://pypi.org/project/caldav/\nGitHub repohttps://github.com/python-caldav/caldav\nIssueshttps://github.com/python-caldav/caldav/issues\n@nlnet \n#caldav #calendaring #pycal #python #foss",
-      "tipo": "comentario general",
-      "url": "https://fosstodon.org/@pycal/117331741994560577"
-    },
-    {
-      "id": "117331668513146554",
+      "id": "117343716053643126",
       "canal": "#python@mastodon.social",
       "autor": "Reuven@fosstodon.org",
-      "fecha": "2026-09-25T12:26:18.000Z",
-      "texto": "It's easy to write #Python with AI.\nBut it's not as easy to build maintainable, well-engineered applications.\nOn Wednesday, I'm giving my advanced Claude Code workshop, 4 hours of hands-on practice with everything from custom skills to testing to telemetry.\nEven if you've been using Claude Code for months, you'll get a lot out of this.\nJoin me: More info at: https://lernerpython.com/code-with-claude/",
+      "fecha": "2026-09-27T15:30:09.000Z",
+      "texto": "You can remove NaN from a #Python #Pandas data frame with dropna, but be careful: It removes rows with even one NaN, which can be overkill.\nPass \"thresh\" to allow some rows to remain, even if they contain NaN:\ndf.dropna(thresh=2)  # keeps rows with 2 or more non-NaN values",
       "tipo": "comentario general",
-      "url": "https://fosstodon.org/@Reuven/117331668393013540"
+      "url": "https://fosstodon.org/@Reuven/117343715934093320"
     },
     {
-      "id": "117331667489424389",
+      "id": "117343605279068071",
       "canal": "#python@mastodon.social",
-      "autor": "f800gecko@mastodon.online",
-      "fecha": "2026-09-25T12:26:04.000Z",
-      "texto": "Have a look at the 'Short Answer' in this stackoverflow on 'chunksize' in Python multiprocessing, then appreciate the sublime humour of the following comment to be found some 15-20 pages down...\n'This is one of the most epic answers on SO. You only need to look here to see that multiprocessing is super easy, barely an inconvenience.' \nhttps://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize\n#it #technology #python #programming",
+      "autor": "fbz@infosec.exchange",
+      "fecha": "2026-09-27T15:01:58.000Z",
+      "texto": "my new Mandelbrot fractal sweaters and blankets https://knityak.com/collections/mandelbrot come with printable code pages in python to type in (or copy/paste) the code for your exact spot on the Mandelbrot set. I made these in the style of the 321 Contact magazine BASIC code pages I used to type in as a kid in the 80s.#math #code #python #sweater",
       "tipo": "comentario general",
-      "url": "https://mastodon.online/@f800gecko/117331667464589444"
+      "url": "https://infosec.exchange/@fbz/117343605140670583"
     },
     {
-      "id": "117331653011042196",
+      "id": "117343597662188975",
       "canal": "#python@mastodon.social",
-      "autor": "corpsmoderne@mamot.fr",
-      "fecha": "2026-09-25T12:22:23.000Z",
-      "texto": "People using #python with #uv how do you handle different ways to install deps in different environnements? (in my case: a dev laptop and Ci).\nLocally I want to install a private dep from git+ssh\nIn CI I'd like to install it with git+https (+github token)\nIs that possible? The alternative would be to make the CI use an ssh key but is there a canonical solution to this problem?",
-      "tipo": "pregunta tecnica",
-      "url": "https://mamot.fr/@corpsmoderne/117331652971026719"
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T15:00:04.565Z",
+      "texto": "231 lines of Python to score product reviews with transformers. Beginner level. Run python3 sentiment.py --reviews reviews.csv --output report.json\nhttps://www.valtersit.com/python/sentiment-analyzer-for-product-reviews/\n#python #ai #nlp",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117343597662188975"
     },
     {
-      "id": "117331613333558255",
+      "id": "117343516712437409",
       "canal": "#python@mastodon.social",
-      "autor": "habr@zhub.link",
-      "fecha": "2026-09-25T12:12:16.000Z",
-      "texto": "Pillow вместо Photoshop: как за 20 строк кода делать мультяшные и Minecraft-текстуры\nИзучая Adobe Photoshop (в частности любимый мною CS6 – так как запросто устанавливается на любой чайник), программы по монтажу (VSDC Video Editor, Wondershare Filmora, Movavi и Capcut), и другого типа редакторы мне не могла не прийти мысль об автоматизации. Как минимум потому, что я ленивый, а в общем и целом – для автоматического создания материалов и текстур. Создавая игры любой разработчик уткнётся носом в одну простую вещь: у него есть готовый и расписанный лор, персонажи и их дизайны, может даже саундтрек и примеры кода, но нет второстепенных текстур. Под второстепенными текстурами я имею в виду то, что не влияет на лор, но влияет на игровой опыт (к примеру, блок земли в Minecraft не поможет нам убить дракона, но данная текстура жизненно необходима игре). Следовательно, нужно было научиться автоматизировать процессы обработки графических материалов. Последовательная обработка подразумевает код, а автоматизация – наличие функций. Желательно было всё это оформить на Python. Идея понятна: хочу обрабатывать визуал таким образом, чтобы целый ряд фильтров и сопутствующих преобразований накладывались по одному клику, без упорного затирания UI Photoshop до дыр. И что делать? Здесь на помощь приходит один известный форк PIL (Python Imaging Library) под названием Python Pillow. Как оказалось, сообщество Python уже давно задумалось над тем, как можно через код работать с графикой. PIL – древняя библиотека для работы с растровой графикой, поддержка которой давно прекращена. Потому на её основе возник форк под названием Pillow, о котором сейчас и поговорим. Стоит отметить, что на мой субъективный взгляд Pillow лучше всего работает именно с форматом PNG, потому рассматривать работу библиотеки с файлами иных расширений мы не станем, по крайней мере в этой статье. Также отмечу, что это не совсем образовательная статья, а скорее Roadmap, потому что доступ к каким угодно учебным материалам сегодня есть из любой точки земного шара, и гораздо важнее поговорить именно про последовательность действий при освоении данной технологии – какой она должна быть, чтобы иметь достаточное понимание для выполнения определённого рода задач.\nhttps://habr.com/ru/articles/1086702/\n#Pillow #PIL #Python #обработка_изображений #картунизация #пикселизация #игровые_текстуры #pixel_art #геймдев #автоматизация",
-      "tipo": "pregunta tecnica",
-      "url": "https://zhub.link/@habr/117331613249194032"
+      "autor": "hugovk",
+      "fecha": "2026-09-27T14:39:29.368Z",
+      "texto": "Make sure to compile your wheel dependencies with -O2 to get 2-3x speedup for free! 🚀\nmultibuild's defaults now also include -O2, so if you use that, update.\nhttps://github.com/python-pillow/Pillow/pull/10060\n#Python #PythonPillow #Pillow",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovk/117343516712437409"
+    },
+    {
+      "id": "117343228649249645",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "fecha": "2026-09-27T13:26:13.872Z",
+      "texto": "R editor and SQL console (in addition to Python editors) in www.techtonique.net\nhttps://thierrymoudiki.github.io/blog/2024/10/21/r/python/sql/techtonique-sql-and-r-editor\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@teeeeeeeee/117343228649249645"
+    },
+    {
+      "id": "117343169992951485",
+      "canal": "#python@mastodon.social",
+      "autor": "hynek",
+      "fecha": "2026-09-27T13:11:18.856Z",
+      "texto": "@carlton @djangomed @judy2k I’m glad a) there are still people caring about new #Python packages and b) see the to-me obvious value in this. Lots of empty stares. 😅",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hynek/117343169992951485"
+    },
+    {
+      "id": "117343134641436829",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovk",
+      "fecha": "2026-09-27T13:02:19.428Z",
+      "texto": "What's New in Python 3.15:\nunicodedata\n* Unicode database updated to v17\n* New iter_graphemes() iterates over grapheme clusters (UAX #29); grapheme_cluster_break(), indic_conjunct_break() & extended_pictographic() give character properties\n* New isxidstart()/isxidcontinue() check UAX #31 identifier characters\n* New block() returns a character's Unicode block\n(Contributed by @stanfromireland, Serhiy Storchaka & Guillaume Sanchez)\nhttps://docs.python.org/3.15/whatsnew/3.15.html#unicodedata\n#Python #Python315 #WhatsNew",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovk/117343134641436829"
+    },
+    {
+      "id": "117343041286501148",
+      "canal": "#python@mastodon.social",
+      "autor": "oots@infosec.exchange",
+      "fecha": "2026-09-27T12:38:34.000Z",
+      "texto": "TIL you can run #Python inside your browser, and I'm not sure if I love that or hate it.\nOn the one side: I think it's great that you can write your in-browser frontend in #Python.\nOn the other hand: This works by compiling the Python interpreter to #WASM and then running it inside your browser, so it adds some additional layers to your (already frighteningly high) tech stack.\n[Imagine the mandatory variant of the famous #xkcd comic here.]\nEdit: Link to the Python docs: https://docs.python.org/3/library/intro.html#webassembly-platforms",
+      "tipo": "comentario general",
+      "url": "https://infosec.exchange/@oots/117343041261277211"
+    },
+    {
+      "id": "117342851636745131",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T11:50:21.120Z",
+      "texto": "180-line Django management command for bulk DB ops on the User model. Batched updates, production-ready. Intermediate. https://www.valtersit.com/python/django-management-command-for-bulk-operations/ #django #python #webdev",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117342851636745131"
+    },
+    {
+      "id": "117342786386314942",
+      "canal": "#python@mastodon.social",
+      "autor": "CosmikLaila@dobbs.town",
+      "fecha": "2026-09-27T11:33:44.000Z",
+      "texto": "Woohoo! I mastered basic Python arithmetic! Also, I learned 3 new Python words -- Integer, Float and Modulo!\nThere's a site I found that makes learning coding into a gaming atmosphere, so it's attracting my old Nintendo Pilot self. Not like a video game, but ya get to have a place on the Leaderboard and earn XP. I rank #2 in the Starter League and earned 801 XP this week 🔥\n#python #nerd #coding",
+      "tipo": "comentario general",
+      "url": "https://dobbs.town/@CosmikLaila/117342786344481200"
+    },
+    {
+      "id": "117342497815422705",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T10:20:22.236Z",
+      "texto": "80-line Python script checks a password list against Have I Been Pwned. Beginner-friendly. Run: python3 hibp_check.py --passwords passwords.txt\nhttps://www.valtersit.com/python/have-i-been-pwned-password-bulk-checker/\n#security #python #infosec",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117342497815422705"
+    },
+    {
+      "id": "117342143857371782",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T08:50:21.263Z",
+      "texto": "181 lines of Python that batch-publishes events to GCP Pub/Sub, for cloud devs and data engineers. Intermediate.\nhttps://www.valtersit.com/python/gcp-pubsub-message-publisher/\n#python #cloud #gcp",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117342143857371782"
+    },
+    {
+      "id": "117342138236159179",
+      "canal": "#python@mastodon.social",
+      "autor": "sercxanto@sueden.social",
+      "fecha": "2026-09-27T08:48:53.000Z",
+      "texto": "TIL: UTF-8 ist eindeutig, Unicode nicht.\n\"ü\" gibt es zweimal: U+00FC (NFC, C3 BC) und u + U+0308 (NFD, 75 CC 88). Gleiches Aussehen, aber verschieden.\nMein Importskript übernahm Buchtitel aus dem DNB-Katalog in NFD und hängte ein getipptes \"- Hörbuch\" in NFC an. Ein String, zwei Formen. Obsidian löst Links offenbar in NFC auf, und das Cover blieb leer.\nMoral: Alles, was von außen kommt zuerst normalisieren.\nunicodedata.normalize(\"NFC\", s)\n#Unicode #Python #Obsidian",
+      "tipo": "comentario general",
+      "url": "https://sueden.social/@sercxanto/117342138111130543"
+    },
+    {
+      "id": "117341750529764347",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T07:10:19.560Z",
+      "texto": "300 lines of Python for AWS CloudFormation stack ops: deploy, update, delete via boto3. Advanced level, sysadmin-ready.\nhttps://www.valtersit.com/python/aws-cloudformation-stack-manager/\n#python #aws #cloud",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117341750529764347"
+    },
+    {
+      "id": "117341571194960052",
+      "canal": "#python@mastodon.social",
+      "autor": "feed@igeek.gamer-geek-news.com",
+      "fecha": "2026-09-27T06:24:42.000Z",
+      "texto": "🐧 Jollpi – lightweight GTK 4 text editor with syntax highlighting\nJollpi is a lightweight Python and GTK 4 text editor with syntax highlighting, tabs, asynchronous file loading, and a minimap. The post Jollpi – lightweight GTK 4 text editor with syntax highlighti...\n📰 Source: LinuxLinks🔗 Link: https://www.linuxlinks.com/jollpi-lightweight-text-editor/\n#Python",
+      "tipo": "comentario general",
+      "url": "https://igeek.gamer-geek-news.com/@feed/statuses/01M3GRK2RTV1N3MJFSD3JH7T4J"
+    },
+    {
+      "id": "117341395488872977",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T05:40:02.071Z",
+      "texto": "362 lines of Python that trigger Jenkins jobs from the CLI and poll until they finish. Built on requests, good for CI/CD scripts and cron jobs. Intermediate level.\nhttps://www.valtersit.com/python/jenkins-job-trigger-and-status-poller/\n#python #devops #jenkins",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117341395488872977"
+    },
+    {
+      "id": "117341008669017274",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T04:01:39.665Z",
+      "texto": "FastAPI boilerplate with JWT auth, password hashing, Pydantic models and protected routes. 203 lines, intermediate. Run with uvicorn.\nhttps://www.valtersit.com/python/fastapi-app-boilerplate-with-auth-and-docs/\n#python #fastapi #webdev",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117341008669017274"
+    },
+    {
+      "id": "117340923645855106",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T03:40:02.315Z",
+      "texto": "300 lines of Python that fuzzes web templates for SSTI and flags vulnerable engines. Advanced. Run: python3 ssti_tester.py --url URL\nhttps://www.valtersit.com/python/server-side-template-injection-ssti-tester/\n#security #python #appsec",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117340923645855106"
+    },
+    {
+      "id": "117340730428903802",
+      "canal": "#python@mastodon.social",
+      "autor": "brass75@masto.bnet.boo",
+      "fecha": "2026-09-27T02:50:37.000Z",
+      "texto": "If you're in the Washington DC area on October 21 you should come hear me talk about NaN in a @pydistrict meetup! Come and hang out with me and some cool #Pythonista \nhttps://luma.com/rq224e4h\n#Python",
+      "tipo": "comentario general",
+      "url": "https://masto.bnet.boo/@brass75/117340729363302811"
+    },
+    {
+      "id": "117340687724202891",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T02:40:02.441Z",
+      "texto": "420 lines of Atheris code that finds crashes in your Python funcs. Expert level, ready to run. https://www.valtersit.com/python/fuzz-testing-with-atheris/\n#python #testing #fuzzing",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117340687724202891"
+    },
+    {
+      "id": "117340486335621574",
+      "canal": "#python@mastodon.social",
+      "autor": "villares@pynews.com.br",
+      "fecha": "2026-09-27T01:48:44.000Z",
+      "texto": "```regras = {    'X': '@X[-FFFL][+FFFL]FFX',    'Y': 'YFFX[+YFFB][-YFFB]',}axioma = 'Y'passo = 3angulo = 52iteracoes = 5``` The sketch-a-day archives and tip jar are at: https://abav.lugaralgum.com/sketch-a-day Code for this: https://github.com/villares/sketch-a-day/tree/main/2026/sketch_2026_09_26#LSystem #Processing #Python #py5 #CreativeCoding",
+      "tipo": "comentario general",
+      "url": "https://pynews.com.br/@villares/117340485988981916"
+    },
+    {
+      "id": "117340451783901449",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "fecha": "2026-09-27T01:40:02.272Z",
+      "texto": "80 lines of Python that generate date ranges across time zones, handling DST correctly. Beginner level, uses pytz. Good base for scheduling and reporting scripts.\nhttps://www.valtersit.com/python/time-zone-aware-date-range-generator/\n#python #data #pytz",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@hugovalters/117340451783901449"
+    },
+    {
+      "id": "117340307042398929",
+      "canal": "#python@mastodon.social",
+      "autor": "ubuntu_touch@mstdn.social",
+      "fecha": "2026-09-27T01:03:08.000Z",
+      "texto": "Simular votación presidencial en Venezuela 2026\n#STEM #python #Eleccion #Venezuela",
+      "tipo": "comentario general",
+      "url": "https://mstdn.social/@ubuntu_touch/117340306727795107"
+    },
+    {
+      "id": "117340154953631821",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "fecha": "2026-09-27T00:24:33.000Z",
+      "texto": "Explaining Time-Series Forecasts with Sensitivity Analysis (ahead::dynrmf and external regressors)\nhttps://thierrymoudiki.github.io/blog/2026/03/29/r/sensi-dynrmf\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "comentario general",
+      "url": "https://mastodon.social/@teeeeeeeee/117340154953631821"
     }
   ]
 }
