@@ -54,7 +54,12 @@ def limpiar_html(textoHtml: str) -> str:
 
 
 def quitar_tildes(texto: str) -> str:
-    """Normaliza acentos: NFD + descarta los marcadores diacríticos (Mn)."""
+    """Normaliza acentos: NFD + descarta los marcadores diacríticos (Mn).
+    
+    Ojo: también convierte "ñ" en "n", así que "año"/"ano" y "sueño"/"sueno"
+    quedan iguales tras normalizar. Es aceptable para clasificar, pero no
+    usar esta función para texto que se muestre al usuario.
+    """
     return "".join(
         c for c in unicodedata.normalize("NFD", texto)
         if unicodedata.category(c) != "Mn"
@@ -82,7 +87,7 @@ def calificar_tipo(texto: str) -> str:
         return "testimonio"
     if _contiene(t, lista_palabras_preguntas):
         return "pregunta tecnica"
-    return "comentario general"
+    return "otro"
 
 
 def oferta_laboral(p: dict, texto: str) -> bool:
@@ -90,7 +95,7 @@ def oferta_laboral(p: dict, texto: str) -> bool:
     if tags & hashstag_oferta:
         return True
     t = quitar_tildes(texto.lower())
-    return any(f in t for f in palabra_oferta)
+    return any(re.search(r"\b" + re.escape(f) + r"\b", t) for f in palabra_oferta)
 
 
 def relevante(p: dict, tipo: str | None, stats: dict | None = None) -> bool:
@@ -113,17 +118,24 @@ def relevante(p: dict, tipo: str | None, stats: dict | None = None) -> bool:
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
 
 
+def _espera_retry_after(valor: str | None, defecto: int = 5, tope: int = 60) -> int:
+    """Segundos a esperar según Retry-After. Si viene como fecha HTTP u otro formato, usa el valor por defecto."""
+    try:
+        return min(int(valor), tope)
+    except (TypeError, ValueError):
+        return defecto
+
+
 def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10,
                   stats: dict | None = None, max_reintentos_429: int = 3) -> list[dict]:
     url = f"https://{instancia}/api/v1/timelines/tag/{hashtag}"
     posts: list[dict] = []
     max_id = None
     reintentos = 0
+    paginas = 0     # Solo cuenta lotes exitosos
+    fin_de_resultados = False
 
-    for _ in range(max_paginas):
-        if len(posts) >= limite:
-            break
-
+    while paginas < max_paginas and len(posts) < limite:
         params = {"limit": min(40, limite - len(posts))}
         if max_id:
             params["max_id"] = max_id
@@ -134,26 +146,34 @@ def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = 
             reintentos += 1
             if reintentos > max_reintentos_429:
                 respuesta.raise_for_status()
-            espera = int(respuesta.headers.get("Retry-After", 5))
+            espera = _espera_retry_after(respuesta.headers.get("Retry-After"))
             print(f"Rate limit alcanzado, esperando {espera}s...", file=sys.stderr)
             time.sleep(espera)
-            continue
+            continue  # no cuenta como página
 
         reintentos = 0
         respuesta.raise_for_status()
         lote = respuesta.json()
+        paginas += 1
+
         # Si no hay mas resultados
         if not lote:
+            fin_de_resultados = True
             break
 
         max_id = lote[-1]["id"]
         posts.extend(p for p in lote if relevante(p, tipo, stats))
-        if len(posts) > limite:
-            posts = posts[:limite]
+        posts = posts[:limite]
 
         # Ya no hay más páginas
         if len(lote) < params["limit"]:
+            fin_de_resultados = True
             break
+
+    if len(posts) < limite and not fin_de_resultados:
+        print(f"Se agotaron las {max_paginas} páginas: {len(posts)} de {limite} posts "
+              f"(el filtro descartó bastante ruido). Sube max_paginas o baja --limit.",
+              file=sys.stderr)
 
     return posts
 
@@ -179,7 +199,7 @@ def main():
     parser.add_argument("--hashtag", required=True, help="Hashtag a consultar sin '#' (ej: ia, python)")
     parser.add_argument("--instance", default="mastodon.social", help="instancia de Mastodon (default: mastodon.social)")
     parser.add_argument("--limit", type=int, default=40, help='Cantidad máxima de post a traer (default: 40)')
-    parser.add_argument("--tipo", choices=["testimonio", "pregunta tecnica", "comentario general"], default=None,
+    parser.add_argument("--tipo", choices=["testimonio", "pregunta tecnica", "otro"], default=None,
                         help="Conservar unicamente este tipo de interacción")
     parser.add_argument("--origen", default=None, help="Valor de 'origen_comunidad' en el JSON de salida")
     parser.add_argument("--out", default="data/sample/mastodon_interacciones.json", help="Ruta del archivo de salida")
