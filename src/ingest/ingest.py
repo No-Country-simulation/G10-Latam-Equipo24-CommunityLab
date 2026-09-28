@@ -5,6 +5,8 @@ import html
 import json
 import re
 import sys
+import time
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,13 +15,13 @@ import requests
 # Variables
 
 lista_palabras_testmonio = [
-    "logré", "logre", "conseguí", "contratad", "empleo", "trabajo nuevo",
-    "gracias a", "aprendí", "aprendi", "termine", "certificaci",
+    "logre", "consegui", "contratad", "empleo", "trabajo nuevo",
+    "gracias a", "aprendi", "termine", "certificaci",
 ]
 
 lista_palabras_preguntas = [
-    "?", "cómo", "como puedo", "duda", "alguien sabe", "error", "no funciona",
-    "ayuda", "como puedo",
+    "?", "como", "como puedo", "duda", "alguien sabe", "error", "no funciona",
+    "ayuda",
 ]
 
 # Descarta el ruido
@@ -35,7 +37,7 @@ hashstag_oferta = {
 palabra_oferta = [
     "is hiring", "are hiring", "we're hiring", "job details",
     "apply now", "estamos contratando", "oferta laboral", "oferta de empleo",
-    "vacante", "postúlante", "postulate",
+    "vacante", "postulante", "postulate",
 ]
 
 # Funciones
@@ -51,18 +53,27 @@ def limpiar_html(textoHtml: str) -> str:
     return texto
 
 
+def quitar_tildes(texto: str) -> str:
+    """Normaliza acentos: NFD + descarta los marcadores diacríticos (Mn)."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", texto)
+        if unicodedata.category(c) != "Mn"
+    )
+
+
 def _contiene(texto: str, palabras: list[str]) -> bool:
     for p in palabras:
         if p == "?":
             if "?" in texto:
                 return True
-        elif re.search(r"\b" + re.escape(p), texto):
+        elif re.search(r"\b" + re.escape(p) + r"\b", texto):
             return True
     return False
 
 
 def calificar_tipo(texto: str) -> str:
     t = re.sub(r"https?://\S+", "", texto.lower())
+    t = quitar_tildes(t)
     if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
     if _contiene(t, lista_palabras_preguntas):
@@ -74,15 +85,19 @@ def oferta_laboral(p: dict, texto: str) -> bool:
     tags = {t["name"].lower() for t in p.get("tags", [])}
     if tags & hashstag_oferta:
         return True
-    t = texto.lower()
+    t = quitar_tildes(texto.lower())
     return any(f in t for f in palabra_oferta)
 
 
-def relevante(p: dict, tipo: str | None) -> bool:
+def relevante(p: dict, tipo: str | None, stats: dict | None = None) -> bool:
     if p.get("account", {}).get("bot"):
         return False
     texto = limpiar_html(p.get("content", ""))
-    if not texto or len(texto) > MAX_CHARS:
+    if not texto:
+        return False
+    if len(texto) > MAX_CHARS:
+        if stats is not None:
+            stats["descartados_por_longitud"] = stats.get("descartados_por_longitud", 0) + 1
         return False
     if oferta_laboral(p, texto):
         return False
@@ -94,10 +109,12 @@ def relevante(p: dict, tipo: str | None) -> bool:
 # Esta función se encarga de obtener los post publicos desde mastodon usando su endpoint publico.
 
 
-def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10) -> list[dict]:
+def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = None, max_paginas: int = 10,
+                  stats: dict | None = None, max_reintentos_429: int = 3) -> list[dict]:
     url = f"https://{instancia}/api/v1/timelines/tag/{hashtag}"
     posts: list[dict] = []
     max_id = None
+    reintentos = 0
 
     for _ in range(max_paginas):
         if len(posts) >= limite:
@@ -108,6 +125,17 @@ def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = 
             params["max_id"] = max_id
 
         respuesta = requests.get(url, params=params, timeout=15)
+
+        if respuesta.status_code == 429:
+            reintentos += 1
+            if reintentos > max_reintentos_429:
+                respuesta.raise_for_status()
+            espera = int(respuesta.headers.get("Retry-After", 5))
+            print(f"Rate limit alcanzado, esperando {espera}s...", file=sys.stderr)
+            time.sleep(espera)
+            continue
+
+        reintentos = 0
         respuesta.raise_for_status()
         lote = respuesta.json()
         # Si no hay mas resultados
@@ -115,7 +143,7 @@ def obtener_posts(instancia: str, hashtag: str, limite: int, tipo: str | None = 
             break
 
         max_id = lote[-1]["id"]
-        posts.extend(p for p in lote if relevante(p, tipo))
+        posts.extend(p for p in lote if relevante(p, tipo, stats))
         if len(posts) > limite:
             posts = posts[:limite]
 
@@ -156,15 +184,19 @@ def main():
     canal_label = f"#{args.hashtag}@{args.instance}"
     origen = args.origen or f"Mastodon_{args.instance}_{args.hashtag}"
 
+    stats = {"descartados_por_longitud": 0}
+
     print(f"Consulta a https://{args.instance}/api/v1/timelines/tag/{args.hashtag}", file=sys.stderr)
 
     try:
-        posts = obtener_posts(args.instance, args.hashtag, args.limit, args.tipo)
+        posts = obtener_posts(args.instance, args.hashtag, args.limit, args.tipo, stats=stats)
     except requests.RequestException as err:  # err => Error
         print(f"Error consultando Mastodon: {err}", file=sys.stderr)
         sys.exit(1)
 
     print(f"{len(posts)} posts recibidos, mapeando al formato de CommunityLab", file=sys.stderr)
+    if stats["descartados_por_longitud"]:
+        print(f"{stats['descartados_por_longitud']} posts descartados por superar MAX_CHARS ({MAX_CHARS})", file=sys.stderr)
 
     interactuar = mapear_posts(posts, canal_label)
 
