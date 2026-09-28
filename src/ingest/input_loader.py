@@ -18,6 +18,9 @@ class JSONInputLoader:
     }
     """
 
+    def __init__(self) -> None:
+        self.normalizer = InputNormalizer()
+
     def load(self, source: str) -> List[InputMessage]:
         """Returns the list of interactions (compatible with DataLoader)."""
         return self.load_batch(source).interacciones
@@ -44,9 +47,8 @@ class JSONInputLoader:
                 raise ValueError("Invalid JSON format: missing 'interacciones' key")
 
         # Normalize each interaction once, at the boundary.
-        normalizer = InputNormalizer()
         data["interacciones"] = [
-            normalizer.normalize(path.stem, msg)
+            self.normalizer.normalize(path.stem, msg)
             for msg in data["interacciones"]
         ]
 
