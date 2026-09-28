@@ -15,13 +15,13 @@ import requests
 # Variables
 
 lista_palabras_testmonio = [
-    "logre", "consegui", "contratad", "empleo", "trabajo nuevo",
-    "gracias a", "aprendi", "termine", "certificaci",
+    "logre", "consegui", "contratad*", "empleo", "trabajo nuevo",
+    "gracias a", "aprendi*", "termine", "certificaci*",
 ]
 
 lista_palabras_preguntas = [
-    "?", "como", "como puedo", "duda", "alguien sabe", "error", "no funciona",
-    "ayuda",
+    "?", "como puedo", "como hago", "como se", "duda*", "alguien sabe",
+    "error*", "no funciona", "ayud*",
 ]
 
 # Descarta el ruido
@@ -66,13 +66,17 @@ def _contiene(texto: str, palabras: list[str]) -> bool:
         if p == "?":
             if "?" in texto:
                 return True
-        elif re.search(r"\b" + re.escape(p) + r"\b", texto):
+            continue
+        patron = r"\b" + re.escape(p.rstrip("*"))
+        patron += r"\w*" if p.endswith("*") else r"\b"
+        if re.search(patron, texto):
             return True
     return False
 
 
 def calificar_tipo(texto: str) -> str:
     t = re.sub(r"https?://\S+", "", texto.lower())
+    t = re.sub(r'#\w+', "", t)  # los hashtags no cuentan para clasificar
     t = quitar_tildes(t)
     if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
