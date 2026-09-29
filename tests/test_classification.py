@@ -18,7 +18,7 @@ def test_como_suelto_no_es_pregunta():
 
 
 def test_como_puedo_es_pregunta():
-    assert calificar_tipo("¿Cómo puedo instalar esto?") == "pregunta tecnica"
+    assert calificar_tipo("¿Cómo puedo instalar esto?") == "pregunta_tecnica"
 
 
 def test_hashtags_no_cuentan():

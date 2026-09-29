@@ -86,7 +86,7 @@ def calificar_tipo(texto: str) -> str:
     if _contiene(t, lista_palabras_testmonio):
         return "testimonio"
     if _contiene(t, lista_palabras_preguntas):
-        return "pregunta tecnica"
+        return "pregunta_tecnica"
     return "otro"
 
 
@@ -199,7 +199,7 @@ def main():
     parser.add_argument("--hashtag", required=True, help="Hashtag a consultar sin '#' (ej: ia, python)")
     parser.add_argument("--instance", default="mastodon.social", help="instancia de Mastodon (default: mastodon.social)")
     parser.add_argument("--limit", type=int, default=40, help='Cantidad máxima de post a traer (default: 40)')
-    parser.add_argument("--tipo", choices=["testimonio", "pregunta tecnica", "otro"], default=None,
+    parser.add_argument("--tipo", choices=["testimonio", "pregunta_tecnica", "otro"], default=None,
                         help="Conservar unicamente este tipo de interacción")
     parser.add_argument("--origen", default=None, help="Valor de 'origen_comunidad' en el JSON de salida")
     parser.add_argument("--out", default="data/sample/mastodon_interacciones.json", help="Ruta del archivo de salida")

@@ -3,184 +3,1082 @@
   "periodo_referencia": "Semana_40_2026",
   "interacciones": [
     {
+      "id": "117351381755474976",
+      "canal": "#python@mastodon.social",
+      "autor": "MScottBlake@fosstodon.org",
+      "timestamp": "2026-09-28T23:59:39.000Z",
+      "texto": "New post: Reduce Your AI Skill Costs\nIf a skill only runs a script and reads the output, it doesn't need a frontier model.\nOpus plans the script, Sonnet writes it and wraps it in a skill, and Haiku runs the skill. My routine tasks now run on my cheapest model, and output quality didn't change.\nIf a skill breaks on Haiku, it still has ambiguity in it. Now you know where to look.\nThe walkthrough uses the Fleet API to manage labels:https://macadminmusings.com/blog/2026/09/28/reduce-your-ai-skill-costs/\n#MacAdmins #ClaudeCode #Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@MScottBlake/117351381707719731"
+      }
+    },
+    {
+      "id": "117351210839587873",
+      "canal": "#python@mastodon.social",
+      "autor": "codetrendy",
+      "timestamp": "2026-09-28T23:16:12.432Z",
+      "texto": "🎨 Spotlight #CodeTrendy → TradingPal\nFind the setup. See the track record.\n#Finance #Python #Nextjs\nhttps://codetrendy.com/listing/tradingpal",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@codetrendy/117351210839587873"
+      }
+    },
+    {
+      "id": "117351068814815957",
+      "canal": "#python@mastodon.social",
+      "autor": "radwebhosting",
+      "timestamp": "2026-09-28T22:40:05.309Z",
+      "texto": "Install and Run Your Own Image and Video Sharing Platform on #Ubuntu #VPS This article provides a guide for how to install and run your own image and video sharing platform on Ubuntu VPS.\nWhat is Chevereto?\nChevereto is a self-hosted image hosting script that allows users to create their own image-sharing website. It provides ...\nContinued 👉 https://blog.radwebhosting.com/install-and-run-your-own-image-and-video-sharing-platform-on-ubuntu-vps/?utm_source=mastodon&utm_medium=social&utm_campaign=mastodon.social #installguide #selfhosting #python #certbot #imagehosting #social #vpsguide #mariadb #opensource #apache #selfhosted #letsencrypt",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@radwebhosting/117351068814815957"
+      }
+    },
+    {
+      "id": "117350954723350146",
+      "canal": "#python@mastodon.social",
+      "autor": "adamchainz@fosstodon.org",
+      "timestamp": "2026-09-28T22:11:02.000Z",
+      "texto": "📣 Join me on Thursday, 8th October, in Lisbon for a small Python/Django meetup!\nLooking forward to meeting more folks out there.\nhttps://adamj.eu/tech/2026/09/28/python-mini-meetup-lisbon/\n#Python #Django #Lisbon #Lisboa #Portugal",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@adamchainz/117350954616486188"
+      }
+    },
+    {
+      "id": "117350928266009629",
+      "canal": "#python@mastodon.social",
+      "autor": "threadlinqs",
+      "timestamp": "2026-09-28T22:04:20.701Z",
+      "texto": "An AI agent shipped a malicious PyPI package during a cyber eval - and real scanners ran it. 9 detections, 20 IOCs. Full analysis + IOCs: https://intel.threadlinqs.com/threat/TL-2026-2747 #ThreatIntel #mlflowui #Python #mlflow_ui #PyPI #ClaudeMythos5",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@threadlinqs/117350928266009629"
+      }
+    },
+    {
+      "id": "117350899519048638",
+      "canal": "#python@mastodon.social",
+      "autor": "driscollis",
+      "timestamp": "2026-09-28T21:57:02.059Z",
+      "texto": "How to add artificial delays to your #Python code using the `time` module 🐍⏰",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@driscollis/117350899519048638"
+      }
+    },
+    {
+      "id": "117350828386041916",
+      "canal": "#python@mastodon.social",
+      "autor": "dn@mastodon.nzoss.nz",
+      "timestamp": "2026-09-28T21:38:54.000Z",
+      "texto": "Online Group offers: Python HelpThursday, 8 October at 1900 NZDT\nAre you working through a Python course, tutorial, book, or your own project, and hit a 'wall'?Join us for an informal session where the group will help you get un-stuck. No lectures. No slides. Just challenges and solutions.For more detail and to register: https://www.meetup.com/pythonnz-online/events/316743092/\n#python",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.nzoss.nz/@dn/117350828266204856"
+      }
+    },
+    {
+      "id": "117350788223186425",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-28T21:28:43.818Z",
+      "texto": "nnetsauce version 0.5.0, randomized neural networks on GPU\nhttps://thierrymoudiki.github.io/blog/2020/07/17/python/r/quasirandomizednn/nnetsauce-new-version\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117350788223186425"
+      }
+    },
+    {
+      "id": "117350637021122222",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T20:50:16.661Z",
+      "texto": "156 lines of Flask that push live updates to browsers over SSE. Runs with python3 sse_server.py --port 8080. Intermediate. https://www.valtersit.com/python/server-sent-events-sse-broadcaster/ #python #flask #webdev",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117350637021122222"
+      }
+    },
+    {
+      "id": "117350614982661345",
+      "canal": "#python@mastodon.social",
+      "autor": "dijjnn@mas.to",
+      "timestamp": "2026-09-28T20:44:40.000Z",
+      "texto": "Anyone have an in with the #npm team? I published github.com/bwthomas/vicary & while the #rubyists & #pythonistas can type `vicary` for cheaper, faster, & better anonymization than #bedrock guardrails, for #JS folk it's `@bwthomas/vicary` or nothing cuz, \"vicary\" ~ \"vary\" 🤷🤦‍♂️\n#python #ruby",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mas.to/@dijjnn/117350614960750763"
+      }
+    },
+    {
+      "id": "117350565269993210",
+      "canal": "#python@mastodon.social",
+      "autor": "treyhunner",
+      "timestamp": "2026-09-28T20:32:01.825Z",
+      "texto": "“It has nothing to do with binary numbers or ones and zeroes.”\nRead more 👉 https://pym.dev/binary-search/\n#Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@treyhunner/117350565269993210"
+      }
+    },
+    {
+      "id": "117350433452930997",
+      "canal": "#python@mastodon.social",
+      "autor": "mdk@mamot.fr",
+      "timestamp": "2026-09-28T19:58:30.000Z",
+      "texto": "Je distribue 8 places gratuites¹ pour la #PyConFR 2026 à Barritz, partage pour tenter ta chance !\n¹ : En fait la PyConFR c’est gratuit, j’peux même pas jouer avec ces stratagèmes débiles de 1ère année en école de commerce, mais tu peux partager quand même ?\n#python",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mamot.fr/@mdk/117350433428998833"
+      }
+    },
+    {
+      "id": "117350427599534608",
+      "canal": "#python@mastodon.social",
+      "autor": "Posit@fosstodon.org",
+      "timestamp": "2026-09-28T19:56:59.000Z",
+      "texto": "The data can't leave Snowflake. So the analysis ends up on a laptop, or in an extract someone has to remember to delete.\nWe're sponsoring Snowflake SnowDay Sacramento on Oct 1 to make the case for moving the toolchain instead. Workbench, Connect and Package Manager run as a Native App inside the account, so environments stay reproducible and packages stay traceable.\nCA public sector, free to attend.\nhttps://carahevents.carahsoft.com/Event/Details/819202-Posit\n#RStats #Python #OpenSource #GovTech",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@Posit/117350427496035014"
+      }
+    },
+    {
+      "id": "117350418211492036",
+      "canal": "#python@mastodon.social",
+      "autor": "Posit@fosstodon.org",
+      "timestamp": "2026-09-28T19:54:37.000Z",
+      "texto": "Orbital 0.6.0 is out! Now compile PyTorch & scikit-learn MLPs straight to SQL.\nRun database-native inference across Postgres, DuckDB, and Snowflake via Ibis. No #Python runtime or model server required!\nLearn more: https://opensource.posit.co/blog/2026-08-17_pyorbital-0-6-0/",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@Posit/117350418156431740"
+      }
+    },
+    {
+      "id": "117350295913913001",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-28T19:23:31.773Z",
+      "texto": "Boosted Configuration (_neural_) Networks for classification\nhttps://thierrymoudiki.github.io/blog/2022/07/21/r/misc/boosted-configuration-networks\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117350295913913001"
+      }
+    },
+    {
+      "id": "117350243412963652",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T19:10:10.673Z",
+      "texto": "250 lines of Python that route Telegram commands to separate handlers instead of one giant if-else. Intermediate level, drop in your bot token and run. https://www.valtersit.com/python/telegram-bot-with-command-routing/ #python #telegram #devtools",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117350243412963652"
+      }
+    },
+    {
+      "id": "117350203477488903",
+      "canal": "#python@mastodon.social",
+      "autor": "leanpub",
+      "timestamp": "2026-09-28T19:00:01.307Z",
+      "texto": "Build Your Own Coding Agent by J. Owen is on sale on Leanpub! Its suggested price is $34.99; get it for $15.99 with this coupon: https://leanpub.com/build-your-own-coding-agent/c/LeanpubWeeklySale20260922  #ai #python #software_engineering #machine_learning #computer_programming",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@leanpub/117350203477488903"
+      }
+    },
+    {
+      "id": "117350040584175518",
+      "canal": "#python@mastodon.social",
+      "autor": "artisan@fosstodon.org",
+      "timestamp": "2026-09-28T18:18:35.000Z",
+      "texto": "artisan 4.2 has over 27k downloads so far. How many will our next version (one of our biggest updates ever) get?\nhttps://github.com/artisan-roaster-scope/artisan\n#openSource #foss  #github #python #coffeeroaster #coffee #cafe",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://fosstodon.org/@artisan/117350040536386846"
+      }
+    },
+    {
+      "id": "117349970494844772",
+      "canal": "#python@mastodon.social",
+      "autor": "artisan@fosstodon.org",
+      "timestamp": "2026-09-28T18:00:44.000Z",
+      "texto": "In a world where most people want the newest, flashiest equipment, there’s something to be said for those who choose a machine that’s built to last. \nTake for example this Probat GP-12 from 1978 that Jaruco Café in Oaxaca, Mexico restored and roasts on today. According to them “artisan gave it a new life.”\nDo you have a cool old roaster that artisan brought back to life? Tag us in your posts 🩵\n#coffee #coffeeroaster #mexico #opensource #foss #python",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://fosstodon.org/@artisan/117349970396801786"
+      }
+    },
+    {
+      "id": "117349962454843524",
+      "canal": "#python@mastodon.social",
+      "autor": "Reuven@fosstodon.org",
+      "timestamp": "2026-09-28T17:58:42.000Z",
+      "texto": "Coding requires hands-on practice — and learning from your mistakes. That's doubly true when it comes to coding with AI.\nThat's why I'm excited to announce the next HOPPy (Hands-On Projects in #Python), a 5-week course in which you'll use #ClaudeCode to write a game that *you* design.\nAlong the way, I'll give you pointers, tips, and techniques. And our cohort will share progress each week.\nWant to hear more? Come to Tuesday's free HOPPy 5 info session: https://buff.ly/VvPbxHO",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://fosstodon.org/@Reuven/117349962355197501"
+      }
+    },
+    {
+      "id": "117349934090283852",
+      "canal": "#python@mastodon.social",
+      "autor": "sxa@fosstodon.org",
+      "timestamp": "2026-09-28T17:51:30.000Z",
+      "texto": "Compiled #python from source today. Don't think I've had to do that before but it seemed the easiest way to get an earlier version than what was on my machine ...",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@sxa/117349934039502602"
+      }
+    },
+    {
+      "id": "117349889769652582",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T17:40:14.504Z",
+      "texto": "Build a conversational AI with persistent history. 203 lines of Python, OpenAI API plus SQLite, so context survives restarts. Intermediate level. https://www.valtersit.com/python/conversational-ai-with-persistent-history/ #python #ai #sqlite",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117349889769652582"
+      }
+    },
+    {
+      "id": "117349866917537899",
+      "canal": "#python@mastodon.social",
+      "autor": "lwn@lwn.net",
+      "timestamp": "2026-09-28T17:34:12.000Z",
+      "texto": "Git v2.56.0 released\nhttps://lwn.net/Articles/1097213/\n#LWN #Linux #Debian #GCC #Rust #Python #Perl #Git",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fedi.lwn.net/@lwn/117349866032104738"
+      }
+    },
+    {
+      "id": "117349846935375844",
+      "canal": "#python@mastodon.social",
+      "autor": "bbelderbos@fosstodon.org",
+      "timestamp": "2026-09-28T17:29:20.000Z",
+      "texto": "Inside, you'll learn:- Agent as plumbing: setting up clean data flows- The 20-line classifier pattern- Enforcing structured outputs- Putting the LLM behind a clean Protocol/interface- Building one core service with multiple interfaces- The human-in-the-loop pattern: the model proposes, you decide- Designing execution loops with explicit guards\nIt teaches you the essential system engineering patterns for harnessing powerful, unpredictable LLMs.  🚀\n#ai #python #softwaredevelopment",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@bbelderbos/117349846877164923"
+      }
+    },
+    {
+      "id": "117349727840726109",
+      "canal": "#python@mastodon.social",
+      "autor": "driscollis",
+      "timestamp": "2026-09-28T16:59:03.668Z",
+      "texto": "How to use a #Python lambda as a return value from a function",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@driscollis/117349727840726109"
+      }
+    },
+    {
+      "id": "117349695172509848",
+      "canal": "#python@mastodon.social",
+      "autor": "flowfx@chaos.social",
+      "timestamp": "2026-09-28T16:50:42.000Z",
+      "texto": "Thanks to @cks and his post https://utcc.utoronto.ca/~cks/space/blog/python/VenvsAndToolsInEmacs, I had a really easy time setting up #Python venvs for #Emacs. 😊 \nhttps://flowfx.de/blog/python-virtual-envs-in-emacs/",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://chaos.social/@flowfx/117349694971166932"
+      }
+    },
+    {
       "id": "117349567706220604",
       "canal": "#python@mastodon.social",
       "autor": "teeeeeeeee",
-      "fecha": "2026-09-28T16:18:20.208Z",
+      "timestamp": "2026-09-28T16:18:20.208Z",
       "texto": "Transfer Learning using ahead::ridge2f on synthetic stocks returns\nhttps://thierrymoudiki.github.io/blog/2025/09/08/r/python/pretraining-ridge2f\n#Python #DataScience #MachineLearning #rstats #Techtonique",
       "tipo": "otro",
-      "url": "https://mastodon.social/@teeeeeeeee/117349567706220604"
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117349567706220604"
+      }
     },
     {
       "id": "117349523857457841",
       "canal": "#python@mastodon.social",
       "autor": "ubuntu_touch@mstdn.social",
-      "fecha": "2026-09-28T16:07:08.000Z",
+      "timestamp": "2026-09-28T16:07:08.000Z",
       "texto": "Incorporar un campo de fuerzas de viento en 3D en la trayectoria del proyectil\n#python #piedras #pelotas #bombas",
       "tipo": "otro",
-      "url": "https://mstdn.social/@ubuntu_touch/117349523689609895"
+      "metadata": {
+        "url": "https://mstdn.social/@ubuntu_touch/117349523689609895"
+      }
     },
     {
       "id": "117349497150429729",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-28T16:00:23.619Z",
+      "timestamp": "2026-09-28T16:00:23.619Z",
       "texto": "300 lines of Python that flag weird log lines with Isolation Forest. Advanced, for DevOps and sysadmins. Runs as python3 log_anomaly.py --log-file app.log --window 5m\nhttps://www.valtersit.com/python/log-anomaly-detector-with-isolation-forest/\n#python #devops #infra",
       "tipo": "otro",
-      "url": "https://mastodon.social/@hugovalters/117349497150429729"
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117349497150429729"
+      }
     },
     {
       "id": "117349466784026091",
       "canal": "#python@mastodon.social",
       "autor": "villares@pynews.com.br",
-      "fecha": "2026-09-28T15:52:35.000Z",
+      "timestamp": "2026-09-28T15:52:35.000Z",
       "texto": "An L-System plant with rule F -> F[+F-F+FB]F[-F+F-FL], the B and L symbols make red (\"Bloom\") and green (\"Leaf\") circles. The sketch-a-day archives and tip jar are at: https://abav.lugaralgum.com/sketch-a-day Code for this: https://github.com/villares/sketch-a-day/tree/main/2026/sketch_2026_09_27 #Processing #Python #py5 #CreativeCoding",
       "tipo": "otro",
-      "url": "https://pynews.com.br/@villares/117349466453247301"
+      "metadata": {
+        "url": "https://pynews.com.br/@villares/117349466453247301"
+      }
     },
     {
       "id": "117349422281497433",
       "canal": "#python@mastodon.social",
       "autor": "remotefox@sakurajima.social",
-      "fecha": "2026-09-28T15:41:16.159Z",
+      "timestamp": "2026-09-28T15:41:16.159Z",
       "texto": "Finally got to change the visual language on my blog (https://blog.rfox.eu) with Claude 5.5. I had this in todo for like .. 5 years:1. Take some inspiration from https://gwern.net/ (fonts, colors)2. Use 5 color ink-based palette from medieval manuscripts (black for font, red, green, blue, yellow/gold)3. Use glyphs / color palette from JourneyI am not yet satisfied and I have not even started with 1), but overall, I like that each page now has it's unique glyph which is actually UUID of the page. Red glyphs / strips are for articles, yellow/gold for categories, green for tags and blue will be for paperclips.I want to play more with borders and fonts and also replace remaining unicode emoji with this visual style.#python #blog #notion",
       "tipo": "otro",
-      "url": "https://sakurajima.social/notes/arozbim7hp"
+      "metadata": {
+        "url": "https://sakurajima.social/notes/arozbim7hp"
+      }
     },
     {
       "id": "117349379641716227",
       "canal": "#python@mastodon.social",
       "autor": "Reuven@fosstodon.org",
-      "fecha": "2026-09-28T15:30:28.000Z",
+      "timestamp": "2026-09-28T15:30:28.000Z",
       "texto": "Drop rows containing NaN in a #Python #Pandas data frame, but only in specific columns, with \"subset\":\ndf.dropna()            # drops rows containing NaNdf.dropna(subset='x')  # drops rows where column x is NaNdf.dropna(subset=['x', 'y'])  # drops rows where x or y is NaN",
       "tipo": "otro",
-      "url": "https://fosstodon.org/@Reuven/117349379531648661"
+      "metadata": {
+        "url": "https://fosstodon.org/@Reuven/117349379531648661"
+      }
     },
     {
       "id": "117349375933490508",
       "canal": "#python@mastodon.social",
       "autor": "lcheylus@bsd.network",
-      "fecha": "2026-09-28T15:29:21.000Z",
+      "timestamp": "2026-09-28T15:29:21.000Z",
       "texto": "After all, a recent version of Ruff (fast Python linter written in Rust) imported in Debian unstable repository #Debian #Python https://tracker.debian.org/pkg/ruff",
       "tipo": "otro",
-      "url": "https://bsd.network/@lcheylus/117349375137564146"
+      "metadata": {
+        "url": "https://bsd.network/@lcheylus/117349375137564146"
+      }
     },
     {
       "id": "117349350390301241",
       "canal": "#python@mastodon.social",
       "autor": "and_rf",
-      "fecha": "2026-09-28T15:23:04.248Z",
+      "timestamp": "2026-09-28T15:23:04.248Z",
       "texto": "🐍🐍 Gostei, postei!\n#Python #Snake #Tshirt #Outfit #Match",
       "tipo": "otro",
-      "url": "https://mastodon.social/@and_rf/117349350390301241"
+      "metadata": {
+        "url": "https://mastodon.social/@and_rf/117349350390301241"
+      }
     },
     {
       "id": "117349324217967623",
       "canal": "#python@mastodon.social",
       "autor": "and_rf@pixelfed.social",
-      "fecha": "2026-09-28T15:16:24.000Z",
+      "timestamp": "2026-09-28T15:16:24.000Z",
       "texto": "🐍🐍 Gostei, postei!\n\n#Python #Snake #Tshirt #Outfit #Match",
       "tipo": "otro",
-      "url": "https://pixelfed.social/p/and_rf/1010205602437307826"
+      "metadata": {
+        "url": "https://pixelfed.social/p/and_rf/1010205602437307826"
+      }
     },
     {
       "id": "117349187155649148",
       "canal": "#python@mastodon.social",
       "autor": "StatisticsGlobe",
-      "fecha": "2026-09-28T14:41:33.469Z",
+      "timestamp": "2026-09-28T14:41:33.469Z",
       "texto": "Final reminder: The current Statistics Globe Hub promotion ends in just a few hours! 🎁\nIf you join the Hub today, you’ll receive all August modules for free, plus all September modules released so far: https://statisticsglobe.com/hub\n#Statistics #DataScience #AI #RStats #Python #DataAnalysis",
       "tipo": "otro",
-      "url": "https://mastodon.social/@StatisticsGlobe/117349187155649148"
+      "metadata": {
+        "url": "https://mastodon.social/@StatisticsGlobe/117349187155649148"
+      }
     },
     {
       "id": "117349142313373825",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-28T14:30:09.227Z",
+      "timestamp": "2026-09-28T14:30:09.227Z",
       "texto": "300 lines of Python to audit AD/LDAP password policy: complexity, lockout thresholds, and more. Uses ldap3. Advanced level.\nhttps://www.valtersit.com/python/adldap-password-policy-auditor/\n#python #security #ldap",
       "tipo": "otro",
-      "url": "https://mastodon.social/@hugovalters/117349142313373825"
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117349142313373825"
+      }
     },
     {
       "id": "117349014520429904",
       "canal": "#python@mastodon.social",
       "autor": "moehrenfeld@social.karotte.org",
-      "fecha": "2026-09-28T13:57:38.000Z",
+      "timestamp": "2026-09-28T13:57:38.000Z",
       "texto": "Anyone here have use for a 30% off coupon for a #Jetbrains All Product Individual license? I have a code that expires in two days. I use it daily for all my #Python and other coding needs.",
-      "tipo": "pregunta tecnica",
-      "url": "https://social.karotte.org/@moehrenfeld/117349014475756423"
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://social.karotte.org/@moehrenfeld/117349014475756423"
+      }
     },
     {
       "id": "117348924238594790",
       "canal": "#python@mastodon.social",
       "autor": "delegatevoid@mastodon.gamedev.place",
-      "fecha": "2026-09-28T13:34:41.000Z",
+      "timestamp": "2026-09-28T13:34:41.000Z",
       "texto": "#python #dependency hell....",
       "tipo": "otro",
-      "url": "https://mastodon.gamedev.place/@delegatevoid/117348924216065810"
+      "metadata": {
+        "url": "https://mastodon.gamedev.place/@delegatevoid/117348924216065810"
+      }
     },
     {
       "id": "117348858663239281",
       "canal": "#python@mastodon.social",
       "autor": "zurich_pyladies",
-      "fecha": "2026-09-28T13:18:01.084Z",
+      "timestamp": "2026-09-28T13:18:01.084Z",
       "texto": "🎤 Looking forward to the talk \"Did we break up? Auditing Instagram data with Python\" by Almudena Barreiro Carrillo ✨\nat #swisspythonsummit in 3.5 weeks!\nCheck out the schedule and get your ticket 👇  \nhttps://www.python-summit.ch/program/\nDon't forget to register for the PyLadies lunch 🤗  \n#python #pyladies #conference #datascience #womenintech #genderminoritiesintech #responsibleai",
-      "tipo": "pregunta tecnica",
-      "url": "https://mastodon.social/@zurich_pyladies/117348858663239281"
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@zurich_pyladies/117348858663239281"
+      }
     },
     {
       "id": "117348845993672930",
       "canal": "#python@mastodon.social",
       "autor": "driscollis",
-      "fecha": "2026-09-28T13:14:47.746Z",
+      "timestamp": "2026-09-28T13:14:47.746Z",
       "texto": "How to create a thumbnail image from any photo using #Python and Pillow!\nAnd you only need FOUR lines of code! 🐍🔥",
       "tipo": "otro",
-      "url": "https://mastodon.social/@driscollis/117348845993672930"
+      "metadata": {
+        "url": "https://mastodon.social/@driscollis/117348845993672930"
+      }
     },
     {
       "id": "117348792137761845",
       "canal": "#python@mastodon.social",
       "autor": "piwo@fosstodon.org",
-      "fecha": "2026-09-28T13:01:05.000Z",
+      "timestamp": "2026-09-28T13:01:05.000Z",
       "texto": "🎬️ Prezentacja nt. skryptu w Pythonie, który nie powinien być skryptem w Pythonie – Mateusz Reszka\nW tej prezentacji poznacie historię próby przeportowania skryptu adbcam na Bash. Zachęcamy do obejrzenia!\n👉️️️️️️ YouTube: https://youtu.be/AehVjxtSHpI👉️️️️️️ PeerTube: https://play.kontrabanda.net/w/4qMidPCx3Q98SfJhPWM7zc\n#piwo #piwo2026 #python #bash #pypoznań #pyconpl #bash #adbcam",
       "tipo": "otro",
-      "url": "https://fosstodon.org/@piwo/117348792082626075"
+      "metadata": {
+        "url": "https://fosstodon.org/@piwo/117348792082626075"
+      }
     },
     {
       "id": "117348788136668864",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-28T13:00:04.921Z",
+      "timestamp": "2026-09-28T13:00:04.921Z",
       "texto": "300 lines of Python for a config-driven feature pipeline: Pandas plus Scikit-learn, YAML in, transformed data out. Advanced but reusable. https://www.valtersit.com/python/feature-engineering-pipeline-with-pandas/ #python #pandas #datascience",
       "tipo": "otro",
-      "url": "https://mastodon.social/@hugovalters/117348788136668864"
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117348788136668864"
+      }
     },
     {
       "id": "117348773542647117",
       "canal": "#python@mastodon.social",
       "autor": "codingjoe@fosstodon.org",
-      "fecha": "2026-09-28T12:56:21.000Z",
+      "timestamp": "2026-09-28T12:56:21.000Z",
       "texto": "BEWARE!!!After 2 decades I decided to finally updated my GitHub profile picture :P\n#GitHub #Django #Python #javascript #openSource",
       "tipo": "otro",
-      "url": "https://fosstodon.org/@codingjoe/117348773464202146"
+      "metadata": {
+        "url": "https://fosstodon.org/@codingjoe/117348773464202146"
+      }
     },
     {
       "id": "117348748686426888",
       "canal": "#python@mastodon.social",
       "autor": "hugovalters",
-      "fecha": "2026-09-28T12:50:02.956Z",
+      "timestamp": "2026-09-28T12:50:02.956Z",
       "texto": "Pydantic 2.5+ Union[discriminator=...] routes validation by literal type tag, skipping trial-and-error on every submodel. Faster and stricter for polymorphic event payloads. https://www.valtersit.com/vault/tagged-union-discriminator-for-polymorphic-event-payloads-8ada79/ #pydantic #python #ValtersIT",
-      "tipo": "pregunta tecnica",
-      "url": "https://mastodon.social/@hugovalters/117348748686426888"
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117348748686426888"
+      }
     },
     {
       "id": "117348724467489089",
       "canal": "#python@mastodon.social",
       "autor": "hugovk",
-      "fecha": "2026-09-28T12:43:53.404Z",
+      "timestamp": "2026-09-28T12:43:53.404Z",
       "texto": "What's New in Python 3.15:\n🌊 wave 🌊\n* Added support for IEEE floating-point WAVE audio (WAVE_FORMAT_IEEE_FLOAT) in wave.\n* Added Wave_read.getformat(), Wave_write.getformat(), and Wave_write.setformat() for explicit frame format handling.\n* Wave_write.setparams() accepts both 7-item tuples including format and 6-item tuples for backwards compatibility (defaulting to WAVE_FORMAT_PCM).\nhttps://docs.python.org/3.15/whatsnew/3.15.html#wave\n#Python #Python315 #WhatsNew",
       "tipo": "otro",
-      "url": "https://mastodon.social/@hugovk/117348724467489089"
+      "metadata": {
+        "url": "https://mastodon.social/@hugovk/117348724467489089"
+      }
+    },
+    {
+      "id": "117348688643121734",
+      "canal": "#python@mastodon.social",
+      "autor": "Stewori",
+      "timestamp": "2026-09-28T12:34:46.771Z",
+      "texto": "Jython 2.7.5 is currently in beta, with a release candidate upcoming soon.\nA good moment to test your setup with the upcoming release is *now*!\nMind a breaking change:\nServlet support moves from javax to jakarta namespace.\nhttps://github.com/jython/jython/releases/tag/v2.7.5b1\n#jython #java #python #jvm",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@Stewori/117348688643121734"
+      }
+    },
+    {
+      "id": "117348623744723029",
+      "canal": "#python@mastodon.social",
+      "autor": "djangomed@fosstodon.org",
+      "timestamp": "2026-09-28T12:18:05.000Z",
+      "texto": "A little bit of Django on the Med 2026 from Pescara 🏖️\n25 people came from around the world to spend three days working on Django, talking, sharing ideas and enjoying some time together.\nIn this first video @paulox explain why we brought the event to Pescara, then Simon Charette talks about how useful it is to work together in person.\nMore people and moments coming soon 😊\n#DjangoOnTheMed #Django #Python #DjangoORM #Pescara",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@djangomed/117348623056014370"
+      }
+    },
+    {
+      "id": "117348567089773259",
+      "canal": "#python@mastodon.social",
+      "autor": "feed@igeek.gamer-geek-news.com",
+      "timestamp": "2026-09-28T12:03:49.000Z",
+      "texto": "📰 3 Numba Tricks for Python Runtime Optimization\nWhen Numba code disappoints, it's nearly never the compiler, and usually ends up being the boundary around the compiled code: not crossing it, not making it wide enough, or crossing it during every...\n📰 Source: KDnuggets🔗 Link: https://www.kdnuggets.com/3-numba-tricks-for-python-runtime-optimization\n#Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://igeek.gamer-geek-news.com/@feed/statuses/01M3KYCQNNTE0E3Q2VDS7A80KB"
+      }
+    },
+    {
+      "id": "117348394860049164",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T11:20:03.995Z",
+      "texto": "180 lines of Python that pulls a GraphQL schema via introspection. Handy for security assessments. Intermediate level. https://www.valtersit.com/python/graphql-introspection-and-schema-extractor/ #python #security #graphql",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117348394860049164"
+      }
+    },
+    {
+      "id": "117348316560517371",
+      "canal": "#python@mastodon.social",
+      "autor": "pyconafrica",
+      "timestamp": "2026-09-28T11:00:09.245Z",
+      "texto": "AI agents are moving from experimentation to production. 🤖🐍\nJoin Alouzeh Brandone Mahbuh and Samule Macharia, Google Cloud Developer Experts, at PyCon Africa 2026 for:\nBuild and Deploy an ADK Agent on Cloud Run\nLearn how to build and deploy an ADK agent on Cloud Run and explore practical approaches to building AI-powered applications with Python.\n📅 October 7, 2026\n📍 Speke Resort Munyonyo, Kampala\n🎟️ Get your ticket: https://africa.pycon.org/2026/tickets\n#PyConAfrica2026 #Python #AI #AgenticAI #GoogleCloud",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@pyconafrica/117348316560517371"
+      }
+    },
+    {
+      "id": "117348040859872056",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T09:50:02.380Z",
+      "texto": "300 lines of Python that generate bash, Python, and PowerShell reverse shell payloads from one command. Advanced pentest tooling.\nhttps://www.valtersit.com/python/reverse-shell-payload-generator/\n#security #python #infosec",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117348040859872056"
+      }
+    },
+    {
+      "id": "117347984541674199",
+      "canal": "#python@mastodon.social",
+      "autor": "djangoconeurope@fosstodon.org",
+      "timestamp": "2026-09-28T09:35:40.000Z",
+      "texto": "Why Innsbruck? 🏔️Because a DjangoCon should come with a pretty great backdrop.\n✨ A beautiful historic city 🏔️ The Alps right outside your door 🚋 Easy to get around ☕ Plenty of places to meet, chat and recharge 💻 And, of course, a whole community of Django people coming together\nReady to discover Innsbruck with us?\n#DjangoConEurope #Innsbruck #Django #Python",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://fosstodon.org/@djangoconeurope/117347984379869281"
+      }
+    },
+    {
+      "id": "117347949955924314",
+      "canal": "#python@mastodon.social",
+      "autor": "codingjoe@fosstodon.org",
+      "timestamp": "2026-09-28T09:26:54.000Z",
+      "texto": "For all you night owls 🦉 \ndjango-letter's preview feature has a dark-mode emulator for both Apple and Gmail now! 🎉 \nhttps://github.com/codingjoe/django-letter\n#django #python #opensource #email",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@codingjoe/117347949874590424"
+      }
+    },
+    {
+      "id": "117347834071469854",
+      "canal": "#python@mastodon.social",
+      "autor": "Chaotica@nrw.social",
+      "timestamp": "2026-09-28T08:57:25.000Z",
+      "texto": "Hach, wie schön. Langsam zahlt sich die ganze Vorarbeit aus und ich kann jetzt vergleichsweise schnell (für mich), neue Funktionalität in mein Dashboard einhängen.\nJetzt kann ich Mastodon-Posts planen und mir auch anzeigen lassen, wann welcher Post geplant ist.\nWie bei den großen.\nNur in gut. :D\n#lerntProgrammieren #python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://nrw.social/@Chaotica/117347833966676277"
+      }
+    },
+    {
+      "id": "117347717656588094",
+      "canal": "#python@mastodon.social",
+      "autor": "feitgemel",
+      "timestamp": "2026-09-28T08:27:50.696Z",
+      "texto": "Step-by-step: Fine-tune YOLOv8 on a cards dataset with OpenCV.\nArticle:\nhttps://medium.com/object-detection-tutorials/how-to-train-yolov8-object-detection-on-a-custom-dataset-cards-detection-5d99bf849987\nWatch:\nhttps://youtu.be/lw6tn3nHaj8\n#YOLOv8 #DataScience #Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@feitgemel/117347717656588094"
+      }
+    },
+    {
+      "id": "117347647611119768",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-28T08:10:01.881Z",
+      "texto": "230 lines of Python to manage Azure Blob Storage from your terminal: upload, download, list, delete. For DevOps folks who want a CLI without the SDK boilerplate. https://www.valtersit.com/python/azure-blob-storage-file-manager/ #python #azure #cloud",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117347647611119768"
+      }
+    },
+    {
+      "id": "117347609451888912",
+      "canal": "#python@mastodon.social",
+      "autor": "hollandnumerics@mastodonapp.uk",
+      "timestamp": "2026-09-28T08:00:19.000Z",
+      "texto": "Altair SLC 2026 series: Summary post #3\nAltair SLC 2026 series: Summary post #3 #AltairSLC #RStats #Python #SAS #DataScience #BatchProcessing #Automation #Licensing #ITOperations\nhttps://hollandnumerics.org.uk/2026/09/altair-slc-2026-series-summary-post-3/?utm_source=mastodon&utm_medium=jetpack_social",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodonapp.uk/@hollandnumerics/117347609416939512"
+      }
+    },
+    {
+      "id": "117347372820249148",
+      "canal": "#python@mastodon.social",
+      "autor": "pycon_nl",
+      "timestamp": "2026-09-28T07:00:08.907Z",
+      "texto": "Our first keynote speaker 🎉\nGeorgi Ker, Director of the Python Software Foundation, Chair of the PSF Diversity & Inclusion Workgroup, and a builder of PyLadies, PyLadiesCon, Python Asia and PyCon Thailand, on \"Sustaining Open Source for the Future\".\nThrough a true story: how communities, companies, foundations and governments can share the responsibility, support contributors, and help new leaders grow 💚\n15 October, Jaarbeurs Utrecht 🐍\n#PyConNL #Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@pycon_nl/117347372820249148"
+      }
+    },
+    {
+      "id": "117347294345502127",
+      "canal": "#python@mastodon.social",
+      "autor": "radwebhosting",
+      "timestamp": "2026-09-28T06:40:11.478Z",
+      "texto": "🚀 Deploy #Odoo on Rocky Linux #VPS \nThis guide walks through the steps to deploy Odoo on Rocky Linux VPS using PostgreSQL, #Python virtual environment, #Nginx reverse proxy, and systemd. This setup is production-ready and appropriate for business deployments.\nWhat Is Odoo?\nOdoo is an open-source business management platform that integrates many core business functions into one ...\nContinued 👉 https://blog.radwebhosting.com/deploy-odoo-on-rocky-linux-vps/?utm_source=mastodon&utm_medium=social&utm_campaign=mastodon.social #opensource #rockylinux #selfhosted #postgresql #letsencrypt #selfhosting",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@radwebhosting/117347294345502127"
+      }
+    },
+    {
+      "id": "117347254756472586",
+      "canal": "#python@mastodon.social",
+      "autor": "pyconza@fosstodon.org",
+      "timestamp": "2026-09-28T06:30:04.000Z",
+      "texto": "Don't miss your chance to be part of PyConZA 2026! 🐍\n📍 14-18 Oct, Cape Town\nWhether it's your first PyConZA or your tenth, we'd love to see you there. Tickets are still available, but time's running out.\n🎟️ Get your ticket: https://za.pycon.org/pages/tickets/buy-tickets/\n#PyConZA #Python #CapeTown",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@pyconza/117347254590112474"
+      }
+    },
+    {
+      "id": "117347170195631954",
+      "canal": "#python@mastodon.social",
+      "autor": "zopyx@mastodon.world",
+      "timestamp": "2026-09-28T06:08:36.000Z",
+      "texto": "Slides of my #PloneConf talk:\n\"Privacy Forms Studio - Enterprise-grade forms for Plone\" \nhttps://slides.zopyx.com/talks/privacy-forms-studio-enterprise-grade-forms-for-plone/\n#plone #python #forms #digitalAutonomy #digitalsovereignty #digitalization",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.world/@zopyx/117347170156890072"
+      }
+    },
+    {
+      "id": "117347053696832644",
+      "canal": "#python@mastodon.social",
+      "autor": "linuxwebzine@mstdn.ro",
+      "timestamp": "2026-09-28T05:38:54.000Z",
+      "texto": "Apprise 2.0 lansat: Utilitarul de notificări aduce reîncercări inteligente și suport asincron\nhttps://linuxforeducation.blogspot.com/2026/09/apprise-20-lansat-utilitarul-de.html\n#Apprise #Python #OpenSource #DevOps #SysAdmin #SelfHosted  #Automation",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mstdn.ro/@linuxwebzine/117347053385740658"
+      }
+    },
+    {
+      "id": "117346954005031662",
+      "canal": "#python@mastodon.social",
+      "autor": "Testbugit",
+      "timestamp": "2026-09-28T05:13:38.292Z",
+      "texto": "Master Playwright with Python & Launch Your Automation Testing Career! \nLooking to become a skilled Automation Tester? Join our Playwright with Python Course at Testbug Solutions .\nvisit Our Website:\n                https://testbugit.com/\n                https://testbugit.com/playwright-with-python-course/\nGet Directions:\n               https://share.google/mAhkVE1bedfLo2I3d\n📍 Ameerpet, Hyderabad\n📞 7997014569\n#Playwright #Python #AutomationTesting #SoftwareTesting #QAEngineer #TestAutomation #PlaywrightWithPython",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@Testbugit/117346954005031662"
+      }
+    },
+    {
+      "id": "117346831718330284",
+      "canal": "#python@mastodon.social",
+      "autor": "RedPacketSecurity",
+      "timestamp": "2026-09-28T04:42:32.344Z",
+      "texto": "CVE Alert: CVE-2026-101060 - universal-tool-calling-protocol - python-utcp - https://www.redpacketsecurity.com/cve-alert-cve-2026-101060-universal-tool-calling-protocol-python-utcp/\n#OSINT #ThreatIntel #CyberSecurity #cve-2026-101060 #universal-tool-calling-protocol #python-utcp",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@RedPacketSecurity/117346831718330284"
+      }
+    },
+    {
+      "id": "117346831717624110",
+      "canal": "#python@mastodon.social",
+      "autor": "RedPacketSecurity",
+      "timestamp": "2026-09-28T04:42:32.334Z",
+      "texto": "CVE Alert: CVE-2026-101059 - universal-tool-calling-protocol - python-utcp - https://www.redpacketsecurity.com/cve-alert-cve-2026-101059-universal-tool-calling-protocol-python-utcp/\n#OSINT #ThreatIntel #CyberSecurity #cve-2026-101059 #universal-tool-calling-protocol #python-utcp",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@RedPacketSecurity/117346831717624110"
+      }
+    },
+    {
+      "id": "117346229721122966",
+      "canal": "#python@mastodon.social",
+      "autor": "ikristina",
+      "timestamp": "2026-09-28T02:09:26.597Z",
+      "texto": "Building an MCP Server for Anki\nhttps://ikristina.github.io/blog/anki-mcp-server\n#mcp #python #anki #ai #agents",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@ikristina/117346229721122966"
+      }
+    },
+    {
+      "id": "117345833557659781",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-28T00:28:41.621Z",
+      "texto": "You can beat Forecasting LLMs (Large Language Models a.k.a foundation models) with nnetsauce.MTS Pt.2: Generic Gradient Boosting\nhttps://thierrymoudiki.github.io/blog/2024/12/01/python/nnetsauce-sktime-LLM-example-Pt2\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117345833557659781"
+      }
+    },
+    {
+      "id": "117345642299892840",
+      "canal": "#python@mastodon.social",
+      "autor": "ubuntu_touch@mstdn.social",
+      "timestamp": "2026-09-27T23:40:03.000Z",
+      "texto": "Calcular integral de linea 3D que representa el efecto Neto del Viento acumulado sobre el dron\n#python #suma #3D",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mstdn.social/@ubuntu_touch/117345642313460747"
+      }
+    },
+    {
+      "id": "117345495914454435",
+      "canal": "#python@mastodon.social",
+      "autor": "borgbackup@fosstodon.org",
+      "timestamp": "2026-09-27T23:02:48.000Z",
+      "texto": "borgbackup 2.0.0b25 was just released!\nContains many new features (you will need to create new repos) and a lot of fixes, please check the change log and help testing:\nhttps://github.com/borgbackup/borg/releases/tag/2.0.0b25\n#linux #freebsd #openbsd #netbsd #macOS #windows #python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@borgbackup/117345495826239309"
+      }
+    },
+    {
+      "id": "117345486187862299",
+      "canal": "#python@mastodon.social",
+      "autor": "treyhunner",
+      "timestamp": "2026-09-27T23:00:21.181Z",
+      "texto": "Python Tip #270 (of 365):\nMove and copy files with pathlib.\nIn Python 3.14, Path objects gained move and copy methods, and copy works on whole directories:\n>>> from pathlib import Path\n>>> taxes = Path(\"taxes\")\n>>> taxes.copy(\"taxes-backup\")\nPosixPath('taxes-backup')\n🧵 (1/3)\n#Python #DailyPythonTip",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@treyhunner/117345486187862299"
+      }
+    },
+    {
+      "id": "117345374622118675",
+      "canal": "#python@mastodon.social",
+      "autor": "hgpu@mast.hpc.social",
+      "timestamp": "2026-09-27T22:31:57.000Z",
+      "texto": "pytest-gpu-proof: Enabling Cloud-CPU Continuous Integration for GPU Code with Local GPU Attestation\n#Python #Cloud #CI #Package\nhttps://hgpu.org/?p=31271",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mast.hpc.social/@hgpu/117345374554884270"
+      }
+    },
+    {
+      "id": "117344908799864655",
+      "canal": "#python@mastodon.social",
+      "autor": "Ai_Lab",
+      "timestamp": "2026-09-27T20:33:30.938Z",
+      "texto": "OCI Python SDK・CLIで新機能を試すとき、AttributeErrorや未認識コマンドが出たら何を確認する？ 必要なバージョンからIAM権限、モデルの提供リージョンまで順に切り分ける手順をまとめました。手順はこちら：https://tips.jp/u/ai-lab/a/C5Al0Qnd #AI #Oracle #Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@Ai_Lab/117344908799864655"
+      }
+    },
+    {
+      "id": "117344698801606387",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T19:40:06.628Z",
+      "texto": "195 lines of Python to create, list, and delete Linode/Akamai instances from the CLI. For sysadmins automating cloud work without the web console. Intermediate. https://www.valtersit.com/python/linodeakamai-cloud-instance-manager/ #python #cloud #linode",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117344698801606387"
+      }
+    },
+    {
+      "id": "117344679832626433",
+      "canal": "#python@mastodon.social",
+      "autor": "rhettallain",
+      "timestamp": "2026-09-27T19:35:17.180Z",
+      "texto": "Here is part 2: using #python to solve the #3bodyproblem #physics\nhttps://youtu.be/ZaeNPoaA0Tk",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@rhettallain/117344679832626433"
+      }
+    },
+    {
+      "id": "117344640887165627",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-27T19:25:22.918Z",
+      "texto": "mlsauce's `v0.18.2`: various examples and benchmarks with dimension reduction\nhttps://thierrymoudiki.github.io/blog/2024/05/06/python/r/lsboost/lsboost-feature-reduction\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117344640887165627"
+      }
+    },
+    {
+      "id": "117344612794913313",
+      "canal": "#python@mastodon.social",
+      "autor": "hschneider66",
+      "timestamp": "2026-09-27T19:18:14.260Z",
+      "texto": "📌 Flet 1.0 ist da: Python Desktop Apps für alle Plattformen, jetzt bereit für die Produktion \nVor gut 4 Jahren ist Flet mit einer einfachen Idee gestartet: Wenn du Python kannst, sollst du plattformübergreifende Apps bauen können. Ohne Umweg über Dart, Swift oder Kotlin. Jetzt ist Flet 1.0 erschienen, und das Team gibt ein klares Versprechen: […] ... https://marketmix.com/de/flet-production-ready/\n#flet #flutter #python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hschneider66/117344612794913313"
+      }
+    },
+    {
+      "id": "117344344676800551",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T18:10:03.103Z",
+      "texto": "259 lines of Python that queries 8.8.8.8, 1.1.1.1 and others to see where your DNS change has landed. Beginner-friendly, uses dnspython. Handy before you switch MX or renew SSL.\nhttps://www.valtersit.com/python/dns-propagation-checker-across-resolvers/\n#python #dns #devops",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117344344676800551"
+      }
+    },
+    {
+      "id": "117344261993013013",
+      "canal": "#python@mastodon.social",
+      "autor": "treyhunner",
+      "timestamp": "2026-09-27T17:49:01.450Z",
+      "texto": "“The reproducibility of pseudorandom numbers is useful for automated tests and for debugging.”\nRead more 👉 https://pym.dev/random-numbers/\n#Python",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@treyhunner/117344261993013013"
+      }
+    },
+    {
+      "id": "117344174791301532",
+      "canal": "#python@mastodon.social",
+      "autor": "M100",
+      "timestamp": "2026-09-27T17:26:50.856Z",
+      "texto": "Looking to build a custom #ActivityPub bot or consume an external RSS feed in your Mastodon timeline? 🤖\nYou don't have to do it all by yourself. We have a network of elite Python, Go, and Ruby developers ready to create sleek, minimal open-source software and bots for activity streams.\nHire professional clean-code developers on Fiverr:(https://go.fiverr.com/visit/?bta=1174784&brand=fiverrmarketplace&landingPage=https%253A%252F%252Fwww.fiverr.com%252Fcategories%252Fprogramming-tech%252Fsoftware-development%253Fsource%253Ddrop_down_filters%2526ref%253Dseller_level%25253Atop_rated_seller%25252Clevel_two_seller)\nCW : sponsored\n #indiedev #tech #technology #OpenSource #Python #Coding #Ad",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://mastodon.social/@M100/117344174791301532"
+      }
+    },
+    {
+      "id": "117344067665038258",
+      "canal": "#python@mastodon.social",
+      "autor": "edigonzales@mstdn.social",
+      "timestamp": "2026-09-27T16:59:34.000Z",
+      "texto": "#INTERLIS leicht gemacht, Teil 69: IBX - INTERLIS kann auch binär. https://blog.interlis.guru/2026/09/28/interlis-leicht-gemacht-number-69/ #java #python #qgis",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mstdn.social/@edigonzales/117344067538597166"
+      }
+    },
+    {
+      "id": "117343990795619759",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T16:40:03.305Z",
+      "texto": "Build a terminal UI in Python with Textual. Advanced, 222 lines. Full walkthrough at valtersit.com/python/interactive-tui-with-textual-framework/ #python #textual #tui",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117343990795619759"
+      }
+    },
+    {
+      "id": "117343977934391672",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-27T16:36:47.057Z",
+      "texto": "RPweave: Unified R + Python + LaTeX System using uv\nhttps://thierrymoudiki.github.io/blog/2025/10/19/r/python/RPweave\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117343977934391672"
+      }
+    },
+    {
+      "id": "117343954342821659",
+      "canal": "#python@mastodon.social",
+      "autor": "krapp@krapp.masto.host",
+      "timestamp": "2026-09-27T16:30:36.000Z",
+      "texto": "I rebuilt the #Python script I use to import #Mastodon posts to my blog. It's much improved over the old version, uses pathlib instead of os and proper HTML parsing instead of the string search and replace that kept breaking things. \nIt's public domain if anyone finds it useful. Eventually I'll have everything documented and published it's just all such a mess right now. \nhttps://codeberg.org/krapp/nikola-mastodon-importer",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://krapp.masto.host/@krapp/117343953634797191"
+      }
+    },
+    {
+      "id": "117343915652125305",
+      "canal": "#python@mastodon.social",
+      "autor": "bloody_albatross@chaos.social",
+      "timestamp": "2026-09-27T16:20:55.000Z",
+      "texto": "Is writing a server in #Python indented servitude? #programminghumor",
+      "tipo": "pregunta_tecnica",
+      "metadata": {
+        "url": "https://chaos.social/@bloody_albatross/117343915586664196"
+      }
+    },
+    {
+      "id": "117343855822907241",
+      "canal": "#python@mastodon.social",
+      "autor": "inautilo",
+      "timestamp": "2026-09-27T16:05:43.785Z",
+      "texto": "#Development #Launches\nKev · Small Jev-like decision models you can train yourself https://ilo.im/16gch5\n_____\n#Kev #Qwen #AI #AiModel #LocalAi #OpenSource #Python #Browser #WebDev #Frontend #Backend",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@inautilo/117343855822907241"
+      }
+    },
+    {
+      "id": "117343791738716645",
+      "canal": "#python@mastodon.social",
+      "autor": "Cito@fosstodon.org",
+      "timestamp": "2026-09-27T15:49:25.000Z",
+      "texto": "Released GraphQL-core 3.3 #GraphQL library for #Python https://github.com/graphql-python/graphql-core/releases/tag/v3.3.0",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@Cito/117343791689487567"
+      }
+    },
+    {
+      "id": "117343716053643126",
+      "canal": "#python@mastodon.social",
+      "autor": "Reuven@fosstodon.org",
+      "timestamp": "2026-09-27T15:30:09.000Z",
+      "texto": "You can remove NaN from a #Python #Pandas data frame with dropna, but be careful: It removes rows with even one NaN, which can be overkill.\nPass \"thresh\" to allow some rows to remain, even if they contain NaN:\ndf.dropna(thresh=2)  # keeps rows with 2 or more non-NaN values",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://fosstodon.org/@Reuven/117343715934093320"
+      }
+    },
+    {
+      "id": "117343605279068071",
+      "canal": "#python@mastodon.social",
+      "autor": "fbz@infosec.exchange",
+      "timestamp": "2026-09-27T15:01:58.000Z",
+      "texto": "my new Mandelbrot fractal sweaters and blankets https://knityak.com/collections/mandelbrot come with printable code pages in python to type in (or copy/paste) the code for your exact spot on the Mandelbrot set. I made these in the style of the 321 Contact magazine BASIC code pages I used to type in as a kid in the 80s.#math #code #python #sweater",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://infosec.exchange/@fbz/117343605140670583"
+      }
+    },
+    {
+      "id": "117343597662188975",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T15:00:04.565Z",
+      "texto": "231 lines of Python to score product reviews with transformers. Beginner level. Run python3 sentiment.py --reviews reviews.csv --output report.json\nhttps://www.valtersit.com/python/sentiment-analyzer-for-product-reviews/\n#python #ai #nlp",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117343597662188975"
+      }
+    },
+    {
+      "id": "117343516712437409",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovk",
+      "timestamp": "2026-09-27T14:39:29.368Z",
+      "texto": "Make sure to compile your wheel dependencies with -O2 to get 2-3x speedup for free! 🚀\nmultibuild's defaults now also include -O2, so if you use that, update.\nhttps://github.com/python-pillow/Pillow/pull/10060\n#Python #PythonPillow #Pillow",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovk/117343516712437409"
+      }
+    },
+    {
+      "id": "117343228649249645",
+      "canal": "#python@mastodon.social",
+      "autor": "teeeeeeeee",
+      "timestamp": "2026-09-27T13:26:13.872Z",
+      "texto": "R editor and SQL console (in addition to Python editors) in www.techtonique.net\nhttps://thierrymoudiki.github.io/blog/2024/10/21/r/python/sql/techtonique-sql-and-r-editor\n#Python #DataScience #MachineLearning #rstats #Techtonique",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@teeeeeeeee/117343228649249645"
+      }
+    },
+    {
+      "id": "117343169992951485",
+      "canal": "#python@mastodon.social",
+      "autor": "hynek",
+      "timestamp": "2026-09-27T13:11:18.856Z",
+      "texto": "@carlton @djangomed @judy2k I’m glad a) there are still people caring about new #Python packages and b) see the to-me obvious value in this. Lots of empty stares. 😅",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hynek/117343169992951485"
+      }
+    },
+    {
+      "id": "117343134641436829",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovk",
+      "timestamp": "2026-09-27T13:02:19.428Z",
+      "texto": "What's New in Python 3.15:\nunicodedata\n* Unicode database updated to v17\n* New iter_graphemes() iterates over grapheme clusters (UAX #29); grapheme_cluster_break(), indic_conjunct_break() & extended_pictographic() give character properties\n* New isxidstart()/isxidcontinue() check UAX #31 identifier characters\n* New block() returns a character's Unicode block\n(Contributed by @stanfromireland, Serhiy Storchaka & Guillaume Sanchez)\nhttps://docs.python.org/3.15/whatsnew/3.15.html#unicodedata\n#Python #Python315 #WhatsNew",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovk/117343134641436829"
+      }
+    },
+    {
+      "id": "117343041286501148",
+      "canal": "#python@mastodon.social",
+      "autor": "oots@infosec.exchange",
+      "timestamp": "2026-09-27T12:38:34.000Z",
+      "texto": "TIL you can run #Python inside your browser, and I'm not sure if I love that or hate it.\nOn the one side: I think it's great that you can write your in-browser frontend in #Python.\nOn the other hand: This works by compiling the Python interpreter to #WASM and then running it inside your browser, so it adds some additional layers to your (already frighteningly high) tech stack.\n[Imagine the mandatory variant of the famous #xkcd comic here.]\nEdit: Link to the Python docs: https://docs.python.org/3/library/intro.html#webassembly-platforms",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://infosec.exchange/@oots/117343041261277211"
+      }
+    },
+    {
+      "id": "117342851636745131",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T11:50:21.120Z",
+      "texto": "180-line Django management command for bulk DB ops on the User model. Batched updates, production-ready. Intermediate. https://www.valtersit.com/python/django-management-command-for-bulk-operations/ #django #python #webdev",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117342851636745131"
+      }
+    },
+    {
+      "id": "117342786386314942",
+      "canal": "#python@mastodon.social",
+      "autor": "CosmikLaila@dobbs.town",
+      "timestamp": "2026-09-27T11:33:44.000Z",
+      "texto": "Woohoo! I mastered basic Python arithmetic! Also, I learned 3 new Python words -- Integer, Float and Modulo!\nThere's a site I found that makes learning coding into a gaming atmosphere, so it's attracting my old Nintendo Pilot self. Not like a video game, but ya get to have a place on the Leaderboard and earn XP. I rank #2 in the Starter League and earned 801 XP this week 🔥\n#python #nerd #coding",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://dobbs.town/@CosmikLaila/117342786344481200"
+      }
+    },
+    {
+      "id": "117342497815422705",
+      "canal": "#python@mastodon.social",
+      "autor": "hugovalters",
+      "timestamp": "2026-09-27T10:20:22.236Z",
+      "texto": "80-line Python script checks a password list against Have I Been Pwned. Beginner-friendly. Run: python3 hibp_check.py --passwords passwords.txt\nhttps://www.valtersit.com/python/have-i-been-pwned-password-bulk-checker/\n#security #python #infosec",
+      "tipo": "otro",
+      "metadata": {
+        "url": "https://mastodon.social/@hugovalters/117342497815422705"
+      }
     }
   ]
 }
