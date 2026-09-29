@@ -186,10 +186,10 @@ def mapear_posts(posts: list[dict], canal: str) -> list[dict]:
             "id": p["id"],
             "canal": canal,
             "autor": p["account"]["acct"],
-            "fecha": p["created_at"],
+            "timestamp": p["created_at"],
             "texto": texto,
             "tipo": calificar_tipo(texto),
-            "url": p.get("url"),
+            "metadata": {"url": p.get("url")},
         })
     return interaccion
 
