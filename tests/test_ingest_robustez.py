@@ -167,3 +167,7 @@ def test_sin_log_si_alcanza_el_limite(mock_get, capsys):
 
     assert len(obtener_posts("x", "python", 100)) == 100
     assert "Se agotaron" not in capsys.readouterr().err
+
+
+def test_postulante_no_es_oferta():
+    assert not oferta_laboral({}, "Soy postulante a una beca de programación")

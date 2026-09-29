@@ -16,12 +16,19 @@ import requests
 
 lista_palabras_testmonio = [
     "logre", "consegui", "contratad*", "empleo", "trabajo nuevo",
-    "gracias a", "aprendi*", "termine", "certificaci*",
+    "gracias a", "aprendi", "aprendimos", "he aprendido", "termine", "certificaci*",
 ]
 
 lista_palabras_preguntas = [
     "?", "como puedo", "como hago", "como se", "duda*", "alguien sabe",
-    "error*", "no funciona", "ayud*",
+    "me da error", "me sale error", "me tira error", "error al",
+    "no funciona", "ayuda", "necesito ayuda",
+]
+
+palabra_oferta = [
+    "is hiring", "are hiring", "we're hiring", "job details",
+    "apply now", "estamos contratando", "oferta laboral", "oferta de empleo",
+    "vacante", "postulate",
 ]
 
 # Descarta el ruido
@@ -33,12 +40,6 @@ hashstag_oferta = {
     "hiring", "nowhiring", "jobs", "jobalert", "jobopening",
     "remotejobs", "vacante", "oferta_laboral", "ofertadeempleo",
 }
-
-palabra_oferta = [
-    "is hiring", "are hiring", "we're hiring", "job details",
-    "apply now", "estamos contratando", "oferta laboral", "oferta de empleo",
-    "vacante", "postulante", "postulate",
-]
 
 # Funciones
 
@@ -226,7 +227,7 @@ def main():
 
     payload = {
         "origen_comunidad": origen,
-        "periodo_referencia": datetime.now(timezone.utc).strftime("Semana_%V_%Y"),
+        "periodo_referencia": datetime.now(timezone.utc).strftime("Semana_%V_%G"),
         "interacciones": interactuar
     }
 

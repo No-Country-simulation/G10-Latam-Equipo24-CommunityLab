@@ -28,3 +28,15 @@ def test_hashtags_no_cuentan():
 def test_postulate_con_y_sin_tilde():
     assert oferta_laboral({"tags": []}, "Postúlate aquí")
     assert oferta_laboral({"tags": []}, "postulate aqui")
+
+
+def test_trial_and_error_no_es_pregunta():
+    assert calificar_tipo("skipping trial-and-error on every submodel") != "pregunta_tecnica"
+
+
+def test_aprendizaje_no_es_testimonio():
+    assert calificar_tipo("El aprendizaje automático es un campo enorme") != "testimonio"
+
+
+def test_ayudo_no_es_pregunta():
+    assert calificar_tipo("Me ayudó mucho este tutorial") != "pregunta_tecnica"
