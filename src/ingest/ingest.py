@@ -121,7 +121,7 @@ def relevante(p: dict, tipo: str | None, stats: dict | None = None) -> bool:
 def _espera_retry_after(valor: str | None, defecto: int = 5, tope: int = 60) -> int:
     """Segundos a esperar según Retry-After. Si viene como fecha HTTP u otro formato, usa el valor por defecto."""
     try:
-        return min(int(valor), tope)
+        return max(0, min(int(valor), tope))
     except (TypeError, ValueError):
         return defecto
 

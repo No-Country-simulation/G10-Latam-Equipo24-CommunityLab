@@ -70,6 +70,13 @@ def test_429_tope_de_60s(mock_get, sleeps):
     assert sleeps == [60]
 
 
+def test_429_retry_after_negativo_espera_cero(mock_get, sleeps):
+    mock_get([FakeResp(429, headers={"Retry-After": "-1"}),
+              FakeResp(200, [post(1)])])
+    assert len(obtener_posts("x", "python", 1)) == 1
+    assert sleeps == [0]
+    
+
 def test_429_no_consume_paginas(mock_get, sleeps):
     mock_get([FakeResp(429), FakeResp(200, [post(1)])])
     assert len(obtener_posts("x", "python", 1, max_paginas=1)) == 1
