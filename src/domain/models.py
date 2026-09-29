@@ -118,6 +118,14 @@ class RelevanceResult(BaseModel):
     is_marketing_worthy: bool
 
 
+class RecurringTopic(BaseModel):
+    """A recurring topic detected in community messages."""
+    topic: str
+    count: int
+    examples: List[str] = Field(default_factory=list)
+    faq_title: str
+
+
 class AnalysisComplete(BaseModel):
     """Consolidated analysis result for a single message."""
     message_id: str
