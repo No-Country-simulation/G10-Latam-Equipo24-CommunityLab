@@ -66,6 +66,7 @@ class RecurringTopicsDetector:
             return word[:-1]
 
         return word
+
     def _extract_topic(self, message: str) -> str | None:
         """Extract a topic from the most relevant word in a message."""
         words = re.findall(
