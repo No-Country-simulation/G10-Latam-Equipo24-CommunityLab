@@ -1,6 +1,8 @@
 ﻿from collections import Counter, defaultdict
 import re
 
+from src.domain.models import RecurringTopic
+
 
 class RecurringTopicsDetector:
     """Detects recurring topics in community messages."""
@@ -11,10 +13,12 @@ class RecurringTopicsDetector:
         "unas", "los", "las", "del", "con", "sin", "sobre", "esta", "este",
         "esto", "hay", "tengo", "tiene", "tienen", "quiero", "necesito",
         "me", "mi", "mis", "el", "la", "de", "en", "y", "o", "un",
-        "cambiar", "cambio", "cambie", "cambias", "actualizar", "actualizo",
-        "actualiza", "actualice", "hacer", "hago", "hace",
-        "acceder", "acceso", "entrar", "entro", "funciona", "funcion",
-        "problema", "ayuda",
+        "cambiar", "cambio", "cambie", "cambias", "cambia", "cambian",
+        "actualizar", "actualizo", "actualiza", "actualice", "actualizas",
+        "actualizan", "hacer", "hago", "hace", "haces", "hacen",
+        "acceder", "acceso", "entrar", "entro", "entra", "entran",
+        "funciona", "funcion", "funcionan", "funciono",
+        "problema", "problemas", "ayuda",
     }
 
     def __init__(self, min_occurrences: int = 2):
@@ -23,7 +27,7 @@ class RecurringTopicsDetector:
 
         self.min_occurrences = min_occurrences
 
-    def detect(self, messages: list[str]) -> list[dict]:
+    def detect(self, messages: list[str]) -> list[RecurringTopic]:
         """Detect recurring topics and return FAQ-ready information."""
         topic_messages = defaultdict(list)
 
@@ -40,16 +44,28 @@ class RecurringTopicsDetector:
 
             if count >= self.min_occurrences:
                 results.append(
-                    {
-                        "topic": topic,
-                        "count": count,
-                        "examples": examples,
-                        "faq_title": self._suggest_faq_title(topic),
-                    }
+                    RecurringTopic(
+                        topic=topic,
+                        count=count,
+                        examples=examples,
+                        faq_title=self._suggest_faq_title(topic),
+                    )
                 )
 
-        return sorted(results, key=lambda item: item["count"], reverse=True)
+        return sorted(results, key=lambda item: item.count, reverse=True)
 
+    def _normalize_word(self, word: str) -> str:
+        """Normalize common Spanish plural forms to singular."""
+        if len(word) <= 4:
+            return word
+
+        if word.endswith("es") and len(word) > 5:
+            return word[:-2]
+
+        if word.endswith("s"):
+            return word[:-1]
+
+        return word
     def _extract_topic(self, message: str) -> str | None:
         """Extract a topic from the most relevant word in a message."""
         words = re.findall(
@@ -58,7 +74,7 @@ class RecurringTopicsDetector:
         )
 
         meaningful_words = [
-            word
+            self._normalize_word(word)
             for word in words
             if word not in self.STOPWORDS and len(word) > 2
         ]
