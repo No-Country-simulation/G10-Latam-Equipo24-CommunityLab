@@ -28,7 +28,7 @@ lista_palabras_preguntas = [
 palabra_oferta = [
     "is hiring", "are hiring", "we're hiring", "job details",
     "apply now", "estamos contratando", "oferta laboral", "oferta de empleo",
-    "vacante", "postulate",
+    "vacante*", "postulate",
 ]
 
 # Descarta el ruido
@@ -96,7 +96,7 @@ def oferta_laboral(p: dict, texto: str) -> bool:
     if tags & hashstag_oferta:
         return True
     t = quitar_tildes(texto.lower())
-    return any(re.search(r"\b" + re.escape(f) + r"\b", t) for f in palabra_oferta)
+    return _contiene(t, palabra_oferta)
 
 
 def relevante(p: dict, tipo: str | None, stats: dict | None = None) -> bool:

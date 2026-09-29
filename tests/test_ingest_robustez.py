@@ -171,3 +171,7 @@ def test_sin_log_si_alcanza_el_limite(mock_get, capsys):
 
 def test_postulante_no_es_oferta():
     assert not oferta_laboral({}, "Soy postulante a una beca de programación")
+
+
+def test_vacantes_plural_es_oferta():
+    assert oferta_laboral({"tags": []}, "Hay vacantes en mi equipo")
