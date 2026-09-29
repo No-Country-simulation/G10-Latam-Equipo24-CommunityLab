@@ -135,6 +135,23 @@ class AnalysisComplete(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# DECISIONS — internal (decision engine output)
+# ---------------------------------------------------------------------------
+
+class DecisionResult(BaseModel):
+    """Output of the rule-based decision engine for a single message.
+
+    `action` is one of "publicar", "crear_faq" or "descartar" (see #69).
+    `asset_type` is the target asset ("linkedin", "faq") or None when the
+    message is discarded.
+    """
+    message_id: str
+    action: str
+    asset_type: Optional[str] = None
+    reason: str = ""
+
+
+# ---------------------------------------------------------------------------
 # OUTPUT — contract (what the system produces)
 # ---------------------------------------------------------------------------
 
