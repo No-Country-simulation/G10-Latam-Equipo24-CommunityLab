@@ -3,8 +3,8 @@ Oracle Cloud Infrastructure (OCI) Storage Module.
 High-level operations on Object Storage (buckets, upload/download assets).
 """
 
-import oci
 from src.oci.client import OCIClient
+
 
 class OCIStorage:
     """Manages storage operations in OCI Object Storage."""

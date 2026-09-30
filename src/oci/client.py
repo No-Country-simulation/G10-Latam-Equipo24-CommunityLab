@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class OCIClient:
     """Centralized client for OCI connections using environment variables."""
 
