@@ -16,7 +16,7 @@ import json
 import logging
 import re
 import unicodedata
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import ValidationError
 
@@ -91,6 +91,15 @@ class GeminiUnifiedAnalyzer:
                 exc,
             )
             return self._default(message)
+
+    def analyze_batch(self, messages: List[InputMessage]) -> List[AnalysisComplete]:
+        """Analyzes a batch of messages; a failure in one never aborts the rest.
+
+        Each message is analyzed independently (one LLM call each). Any
+        per-message failure yields the safe default, so the returned list always
+        has the same length and order as the input.
+        """
+        return [self.analyze(message) for message in messages]
 
     # ------------------------------------------------------------------
     # Prompt

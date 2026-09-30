@@ -24,6 +24,24 @@ class FakeClient:
         return self._response
 
 
+class SequenceClient:
+    """Returns a sequence of canned responses/errors, one per call."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = 0
+
+    def generate(self, prompt, **kwargs):
+        idx = self.calls
+        self.calls += 1
+        if idx >= len(self._responses):
+            return "{}"
+        resp = self._responses[idx]
+        if isinstance(resp, Exception):
+            raise resp
+        return resp
+
+
 def _msg(texto: str = "hola", tipo: str = "otro") -> InputMessage:
     return InputMessage(autor="A", canal="#c", tipo=tipo, texto=texto, id="m1")
 
@@ -165,3 +183,16 @@ def test_unexpected_types_return_default():
     result = analyzer.analyze(_msg())
     assert result.sentiment.sentiment == SentimentType.NEUTRO
     assert result.categorization.category == "otro"
+
+
+# ANL-17: a batch isolates per-message failures (the pipeline iterates)
+def test_batch_isolates_failures():
+    client = SequenceClient([_full_json(), LLMError("boom"), _full_json()])
+    analyzer = GeminiUnifiedAnalyzer(client=client)
+    messages = [_msg(texto="a"), _msg(texto="b"), _msg(texto="c")]
+    results = analyzer.analyze_batch(messages)
+
+    assert len(results) == 3
+    assert results[0].categorization.category == "testimonio"
+    assert results[1].categorization.category == "otro"      # falló -> default
+    assert results[2].categorization.category == "testimonio"
