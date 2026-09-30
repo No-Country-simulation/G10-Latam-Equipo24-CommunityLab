@@ -6,6 +6,8 @@ contract OutputBatch.
 NOTE: the decisions and generators steps are STUBS for now. The analysis step
 already uses the real GeminiUnifiedAnalyzer (src/analysis).
 """
+from collections import Counter
+
 from dotenv import load_dotenv
 
 from src.domain.models import (
@@ -122,11 +124,26 @@ def _generate(results, llm) -> DistributionAssets:
 
 
 def _summarize(batch: InputBatch, results) -> CommunitySummary:
-    """Builds the community summary from the batch."""
-    topics = sorted({m.tipo for m in batch.interacciones})
+    """Builds the community summary from the batch's analysis results."""
+    sentiments = [
+        analysis.sentiment.sentiment.value
+        for _, analysis, _ in results
+        if analysis.sentiment is not None
+    ]
+    predominant = (
+        Counter(sentiments).most_common(1)[0][0] if sentiments else "neutral"
+    )
+
+    topics = sorted({
+        topic
+        for _, analysis, _ in results
+        if analysis.categorization is not None
+        for topic in analysis.categorization.topics
+    })
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
-        sentimiento_predominante="Neutral",
+        sentimiento_predominante=predominant,
         temas_principales=topics,
     )
 
