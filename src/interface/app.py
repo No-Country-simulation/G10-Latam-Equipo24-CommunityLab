@@ -4,13 +4,34 @@ from pathlib import Path
 import streamlit as st
 from src.pipeline import run_pipeline
 
+EDIT_WIDGET_KEYS = (
+    "linkedin_edit",
+    "linkedin_check",
+    "news_edit",
+    "news_check",
+    "faq_edit",
+    "faq_check",
+)
+
 
 def process_json_input(content):
-    """Passes JSON text to the file-based pipeline and returns its output."""
+    """Procesa un lote JSON y devuelve la salida del contrato."""
     with tempfile.TemporaryDirectory() as temp_dir:
         source = Path(temp_dir) / "input.json"
         source.write_text(content, encoding="utf-8")
-        return run_pipeline(str(source)).model_dump()
+        result = run_pipeline(str(source)).model_dump()
+
+    if result.get("status") != "exito":
+        raise ValueError(f"El pipeline devolvió un estado inesperado: {result.get('status')!r}")
+    return result
+
+
+def reset_batch_state(session_state):
+    """Limpia resultados y ediciones anteriores antes de procesar un lote."""
+    for key in EDIT_WIDGET_KEYS:
+        session_state.pop(key, None)
+    session_state["processing_done"] = False
+    session_state["llm_results"] = None
 
 
 def init_session_state():
@@ -47,7 +68,8 @@ def main():
 
     data_ready = uploaded_file is not None or bool(raw_json_input.strip())
 
-    if st.button("🧠 Procesar Interacciones con IA", type="primary", disabled=not data_ready, use_container_width=True):
+    if st.button("🧠 Procesar Interacciones con IA", type="primary", disabled=not data_ready, width="stretch"):
+        reset_batch_state(st.session_state)
         try:
             content = (
                 uploaded_file.getvalue().decode("utf-8")
@@ -69,6 +91,9 @@ def main():
         results = st.session_state.llm_results
         summary = results["resumen_comunidad"]
         assets = results["activos_distribucion_generados"]
+        storage = results["almacenamiento_oci"]
+
+        st.success(f"Estado del lote: {results['status']}")
 
         st.subheader("📊 Análisis Rápido")
         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
@@ -88,8 +113,11 @@ def main():
         with tab1:
             linkedin = assets["post_linkedin"]
             if linkedin:
+                st.write(f"**Título:** {linkedin['titulo']}")
+                st.write(f"**Canal recomendado:** {linkedin['canal_recomendado']}")
+                st.write(f"**Potencial de engagement:** {linkedin['potencial_engagement']}")
                 st.info("Revisa y ajusta el copy antes de aprobar.")
-                linkedin_edited = st.text_area("Contenido del Post:", value=linkedin["copy"], height=250, key="linkedin_edit")
+                linkedin_edited = st.text_area("Contenido del Post:", value=linkedin["copy"], height=250, key="linkedin_edit", width="stretch")
                 linkedin_approve = st.checkbox("✅ Aprobar Post de LinkedIn", value=True, key="linkedin_check")
             else:
                 st.info("No se generó un post de LinkedIn para este lote.")
@@ -99,8 +127,10 @@ def main():
         with tab2:
             newsletter = assets["destaque_newsletter_semanal"]
             if newsletter:
+                st.write(f"**Sección:** {newsletter['seccion']}")
+                st.write(f"**Titular:** {newsletter['titular']}")
                 st.info("Resumen para incluir en el próximo correo semanal.")
-                newsletter_edited = st.text_area("Contenido Newsletter:", value=newsletter["resumen"], height=200, key="news_edit")
+                newsletter_edited = st.text_area("Contenido Newsletter:", value=newsletter["resumen"], height=200, key="news_edit", width="stretch")
                 newsletter_approve = st.checkbox("✅ Aprobar Newsletter", value=True, key="news_check")
             else:
                 st.info("No se generó un destaque para la newsletter semanal.")
@@ -110,8 +140,10 @@ def main():
         with tab3:
             faq = assets["sugerencia_contenido_faq"]
             if faq:
+                st.write(f"**Origen:** {faq['origen']}")
+                st.write(f"**Estado:** {faq['status']}")
                 st.info("Pregunta frecuente detectada automáticamente para la base de conocimiento.")
-                faq_edited = st.text_area("Entrada FAQ:", value=faq["tema"], height=200, key="faq_edit")
+                faq_edited = st.text_area("Entrada FAQ:", value=faq["tema"], height=200, key="faq_edit", width="stretch")
                 faq_approve = st.checkbox("✅ Aprobar Sugerencia FAQ", value=True, key="faq_check")
             else:
                 st.info("No se detectó una pregunta frecuente para este lote.")
@@ -126,13 +158,16 @@ def main():
 
         st.markdown("---")
         st.header("3. Confirmación y Guardado")
+        st.caption(
+            f"OCI: {storage['status']} | {storage['bucket']}/{storage['ruta_objeto']}"
+        )
         st.write("Los activos aprobados quedan seleccionados en esta sesión. El guardado en OCI aún no está integrado.")
 
-        if st.button("Aprobar activos seleccionados", type="primary", use_container_width=True):
-            if not (linkedin_approve or newsletter_approve or faq_approve):
+        if st.button("Aprobar activos seleccionados", type="primary", width="stretch"):
+            if not any(value and value.strip() for value in payload_to_save.values()):
                 st.warning("⚠️ Debes aprobar al menos un activo para poder guardarlo.")
             else:
-                approved_count = sum(value is not None for value in payload_to_save.values())
+                approved_count = sum(bool(value and value.strip()) for value in payload_to_save.values())
                 st.warning(
                     f"{approved_count} activos aprobados en esta sesión. "
                     "El pipeline todavía no los ha guardado en OCI."
