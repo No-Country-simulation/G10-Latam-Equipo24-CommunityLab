@@ -73,7 +73,7 @@ def test_parses_fenced_json():
 
 # ANL-04: free text (not JSON) returns the default, without raising
 def test_free_text_returns_default():
-    analyzer = GeminiUnifiedAnalyzer(client=FakeClient('"Lo siento, no puedo analizar."'))
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient("Lo siento, no puedo analizar ese mensaje."))
     result = analyzer.analyze(_msg())
     assert result.sentiment.sentiment == SentimentType.NEUTRO
     assert result.categorization.category == "otro"
@@ -122,7 +122,6 @@ def test_duda_tecnica_aliases_to_pregunta_tecnica():
 
 # ANL-12 / ANL-13: relevance border is inclusive at 0.60
 def test_relevance_border_inclusive_and_exclusive():
-    analyzer = GeminiUnifiedAnalyzer(client=FakeClient("{}"))
     # 0.60 -> worthy
     data_60 = {"relevance": {"score": 0.60, "is_marketing_worthy": False}}
     analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data_60)))
@@ -131,6 +130,13 @@ def test_relevance_border_inclusive_and_exclusive():
     # 0.59 -> not worthy
     data_59 = {"relevance": {"score": 0.59}}
     analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data_59)))
+    assert analyzer.analyze(_msg()).relevance.is_marketing_worthy is False
+
+
+# ANL-15: a contradictory explicit field loses to the derived score
+def test_marketing_worthy_derives_from_score():
+    data = {"relevance": {"score": 0.3, "is_marketing_worthy": True}}
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data)))
     assert analyzer.analyze(_msg()).relevance.is_marketing_worthy is False
 
 
@@ -149,4 +155,13 @@ def test_empty_text_skips_llm():
     analyzer = GeminiUnifiedAnalyzer(client=client)
     result = analyzer.analyze(_msg(texto="   "))
     assert client.calls == 0
+    assert result.categorization.category == "otro"
+
+
+# Review (Emmanuel, blocker 1): valid JSON with unexpected types -> default
+def test_unexpected_types_return_default():
+    data = {"sentiment": "positivo"}  # a string where an object is expected
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data)))
+    result = analyzer.analyze(_msg())
+    assert result.sentiment.sentiment == SentimentType.NEUTRO
     assert result.categorization.category == "otro"
