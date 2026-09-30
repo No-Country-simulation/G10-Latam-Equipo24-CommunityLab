@@ -11,7 +11,7 @@ Convention: class names and comments are in English, but the FIELD names are
 in Spanish because they are the exact JSON keys of the contract.
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -146,8 +146,8 @@ class DecisionResult(BaseModel):
     message is discarded.
     """
     message_id: str
-    action: str
-    asset_type: Optional[str] = None
+    action: Literal["publicar", "crear_faq", "descartar"]
+    asset_type: Optional[Literal["linkedin", "faq"]] = None
     reason: str = ""
 
 

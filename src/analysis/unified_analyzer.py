@@ -13,8 +13,12 @@ Design decisions (agreed with the QA matrix #48):
     - On any failure the analyzer returns a safe default and never raises.
 """
 import json
+import logging
 import re
+import unicodedata
 from typing import Any, Dict, Optional
+
+from pydantic import ValidationError
 
 from src.domain.models import (
     AnalysisComplete,
@@ -25,6 +29,8 @@ from src.domain.models import (
     SentimentType,
 )
 from src.utils.llm import LLMError, get_llm_client
+
+logger = logging.getLogger(__name__)
 
 
 # Non-canonical values the LLM may return, mapped to the contract's vocabulary.
@@ -70,10 +76,21 @@ class GeminiUnifiedAnalyzer:
         try:
             raw = self.client.generate(self._build_prompt(message))
             data = self._parse_json(raw)
-        except (LLMError, ValueError, json.JSONDecodeError):
+            return self._to_analysis(message, data)
+        except (
+            LLMError,
+            json.JSONDecodeError,
+            ValueError,
+            AttributeError,
+            TypeError,
+            ValidationError,
+        ) as exc:
+            logger.warning(
+                "Unified analyzer fell back to default for %r: %s",
+                message.id,
+                exc,
+            )
             return self._default(message)
-
-        return self._to_analysis(message, data)
 
     # ------------------------------------------------------------------
     # Prompt
@@ -97,7 +114,7 @@ class GeminiUnifiedAnalyzer:
             '"entities": ["..."]},\n'
             '  "relevance": {"score": <0.0-1.0>, "is_marketing_worthy": true|false}\n'
             '}\n\n'
-            f"Mensaje: {message.texto}\n"
+            f"Mensaje:\n<mensaje>\n{message.texto}\n</mensaje>\n"
         )
 
     # ------------------------------------------------------------------
@@ -187,20 +204,33 @@ class GeminiUnifiedAnalyzer:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _normalize_sentiment(value: Optional[str]) -> SentimentType:
-        if value in _SENTIMENT_VALUES:
-            return SentimentType(value)
+    def _normalize_token(value: Optional[str]) -> str:
+        """Lowercases, strips accents and turns spaces into underscores."""
+        if not value:
+            return ""
+        text = str(value).strip().lower()
+        text = "".join(
+            c for c in unicodedata.normalize("NFD", text)
+            if unicodedata.category(c) != "Mn"
+        )
+        return text.replace(" ", "_")
+
+    @classmethod
+    def _normalize_sentiment(cls, value: Optional[str]) -> SentimentType:
+        token = cls._normalize_token(value)
+        if token in _SENTIMENT_VALUES:
+            return SentimentType(token)
         return SentimentType.NEUTRO
 
-    @staticmethod
-    def _normalize_category(value: Optional[str]) -> str:
-        if not value:
+    @classmethod
+    def _normalize_category(cls, value: Optional[str]) -> str:
+        token = cls._normalize_token(value)
+        if not token:
             return "otro"
-        category = str(value).strip().lower().replace(" ", "_")
-        category = _CATEGORY_ALIASES.get(category, category)
-        if category not in _CANONICAL_CATEGORIES:
+        token = _CATEGORY_ALIASES.get(token, token)
+        if token not in _CANONICAL_CATEGORIES:
             return "otro"
-        return category
+        return token
 
     @staticmethod
     def _clamp(value: Any) -> float:
