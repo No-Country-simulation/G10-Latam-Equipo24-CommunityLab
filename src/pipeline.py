@@ -3,15 +3,13 @@
 This is the orchestrator (HU-S3-005). It receives a JSON file and produces the
 contract OutputBatch.
 
-NOTE: the analysis, decisions and generators steps are STUBS for now. They will
-be replaced by the real modules (src/analysis, src/decisions, src/generators)
-once those are implemented.
+NOTE: the decisions and generators steps are STUBS for now. The analysis step
+already uses the real GeminiUnifiedAnalyzer (src/analysis).
 """
 from dotenv import load_dotenv
 
 from src.domain.models import (
     AnalysisComplete,
-    CategorizationResult,
     CommunitySummary,
     DistributionAssets,
     FAQSuggestion,
@@ -21,10 +19,8 @@ from src.domain.models import (
     NewsletterHighlight,
     OCIStorage,
     OutputBatch,
-    RelevanceResult,
-    SentimentResult,
-    SentimentType,
 )
+from src.analysis.unified_analyzer import GeminiUnifiedAnalyzer
 from src.ingest.input_loader import JSONInputLoader
 from src.ingest.normalizer import InputNormalizer
 from src.utils.llm import get_llm_client
@@ -41,11 +37,12 @@ def run_pipeline(source: str) -> OutputBatch:
 
     # 2. LLM client (gemini / ollama / rule_based via COMMUNITYLAB_LLM_BACKEND)
     llm = get_llm_client()
+    analyzer = GeminiUnifiedAnalyzer(client=llm)
 
     # 3-4. Analysis + decisions per message
     results = []
     for msg in batch.interacciones:
-        analysis = _analyze(msg, llm)          # STUB
+        analysis = analyzer.analyze(msg)       # real analysis (HU-S2-001)
         decision = _decide(msg, analysis)      # STUB (routes by `tipo`)
         results.append((msg, analysis, decision))
 
@@ -62,39 +59,8 @@ def run_pipeline(source: str) -> OutputBatch:
 
 
 # ---------------------------------------------------------------------------
-# STUBS — to be replaced by the real src/analysis, src/decisions and
-# src/generators modules.
+# STUBS — to be replaced by the real src/decisions and src/generators modules.
 # ---------------------------------------------------------------------------
-
-def _analyze(msg: InputMessage, llm) -> AnalysisComplete:
-    """STUB: returns a neutral analysis.
-
-    TODO: replace with the real sentiment / categorization / relevance modules
-    that call `llm.generate(...)` and parse the response into the contract
-    result models.
-    """
-    mid = msg.id or ""
-    return AnalysisComplete(
-        message_id=mid,
-        sentiment=SentimentResult(
-            message_id=mid,
-            sentiment=SentimentType.NEUTRO,
-            score=0.5,
-            reasoning="stub",
-        ),
-        categorization=CategorizationResult(
-            message_id=mid,
-            category=msg.tipo,
-            topics=[],
-            entities=[],
-        ),
-        relevance=RelevanceResult(
-            message_id=mid,
-            score=0.5,
-            is_marketing_worthy=msg.tipo == "testimonio",
-        ),
-    )
-
 
 def _decide(msg: InputMessage, analysis: AnalysisComplete) -> str:
     """STUB: routes by `tipo` (the contract's key signal).
