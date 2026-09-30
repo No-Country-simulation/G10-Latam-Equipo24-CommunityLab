@@ -115,3 +115,16 @@ def test_returns_empty_for_stopwords_only_message():
 def test_returns_empty_for_empty_message_list():
     detector = RecurringTopicsDetector()
     assert detector.detect([]) == []
+
+
+@pytest.mark.parametrize("a,b", [
+    ("mensaje", "mensajes"),
+    ("clave", "claves"),
+    ("notificación", "notificaciones"),
+])
+def test_groups_plural_variants(a, b):
+    detector = RecurringTopicsDetector()
+    results = detector.detect([a, b])
+
+    assert len(results) == 1
+    assert results[0].count == 2
