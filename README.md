@@ -135,7 +135,7 @@ GEMINI_API_KEY=...
 ### 3. Pipeline end-to-end
 
 ```bash
-python3 -m src.pipeline data/raw/demo_fixed.json
+python3 -m src.pipeline data/sample/demo_fixed.json
 ```
 
 ### 4. Tests
