@@ -127,7 +127,8 @@ git commit -m "wip"
 - [ ] Tu código corre sin errores
 - [ ] No dejaste print/puts de debug innecesarios
 - [ ] Agregaste tests si es funcionalidad nueva
-- [ ] Tu branch está actualizado con main (`git rebase main`)
+- [ ] Tu branch está actualizado con main: `git fetch origin && git rebase origin/main`
+- [ ] Si ya habías pusheado tu branch, después del rebase: `git push --force-with-lease`
 
 ### Formato del PR en GitHub
 ```markdown
@@ -193,8 +194,8 @@ git rebase main
 
 # 2. Resolver conflictos si los hay (el BE ayuda)
 
-# 3. Push de tus cambios
-git push origin feat/mi-tarea
+# 3. Push de tus cambios (--force-with-lease porque el rebase reescribió la historia)
+git push --force-with-lease origin feat/mi-tarea
 
 # 4. Si terminaste → abrir PR
 ```
