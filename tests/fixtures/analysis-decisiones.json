@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "descripcion": "Casos de referencia para docs/pruebas/analisis-decisiones.md (HU-S2-009, issue #48). Datos sinteticos: no duplican data/sample ni tests/test_contract.py. Cada test debe usar el id del caso en su nombre (p. ej. test_dec_05_...).",
+  "version": "1.2",
+  "descripcion": "Casos de referencia para docs/pruebas/analisis-decisiones.md (HU-S2-009, issue #48). Datos sinteticos: no duplican data/sample ni tests/test_contract.py. Cada test debe usar el id del caso en su nombre (p. ej. test_dec_05_...). Son 78 casos especificados con datos; todavia no son tests automatizados.",
   "convenciones": {
     "umbral_relevancia": 0.6,
     "sentimientos": [
@@ -9,17 +9,32 @@
       "neutral"
     ],
     "categorias_analisis": [
-      "duda_tecnica",
       "testimonio",
+      "pregunta_tecnica",
       "feedback",
-      "pregunta_general",
+      "logro",
       "discusion",
       "otro"
     ],
+    "alias_de_categoria": {
+      "duda_tecnica": "pregunta_tecnica",
+      "pregunta_general": "otro",
+      "comentario_general": "otro"
+    },
+    "decision_D-C": "Decidida en codigo (feat/unified-analyzer, 29/9): las categorias del analisis son las del enum InteractionType.",
     "tipo_en_casos_de_analisis": "Se fija en 'otro' para aislar la clasificacion del LLM del campo tipo de entrada.",
+    "tipo_comentario_general": "Decidido el 28/9: comentario_general se mapea a otro; la ingesta ya emite otro (PR #63).",
+    "aliases": {
+      "@<clave>": "Referencia a otra clave de la misma seccion (casos_analizador_mock). El test la sustituye por el valor de esa clave antes de usar el caso. Ej.: @respuesta_valida -> casos_analizador_mock.respuesta_valida; @respuesta_por_defecto -> casos_analizador_mock.respuesta_por_defecto.",
+      "texto con @<clave>": "Si el alias aparece dentro de un string, se sustituye por el JSON serializado de esa clave (ANL-03: respuesta envuelta en un bloque de codigo).",
+      "@relevancia_por_defecto": "Atajo de respuesta_por_defecto.relevance.",
+      "{\"excepcion\": ...}": "El mock no devuelve texto: lanza esa excepcion (ANL-06, ANL-07).",
+      "valores descriptivos": "Los campos 'lote' y los 'esperado' que son texto describen el caso en lenguaje natural; el test los implementa a mano."
+    },
     "estados": {
-      "ESPECIFICADO": "Definido por las fichas (#68, #69, HU-S2-006/007).",
-      "PROPUESTO": "Criterio no definido en las fichas; el duenio del modulo debe confirmarlo."
+      "ESPECIFICADO": "Definido por las fichas (#68, #69, HU-S2-007) o por una decision del equipo.",
+      "PROPUESTO": "Criterio no definido en las fichas; el duenio del modulo debe confirmarlo.",
+      "FUERA_DE_ALCANCE": "Ficha quitada del MVP en la reestructuracion del 28/9 (si hay tiempo). Se conserva el caso para retomarlo."
     }
   },
   "casos_analisis": [
@@ -175,7 +190,7 @@
         "texto": "Me sale ModuleNotFoundError al importar langgraph aunque ya reinstalé el paquete. ¿Alguna idea?"
       },
       "esperado": {
-        "category": "duda_tecnica",
+        "category": "pregunta_tecnica",
         "topics_no_vacio": true
       },
       "estado": "ESPECIFICADO"
@@ -218,7 +233,8 @@
         "texto": "¿A qué hora empieza la sesión del jueves y dónde se comparte el enlace?"
       },
       "esperado": {
-        "category": "pregunta_general"
+        "category": "otro",
+        "nota": "Pregunta logistica: pregunta_general es alias de otro"
       },
       "estado": "ESPECIFICADO"
     },
@@ -265,6 +281,24 @@
           "LangChain",
           "Oracle Cloud Infrastructure"
         ]
+      },
+      "estado": "PROPUESTO"
+    },
+    {
+      "id": "CAT-08",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Martina Gil",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "¡Aprobé la certificación OCI Foundations! Tres semanas de estudio con los materiales del curso."
+      },
+      "esperado": {
+        "category_en": [
+          "logro",
+          "testimonio"
+        ],
+        "nota": "Frontera logro/testimonio sin definir (O-15, D-E)"
       },
       "estado": "PROPUESTO"
     },
@@ -398,7 +432,7 @@
         "id": "ANL-03",
         "respuesta": "```json\n@respuesta_valida\n```",
         "esperado": "igual que ANL-01",
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-04",
@@ -430,7 +464,7 @@
           "category": "testimonio",
           "relevance": "@relevancia_por_defecto"
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-06",
@@ -474,7 +508,7 @@
         "esperado": {
           "sentiment": "neutral"
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-09",
@@ -556,9 +590,65 @@
           }
         },
         "esperado": {
-          "category": "duda_tecnica"
+          "category": "pregunta_tecnica"
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-18",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "duda_tecnica",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "pregunta_tecnica"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-19",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "pregunta_general",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "otro"
+        },
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-12",
@@ -672,7 +762,7 @@
             "is_marketing_worthy": false
           }
         ],
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-15",
@@ -700,7 +790,7 @@
         "esperado": {
           "is_marketing_worthy": true
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-16",
@@ -712,7 +802,7 @@
           "llamadas_al_llm": 0,
           "resultado": "@respuesta_por_defecto"
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "ANL-17",
@@ -726,7 +816,7 @@
       }
     ],
     "respuesta_por_defecto": {
-      "_estado": "PROPUESTO (las fichas no fijan los valores; se alinea con el stub actual de src/pipeline.py)",
+      "_estado": "ESPECIFICADO (implementado asi en feat/unified-analyzer, 29/9)",
       "sentiment": {
         "type": "neutral",
         "score": 0.5,
@@ -747,7 +837,7 @@
     "_nota": "Entrada: category y sentiment vienen del analisis; tipo es el campo de entrada del contrato; recurrente indica si el tema aparece 2+ veces (RecurringTopicsDetector). Orden de evaluacion propuesto: R1, R2, R3 (la primera que aplica gana).",
     "reglas": {
       "R1": "testimonio + positivo + relevancia >= 0.6 -> action=publicar, asset_type=linkedin",
-      "R2": "duda tecnica / pregunta frecuente -> action=crear_faq, asset_type=faq",
+      "R2": "pregunta_tecnica (duda tecnica / pregunta frecuente) -> action=crear_faq, asset_type=faq",
       "R3": "neutral o relevancia < 0.6 -> action=descartar"
     },
     "casos": [
@@ -819,7 +909,7 @@
         "id": "DEC-05",
         "regla": "R2",
         "entrada": {
-          "category": "duda_tecnica",
+          "category": "pregunta_tecnica",
           "tipo": "pregunta_tecnica",
           "sentiment": "neutral",
           "relevance_score": 0.4,
@@ -835,7 +925,7 @@
         "id": "DEC-06",
         "regla": "R2",
         "entrada": {
-          "category": "duda_tecnica",
+          "category": "pregunta_tecnica",
           "tipo": "pregunta_tecnica",
           "sentiment": "neutral",
           "relevance_score": 0.7,
@@ -849,17 +939,18 @@
       },
       {
         "id": "DEC-07",
-        "regla": "R2",
+        "regla": "R3",
         "entrada": {
-          "category": "pregunta_general",
+          "category": "otro",
           "tipo": "otro",
           "sentiment": "neutral",
           "relevance_score": 0.5,
           "recurrente": true
         },
         "esperado": {
-          "action": "crear_faq",
-          "asset_type": "faq"
+          "action": "descartar",
+          "asset_type": null,
+          "nota": "La recurrencia sola no genera FAQ si no es pregunta_tecnica (D-A, D-D)"
         },
         "estado": "PROPUESTO"
       },
@@ -867,7 +958,7 @@
         "id": "DEC-08",
         "regla": "R3",
         "entrada": {
-          "category": "pregunta_general",
+          "category": "otro",
           "tipo": "otro",
           "sentiment": "neutral",
           "relevance_score": 0.5,
@@ -877,7 +968,7 @@
           "action": "descartar",
           "asset_type": null
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "DEC-09",
@@ -931,7 +1022,7 @@
       },
       {
         "id": "DEC-12",
-        "regla": "D-02",
+        "regla": "D-B",
         "entrada": {
           "category": "testimonio",
           "tipo": "pregunta_tecnica",
@@ -948,10 +1039,10 @@
       },
       {
         "id": "DEC-13",
-        "regla": "D-02",
+        "regla": "D-B",
         "entrada": {
           "category": "testimonio",
-          "tipo": "comentario_general",
+          "tipo": "otro",
           "sentiment": "positivo",
           "relevance_score": 0.85,
           "recurrente": false
@@ -978,10 +1069,27 @@
           "reason_contiene": "análisis incompleto"
         },
         "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-18",
+        "regla": "D-E",
+        "entrada": {
+          "category": "logro",
+          "tipo": "otro",
+          "sentiment": "positivo",
+          "relevance_score": 0.8,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin"
+        },
+        "estado": "PROPUESTO"
       }
     ]
   },
   "casos_riesgo": {
+    "_alcance": "FUERA_DE_ALCANCE: HU-S2-006 se quito del MVP el 28/9 (si hay tiempo). Todos los casos RSK quedan en ese estado.",
     "_nota": "historial va de mas antiguo a mas reciente (sentimiento de cada mensaje del miembro). Umbrales PROPUESTOS (Elias confirma): ventana = ultimos 5 mensajes; negativos en ventana: 0-1 sin alerta, 2 bajo, 3 medio, 4+ alto.",
     "casos": [
       {
@@ -992,7 +1100,7 @@
         "esperado": {
           "alertas": []
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-02",
@@ -1008,7 +1116,7 @@
         "esperado": {
           "alertas": []
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-03",
@@ -1029,7 +1137,7 @@
             }
           ]
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-04",
@@ -1050,7 +1158,7 @@
             }
           ]
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-05",
@@ -1072,7 +1180,7 @@
           ],
           "razones": "menciona 4 mensajes negativos de los ultimos 5"
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-06",
@@ -1088,7 +1196,7 @@
         "esperado": {
           "alertas": []
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-07",
@@ -1105,7 +1213,7 @@
           "nivel_maximo": "medio",
           "nota": "Mejora reciente: Elias define si baja de nivel."
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-08",
@@ -1129,7 +1237,7 @@
             }
           ]
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-09",
@@ -1156,7 +1264,7 @@
           ],
           "nota": "Un solo miembro tras normalizar espacios y mayusculas."
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-10",
@@ -1178,7 +1286,7 @@
           "alertas": [],
           "excepcion": false
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       },
       {
         "id": "RSK-11",
@@ -1197,12 +1305,12 @@
         "esperado": {
           "orden_usado": "por timestamp (10:00 antes que 12:00), no por orden de llegada; sin timestamp, orden de llegada"
         },
-        "estado": "PROPUESTO"
+        "estado": "FUERA_DE_ALCANCE"
       }
     ]
   },
   "casos_recurrentes": {
-    "_nota": "Se ejecutaron contra RecurringTopicsDetector (rama feat/recurring-topics @ 6a3dfcd); el resultado observado esta en el documento, no aqui.",
+    "_nota": "Se ejecutaron contra RecurringTopicsDetector (main @ e452c0b tras el merge del PR #64, y la rama de seguimiento feat/recurring-topics @ c8fb3d1; ambas dan el mismo resultado); el resultado observado esta en el documento, no aqui.",
     "casos": [
       {
         "id": "REC-01",
@@ -1340,7 +1448,7 @@
           "¿Dónde puedo cambiar la contraseña?"
         ],
         "esperado": {
-          "llaves": [
+          "atributos": [
             "topic",
             "count",
             "examples",
