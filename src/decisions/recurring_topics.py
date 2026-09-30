@@ -1,5 +1,6 @@
 ﻿from collections import Counter, defaultdict
 import re
+import unicodedata
 
 from src.domain.models import RecurringTopic
 
@@ -30,19 +31,23 @@ class RecurringTopicsDetector:
     def detect(self, messages: list[str]) -> list[RecurringTopic]:
         """Detect recurring topics and return FAQ-ready information."""
         topic_messages = defaultdict(list)
+        topic_labels = defaultdict(Counter)
 
         for message in messages:
-            topic = self._extract_topic(message)
+            topic, grouping_key = self._extract_topic(message)
 
             if topic:
-                topic_messages[topic].append(message)
+                topic_messages[grouping_key].append(message)
+                topic_labels[grouping_key][topic] += 1
 
         results = []
 
-        for topic, examples in topic_messages.items():
+        for grouping_key, examples in topic_messages.items():
             count = len(examples)
 
             if count >= self.min_occurrences:
+                topic = topic_labels[grouping_key].most_common(1)[0][0]
+
                 results.append(
                     RecurringTopic(
                         topic=topic,
@@ -56,19 +61,32 @@ class RecurringTopicsDetector:
 
     def _normalize_word(self, word: str) -> str:
         """Normalize common Spanish plural forms to singular."""
-        if len(word) <= 4:
-            return word
+        if word.endswith("iones") and len(word) > 6:
+            return word[:-5] + "ión"
+
+        if word.endswith("s") and len(word) > 4:
+            singular_candidate = word[:-1]
+
+            if singular_candidate[-1] in "aeiouáéíóúü":
+                return singular_candidate
 
         if word.endswith("es") and len(word) > 5:
             return word[:-2]
 
-        if word.endswith("s"):
-            return word[:-1]
-
         return word
 
-    def _extract_topic(self, message: str) -> str | None:
-        """Extract a topic from the most relevant word in a message."""
+    def _grouping_key(self, word: str) -> str:
+        """Create an accent-insensitive key for grouping topics."""
+        normalized = unicodedata.normalize("NFD", word)
+
+        return "".join(
+            char
+            for char in normalized
+            if unicodedata.category(char) != "Mn"
+        )
+
+    def _extract_topic(self, message: str) -> tuple[str, str] | tuple[None, None]:
+        """Extract a display topic and grouping key from a message."""
         words = re.findall(
             r"[a-záéíóúüñ]+",
             message.lower(),
@@ -81,11 +99,12 @@ class RecurringTopicsDetector:
         ]
 
         if not meaningful_words:
-            return None
+            return None, None
 
         word_counts = Counter(meaningful_words)
+        topic = word_counts.most_common(1)[0][0]
 
-        return word_counts.most_common(1)[0][0]
+        return topic, self._grouping_key(topic)
 
     def _suggest_faq_title(self, topic: str) -> str:
         """Generate a simple FAQ title for a recurring topic."""
