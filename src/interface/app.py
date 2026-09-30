@@ -75,7 +75,7 @@ def main():
         with kpi_col1:
             st.metric(label="Total Interacciones", value=summary["total_interacciones_procesadas"])
         with kpi_col2:
-            st.metric(label="Sentimiento", value=summary["sentimiento_predominante"], delta="Bueno")
+            st.metric(label="Sentimiento", value=summary["sentimiento_predominante"])
         with kpi_col3:
             st.markdown("**Temas Principales:**")
             st.info(", ".join(summary["temas_principales"]))

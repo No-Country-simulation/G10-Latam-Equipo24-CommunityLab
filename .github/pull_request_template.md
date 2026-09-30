@@ -5,24 +5,22 @@
 -->
 
 ## Qué hice
-<!-- Una línea clara: feature, fix, refactor, docs. Ej: "Agregué el GeminiRelevanceScorer". -->
+Conecté el panel de curaduría de Streamlit con `run_pipeline`, agregué una prueba básica de `process_json_input` y moví el mockup visual a `docs/`.
 
 ## Por qué
-<!-- Qué problema resuelve o qué agrega. Si cierra un issue: "Closes #28". -->
+Permite cargar un lote JSON, revisar/editar los activos generados y avanzar al paso de confirmación con datos reales del pipeline.
 
 ## Cómo probarlo
-<!-- Pasos exactos para que otra persona lo corra y lo verifique. Comandos incluidos. -->
+1. Ejecutar `pytest tests/test_interface_app.py`.
+2. Ejecutar `streamlit run src/interface/app.py`, cargar un JSON de interacciones y verificar el análisis y la edición de activos.
 
 ## Contrato de datos
-<!-- Obligatorio si tocás src/domain o src/ingest. Si no aplica, poné "No aplica". -->
-- ¿Se conserva el campo `tipo` de cada interacción?
-- ¿La entrada se parsea con los campos del PDF (`autor`, `canal`, `tipo`, `texto`)?
-- ¿La salida reproduce `resumen_comunidad` / `activos_distribucion_generados` / `almacenamiento_oci`?
+No aplica: no se modificó el contrato de entrada ni de salida.
 
 ## Checklist del autor (marcá TODO antes de pedir review)
-- [ ] Corrí los tests en local (`pytest`) y pasan
+- [x] Corrí los tests en local (`pytest`) y pasan
 - [ ] El CI (check `test`) está en verde
-- [ ] No dejé `print`s ni código de debug
+- [x] No dejé `print`s ni código de debug
 - [ ] No commitié API keys, tokens ni credenciales
-- [ ] Agregué tests si es funcionalidad nueva
+- [x] Agregué tests si es funcionalidad nueva
 - [ ] Mi branch está al día con `main` (rebase hecho)
