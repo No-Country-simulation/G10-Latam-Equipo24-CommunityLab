@@ -180,7 +180,8 @@ python3 -m pytest tests/ -q
 | Backend | `Elias-J-Guardado` | Ingesta (Mastodon) |
 | Data Science | `Yis-ai-eng` | Decisiones + dudas recurrentes |
 | Data Analyst | `mrolon09` | Interfaz Streamlit |
-| Apoyo | `Antonio3051`, `itanflores` | Demo, docs, QA |
+| Project Manager / QA | `itanflores` | Matriz de pruebas, QA, planificación |
+| Documentación / Demo | `Antonio3051` | Docs finales, video demo |
 
 ---
 
