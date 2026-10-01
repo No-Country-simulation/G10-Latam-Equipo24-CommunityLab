@@ -11,7 +11,7 @@ Convention: class names and comments are in English, but the FIELD names are
 in Spanish because they are the exact JSON keys of the contract.
 """
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -132,23 +132,6 @@ class AnalysisComplete(BaseModel):
     sentiment: Optional[SentimentResult] = None
     categorization: Optional[CategorizationResult] = None
     relevance: Optional[RelevanceResult] = None
-
-
-# ---------------------------------------------------------------------------
-# DECISIONS — internal (decision engine output)
-# ---------------------------------------------------------------------------
-
-class DecisionResult(BaseModel):
-    """Output of the rule-based decision engine for a single message.
-
-    `action` is one of "publicar", "crear_faq" or "descartar" (see #69).
-    `asset_type` is the target asset ("linkedin", "faq") or None when the
-    message is discarded.
-    """
-    message_id: str
-    action: Literal["publicar", "crear_faq", "descartar"]
-    asset_type: Optional[Literal["linkedin", "faq"]] = None
-    reason: str = ""
 
 
 # ---------------------------------------------------------------------------
