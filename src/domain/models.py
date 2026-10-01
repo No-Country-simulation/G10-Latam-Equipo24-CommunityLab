@@ -59,6 +59,7 @@ class RiskLevel(str, Enum):
 class ActionType(str, Enum):
     PUBLISH = "publicar"
     DERIVAR = "derivar"
+    CREAR_FAQ = "crear_faq"
     DESCARTAR = "descartar"
 
 
@@ -132,6 +133,14 @@ class AnalysisComplete(BaseModel):
     sentiment: Optional[SentimentResult] = None
     categorization: Optional[CategorizationResult] = None
     relevance: Optional[RelevanceResult] = None
+
+
+class DecisionResult(BaseModel):
+    """Decision produced by the rule-based decision engine."""
+    message_id: str
+    action: ActionType
+    asset_type: Optional[AssetType] = None
+    reason: str
 
 
 # ---------------------------------------------------------------------------

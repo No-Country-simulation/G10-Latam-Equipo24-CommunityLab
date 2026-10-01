@@ -2,7 +2,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
 from src.domain.models import (
+    AnalysisComplete,
     CategorizationResult,
+    DecisionResult,
     InputMessage,
     RelevanceResult,
     SentimentResult,
@@ -35,7 +37,7 @@ class RelevanceScorer(ABC):
 
 class DecisionEngine(ABC):
     @abstractmethod
-    def decide(self, analysis: List[InputMessage]) -> List[Dict]:
+    def decide(self, analysis: AnalysisComplete) -> DecisionResult:
         pass
 
 
