@@ -4,7 +4,8 @@ Handles authentication and provides the Object Storage client using OCI SDK.
 """
 
 import os
-import oci
+from typing import Any
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,8 +25,18 @@ class OCIClient:
         self.namespace = os.getenv("OCI_NAMESPACE", "axcyr94oehmi")
         self._client = None
 
-    def get_object_storage_client(self) -> oci.object_storage.ObjectStorageClient:
-        """Returns an authenticated instance of the Object Storage client."""
+    def get_object_storage_client(self) -> Any:
+        """Returns an authenticated instance of the Object Storage client.
+
+        The `oci` SDK is imported lazily so the repo can be imported without it
+        installed (consistent with `src/utils/llm.py`).
+        """
         if not self._client:
+            try:
+                import oci
+            except ImportError as exc:
+                raise ImportError(
+                    "oci is not installed. Run: pip install oci"
+                ) from exc
             self._client = oci.object_storage.ObjectStorageClient(self.config)
         return self._client
