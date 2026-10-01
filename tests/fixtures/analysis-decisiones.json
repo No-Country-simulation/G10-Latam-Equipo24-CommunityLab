@@ -1,6 +1,6 @@
 {
-  "version": "1.2",
-  "descripcion": "Casos de referencia para docs/pruebas/analisis-decisiones.md (HU-S2-009, issue #48). Datos sinteticos: no duplican data/sample ni tests/test_contract.py. Cada test debe usar el id del caso en su nombre (p. ej. test_dec_05_...). Son 78 casos especificados con datos; todavia no son tests automatizados.",
+  "version": "1.3",
+  "descripcion": "Casos de referencia para docs/pruebas/analisis-decisiones.md (HU-S2-009, issue #48). Datos sinteticos: no duplican data/sample ni tests/test_contract.py. Cada test debe usar el id del caso en su nombre (p. ej. test_dec_05_...). Son casos especificados con datos; todavia no son tests automatizados.",
   "convenciones": {
     "umbral_relevancia": 0.6,
     "sentimientos": [
@@ -35,6 +35,19 @@
       "ESPECIFICADO": "Definido por las fichas (#68, #69, HU-S2-007) o por una decision del equipo.",
       "PROPUESTO": "Criterio no definido en las fichas; el duenio del modulo debe confirmarlo.",
       "FUERA_DE_ALCANCE": "Ficha quitada del MVP en la reestructuracion del 28/9 (si hay tiempo). Se conserva el caso para retomarlo."
+    },
+    "tipos_reconocidos": [
+      "testimonio",
+      "pregunta_tecnica",
+      "feedback",
+      "logro",
+      "discusion"
+    ],
+    "precedencia_tipo_vs_category": "Decidido por Rox (O-05, 29/9): si tipo es explicito y reconocido prevalece el tipo; si es otro, comentario_general o vacio, prevalece la category del analisis.",
+    "tests_por_estado": {
+      "ESPECIFICADO": "Test normal.",
+      "PROPUESTO": "@pytest.mark.xfail(strict=False, reason='criterio PROPUESTO: pendiente de confirmacion').",
+      "FUERA_DE_ALCANCE": "@pytest.mark.skip(reason='ficha fuera del MVP')."
     }
   },
   "casos_analisis": [
@@ -303,6 +316,21 @@
       "estado": "PROPUESTO"
     },
     {
+      "id": "CAT-09",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Joaquin Pena",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Consegui mi primer trabajo como desarrollador. Gracias a la comunidad por todo el apoyo."
+      },
+      "esperado": {
+        "category": "testimonio"
+      },
+      "estado": "ESPECIFICADO",
+      "nota": "Texto sin tildes ni signos de apertura; la clasificacion no debe depender de ellos."
+    },
+    {
       "id": "REL-01",
       "owner": "Rox-0864",
       "entrada": {
@@ -431,7 +459,13 @@
       {
         "id": "ANL-03",
         "respuesta": "```json\n@respuesta_valida\n```",
-        "esperado": "igual que ANL-01",
+        "esperado": {
+          "message_id": "msg-001",
+          "sentiment": "positivo",
+          "category": "testimonio",
+          "is_marketing_worthy": true,
+          "mismo_resultado_que": "ANL-01"
+        },
         "estado": "ESPECIFICADO"
       },
       {
@@ -471,7 +505,11 @@
         "respuesta": {
           "excepcion": "ConnectionError"
         },
-        "esperado": "@respuesta_por_defecto",
+        "esperado": {
+          "resultado": "@respuesta_por_defecto",
+          "excepcion_propagada": false,
+          "llamadas_al_llm": 1
+        },
         "estado": "ESPECIFICADO"
       },
       {
@@ -479,7 +517,11 @@
         "respuesta": {
           "excepcion": "cuota agotada (HTTP 429)"
         },
-        "esperado": "@respuesta_por_defecto, sin reintentos infinitos",
+        "esperado": {
+          "resultado": "@respuesta_por_defecto",
+          "excepcion_propagada": false,
+          "llamadas_al_llm": 1
+        },
         "estado": "ESPECIFICADO"
       },
       {
@@ -806,13 +848,57 @@
       },
       {
         "id": "ANL-17",
-        "lote": "3 mensajes; el 2.o provoca ConnectionError",
         "esperado": {
           "resultados": 3,
-          "orden": "preservado",
-          "el_2o": "@respuesta_por_defecto"
+          "ids_en_orden": [
+            "m1",
+            "m2",
+            "m3"
+          ],
+          "el_2o": {
+            "category": "otro",
+            "is_marketing_worthy": false
+          }
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO",
+        "lote": {
+          "mensajes": [
+            "m1",
+            "m2",
+            "m3"
+          ],
+          "falla_en": 2
+        }
+      },
+      {
+        "id": "ANL-20",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.2,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "sentiment": "positivo",
+          "score": 0.2
+        },
+        "nota": "El score es la confianza de la etiqueta: un score bajo no cambia la polaridad (O-08).",
+        "estado": "ESPECIFICADO"
       }
     ],
     "respuesta_por_defecto": {
@@ -1033,9 +1119,10 @@
         "esperado": {
           "action": "crear_faq",
           "asset_type": "faq",
-          "reason_contiene": "discrepancia"
+          "reason_contiene": "discrepancia",
+          "nota": "La accion esta especificada (O-05); mencionar la discrepancia en reason es una propuesta."
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "DEC-13",
@@ -1051,7 +1138,7 @@
           "action": "publicar",
           "asset_type": "linkedin"
         },
-        "estado": "PROPUESTO"
+        "estado": "ESPECIFICADO"
       },
       {
         "id": "DEC-14",
@@ -1085,6 +1172,57 @@
           "asset_type": "linkedin"
         },
         "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-19",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "tipo vacio: manda la category del analisis"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-20",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "comentario_general",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "tipo que la ingesta de Mastodon emite hoy para casi todos los mensajes"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-21",
+        "regla": "D-B",
+        "entrada": {
+          "category": "otro",
+          "tipo": "testimonio",
+          "sentiment": "positivo",
+          "relevance_score": 0.9,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "El tipo explicito y reconocido prevalece sobre el analisis; si la ingesta se equivoca, el error llega al motor (O-16)."
+        },
+        "estado": "ESPECIFICADO"
       }
     ]
   },
@@ -1210,8 +1348,13 @@
           ]
         },
         "esperado": {
-          "nivel_maximo": "medio",
-          "nota": "Mejora reciente: Elias define si baja de nivel."
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "medio"
+            }
+          ],
+          "nota": "Una mejora reciente no baja el nivel (propuesta; Elias decide)."
         },
         "estado": "FUERA_DE_ALCANCE"
       },
@@ -1303,7 +1446,80 @@
           }
         ],
         "esperado": {
-          "orden_usado": "por timestamp (10:00 antes que 12:00), no por orden de llegada; sin timestamp, orden de llegada"
+          "historial_ordenado": [
+            "positivo",
+            "negativo"
+          ],
+          "nota": "Se ordena por timestamp (10:00 antes que 12:00). Con 2 eventos el nivel no cambia; ver RSK-14."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-13",
+        "miembros": {
+          "Sofía Herrera": [
+            "negativo",
+            "negativo",
+            "negativo",
+            "negativo",
+            "positivo",
+            "positivo",
+            "positivo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "bajo"
+            }
+          ],
+          "nota": "Solo cuenta la ventana de los ultimos 5: [negativo, negativo, positivo, positivo, positivo] = 2 negativos."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-14",
+        "eventos": [
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T15:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T14:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T13:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T12:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T11:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T10:00:00"
+          }
+        ],
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Andrés Molina",
+              "nivel": "medio"
+            }
+          ],
+          "nota": "Por timestamp la ventana es [pos, pos, neg, neg, neg] = 3 negativos (medio); por orden de llegada seria [neg, neg, pos, pos, pos] = 2 negativos (bajo). El orden cambia el nivel."
         },
         "estado": "FUERA_DE_ALCANCE"
       }
@@ -1466,7 +1682,9 @@
           },
           null
         ],
-        "esperado": "error claro (TypeError/ValueError) o entrada ignorada; nunca AttributeError"
+        "esperado": "TypeError",
+        "nota": "Comportamiento PROPUESTO (Yis decide): fallar rapido con un TypeError claro en lugar de AttributeError.",
+        "estado": "PROPUESTO"
       },
       {
         "id": "REC-14",
@@ -1487,6 +1705,158 @@
           }
         ],
         "nota": "Con empate el orden debe ser estable."
+      },
+      {
+        "id": "REC-15",
+        "topics_por_mensaje": [
+          [
+            "docker"
+          ],
+          [
+            "docker",
+            "error"
+          ],
+          [
+            "git"
+          ]
+        ],
+        "esperado": [
+          {
+            "tema": "docker",
+            "count": 2
+          }
+        ],
+        "nota": "Anticipa el follow-up #75: el detector consume los topics del analisis unificado en lugar de extraer el tema del texto.",
+        "estado": "PROPUESTO"
+      }
+    ],
+    "_convencion_de_tema": "Tema = sustantivo del dominio. Las palabras funcionales (stopwords) no son temas; el lexico vive en el codigo del detector. Tras el follow-up #75 los temas vendran de los topics del analisis."
+  },
+  "casos_pipeline": {
+    "_nota": "Cobertura a nivel pipeline (ficha #53 / HU-S3-005). Rox decidio que el lote lo itera el pipeline. Verificado el 30/9 sobre PR #73 @ 9530f90.",
+    "casos": [
+      {
+        "id": "PIP-01",
+        "descripcion": "Lote de 3 mensajes (m1, m2, m3); el analizador falla en el 2.o (ver ANL-17)",
+        "esperado": {
+          "total_interacciones_procesadas": 3,
+          "el_pipeline_no_aborta": true
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-02",
+        "descripcion": "Resumen con 4 analisis",
+        "analisis": [
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ]
+          },
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "empleo"
+            ]
+          },
+          {
+            "sentiment": "negativo",
+            "topics": [
+              "error"
+            ]
+          },
+          {
+            "sentiment": "neutral",
+            "topics": []
+          }
+        ],
+        "esperado": {
+          "total_interacciones_procesadas": 4,
+          "sentimiento_predominante": "positivo",
+          "temas_principales": [
+            "empleo",
+            "error",
+            "portafolio"
+          ]
+        },
+        "nota": "temas_principales es la union ordenada alfabeticamente de todos los topics, sin ranking ni limite (O-17).",
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-03",
+        "descripcion": "Empate de sentimientos",
+        "analisis": [
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "a"
+            ]
+          },
+          {
+            "sentiment": "negativo",
+            "topics": [
+              "b"
+            ]
+          }
+        ],
+        "esperado": {
+          "sentimiento_predominante": "positivo",
+          "nota": "Desempate por primera aparicion"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "PIP-04",
+        "descripcion": "Lote vacio",
+        "analisis": [],
+        "esperado": {
+          "total_interacciones_procesadas": 0,
+          "sentimiento_predominante": "neutral",
+          "temas_principales": []
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-05",
+        "descripcion": "Dataset de demo: 3 ejemplos de transformacion (requisito R6 del jurado)",
+        "fuente": "data/sample/demo_fixed.json (PR #77, feat/demo-dataset): se referencia, no se copia",
+        "interacciones": 12,
+        "transformaciones_R6": [
+          {
+            "autor": "Mariana Souza",
+            "tipo": "testimonio",
+            "esperado": {
+              "action": "publicar",
+              "asset_type": "linkedin"
+            }
+          },
+          {
+            "autor": "Lucas Albuquerque",
+            "tipo": "pregunta_tecnica",
+            "esperado": {
+              "action": "crear_faq",
+              "asset_type": "faq"
+            }
+          },
+          {
+            "autor": "Pedro Núñez",
+            "tipo": "otro",
+            "esperado": {
+              "action": "descartar",
+              "asset_type": null
+            }
+          }
+        ],
+        "esperado": {
+          "total_interacciones_procesadas": 12,
+          "post_linkedin": "no nulo",
+          "sugerencia_contenido_faq": "no nulo"
+        },
+        "nota": "La salida del contrato tiene un solo post_linkedin y una sola sugerencia de FAQ: los 3 ejemplos son 3 transformaciones distintas, no 3 posts en una salida.",
+        "verificado": "Con el pipeline de #73 y backend rule_based: 12 interacciones, post_linkedin y FAQ presentes (el motor de decisiones aun es un stub por tipo).",
+        "estado": "ESPECIFICADO"
       }
     ]
   }
