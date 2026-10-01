@@ -60,6 +60,7 @@ def test_suggests_faq_title():
 
     assert results[0].faq_title == "Preguntas frecuentes sobre contraseña"
 
+
 def test_topics_are_sorted_by_frequency():
     detector = RecurringTopicsDetector()
 
@@ -89,6 +90,7 @@ def test_minimum_occurrences_can_be_configured():
 
     assert results == []
 
+
 def test_groups_singular_and_plural_topics():
     detector = RecurringTopicsDetector()
     messages = [
@@ -101,6 +103,7 @@ def test_groups_singular_and_plural_topics():
     assert len(results) == 1
     assert results[0].topic == "contraseña"
     assert results[0].count == 2
+
 
 def test_rejects_min_occurrences_below_two():
     with pytest.raises(ValueError):
