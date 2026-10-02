@@ -20,14 +20,19 @@ class RuleBasedDecisionEngine(DecisionEngine):
         message_id = analysis.message_id
 
         # Rule 1: positive testimonial with sufficient relevance -> LinkedIn.
-        if (
-            analysis.categorization
-            and analysis.categorization.category == "testimonio"
-            and analysis.sentiment
-            and analysis.sentiment.sentiment.value == "positivo"
-            and analysis.relevance
-            and analysis.relevance.score >= self.RELEVANCE_THRESHOLD
-        ):
+        is_testimonial = False
+        if analysis.categorization is not None:
+            is_testimonial = analysis.categorization.category == "testimonio"
+
+        is_positive = False
+        if analysis.sentiment is not None:
+            is_positive = analysis.sentiment.sentiment.value == "positivo"
+
+        is_relevant = False
+        if analysis.relevance is not None:
+            is_relevant = analysis.relevance.score >= self.RELEVANCE_THRESHOLD
+
+        if is_testimonial and is_positive and is_relevant:
             return DecisionResult(
                 message_id=message_id,
                 action=ActionType.PUBLISH,
@@ -36,10 +41,13 @@ class RuleBasedDecisionEngine(DecisionEngine):
             )
 
         # Rule 2: technical question -> FAQ.
-        if (
-            analysis.categorization
-            and analysis.categorization.category == "pregunta_tecnica"
-        ):
+        is_technical_question = False
+        if analysis.categorization is not None:
+            is_technical_question = (
+                analysis.categorization.category == "pregunta_tecnica"
+            )
+
+        if is_technical_question:
             return DecisionResult(
                 message_id=message_id,
                 action=ActionType.CREAR_FAQ,

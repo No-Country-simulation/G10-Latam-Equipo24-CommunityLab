@@ -122,3 +122,13 @@ def test_unknown_category_is_discarded():
 
     assert result.action == ActionType.DESCARTAR
     assert result.asset_type is None
+
+
+def test_empty_analysis_is_discarded():
+    engine = RuleBasedDecisionEngine()
+    analysis = AnalysisComplete(message_id="msg-empty")
+
+    result = engine.decide(analysis)
+
+    assert result.action == ActionType.DESCARTAR
+    assert result.asset_type is None
