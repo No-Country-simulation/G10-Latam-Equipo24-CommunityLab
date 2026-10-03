@@ -5,26 +5,30 @@
 
 ---
 
-## 🎯 Qué es
+## 🎯 Objetivos
 
-CommunityLab ingiere interacciones de comunidades digitales (Discord, Slack, foros, Mastodon), las analiza con LLMs (sentimiento, temas, relevancia) y genera automáticamente **activos de distribución**: posts de LinkedIn, resúmenes de newsletter, FAQs y alertas de sentimiento. Todo se persiste en **OCI Object Storage** (capa Always Free).
+- **Ingerir** interacciones de comunidades digitales (Discord, Slack, foros, Mastodon).
+- **Analizar** cada mensaje con LLMs (sentimiento, categoría, relevancia) en **una sola llamada**.
+- **Decidir** automáticamente qué activo generar (LinkedIn, FAQ, newsletter) según el `tipo`.
+- **Generar** los activos de marketing listos para publicar.
+- **Persistir** todo en **OCI Object Storage** (capa Always Free).
 
 ---
 
-## ⚠️ Estado actual (honesto)
+## ⚠️ Estado actual
 
 | Módulo | Estado |
 |---|---|
 | Contrato de datos (modelos) | ✅ Listo |
 | Cliente LLM (Gemini / OpenAI / Ollama / rule_based) | ✅ Listo |
-| Ingesta (loader + normalizer) | ✅ Listo |
-| Tests (incluido el del contrato) | ✅ 22 tests |
-| Pipeline end-to-end | 🟡 Esqueleto con stubs |
-| Análisis IA (sentimiento/temas/relevancia) | ❌ Pendiente |
+| Ingesta (loader + normalizer + Mastodon) | ✅ Listo |
+| Detector de dudas recurrentes | ✅ Listo |
+| Análisis unificado (sentimiento/categoría/relevancia) | 🟡 PR #73 (en review) |
 | Motor de decisiones | ❌ Pendiente |
 | Generadores (LinkedIn / newsletter / FAQ) | ❌ Pendiente |
-| OCI Object Storage | ❌ Pendiente |
-| Interfaz Streamlit | ❌ Pendiente |
+| OCI Object Storage | 🟡 PR #76 (en review) |
+| Interfaz Streamlit | 🟡 PR #74 (MVP) |
+| Tests | ✅ 72 tests |
 
 > Este README describe el **objetivo**. El estado real se rastrea en los issues del repo.
 
@@ -71,12 +75,17 @@ El sistema consume y produce **exactamente** estos JSON, definidos en el desafí
 ```mermaid
 flowchart TB
     IN["InputBatch (contrato)"] --> ING["1. Ingesta (loader + normalizer)"]
-    ING --> ANL["2. Análisis IA (LLM + fallback rule_based)"]
+    ING --> ANL["2. Análisis unificado (Gemini, 1 llamada)"]
     ANL --> DEC["3. Decisiones (ruteo por tipo)"]
     DEC --> GEN["4. Generadores (LinkedIn, newsletter, FAQ)"]
     GEN --> OCI["5. OCI Object Storage"]
     OCI --> OUT["OutputBatch (contrato)"]
 ```
+
+**Decisiones de diseño clave** (acordadas con la matriz de pruebas):
+- El **contrato es la fuente de verdad** del vocabulario. Las categorías canónicas son `testimonio`, `pregunta_tecnica`, `feedback`, `logro`, `discusion`, `otro`.
+- `duda_tecnica` es alias de `pregunta_tecnica`; `comentario_general` y `pregunta_general` mapean a `otro`.
+- Ante fallo del LLM, el analizador devuelve un default seguro (neutral + `otro` + relevancia 0) y **nunca crashea**.
 
 ---
 
@@ -86,15 +95,15 @@ flowchart TB
 communitylab/
 ├── src/
 │   ├── domain/             # Modelos (contrato) + interfaces
-│   ├── ingest/             # Loader + normalizer
+│   ├── ingest/             # Loader + normalizer + Mastodon
 │   ├── utils/              # Cliente LLM (gemini/ollama/openai/rule_based)
-│   ├── analysis/           # Sentimiento, categorías, relevancia (pendiente)
-│   ├── decisions/          # Motor de decisiones (pendiente)
+│   ├── analysis/           # Análisis unificado (GeminiUnifiedAnalyzer)
+│   ├── decisions/          # Detector de dudas recurrentes (motor de decisiones: pendiente)
 │   ├── generators/         # LinkedIn, newsletter, FAQ (pendiente)
-│   ├── oci/                # Object Storage (pendiente)
-│   ├── interface/          # Streamlit (pendiente)
-│   └── pipeline.py         # Orquestador end-to-end (esqueleto)
-├── tests/                  # 22 tests
+│   ├── oci/                # Object Storage (en review)
+│   ├── interface/          # Streamlit (MVP)
+│   └── pipeline.py         # Orquestador end-to-end
+├── tests/                  # 72 tests
 ├── data/                   # Datos (raw/processed/sample)
 ├── docs/                   # Documentación
 └── README.md
@@ -104,7 +113,7 @@ communitylab/
 
 ## 🚀 Cómo ejecutar
 
-### Instalación
+### 1. Instalación
 
 ```bash
 python3 -m venv venv
@@ -112,13 +121,24 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Pipeline end-to-end (esqueleto)
+### 2. Configuración
+
+Copiá `.env.example` a `.env` y completá:
 
 ```bash
-python3 -m src.pipeline <archivo.json>
+COMMUNITYLAB_LLM_BACKEND=gemini   # gemini | openai | ollama | rule_based
+GEMINI_API_KEY=...
 ```
 
-### Tests
+> Sin credenciales, usá `COMMUNITYLAB_LLM_BACKEND=rule_based` (determinista, ideal para demos y CI).
+
+### 3. Pipeline end-to-end
+
+```bash
+python3 -m src.pipeline data/sample/demo_fixed.json
+```
+
+### 4. Tests
 
 ```bash
 python3 -m pytest tests/ -q
@@ -126,10 +146,22 @@ python3 -m pytest tests/ -q
 
 ---
 
+## 📚 Documentación
+
+- [Arquitectura](docs/arquitectura.md)
+- [Deploy y OCI](docs/deploy.md)
+- [Análisis de datasets](docs/analisis_datasets.md)
+- [Fichas de historias de usuario](docs/fichas-historias-usuario.md)
+- [UI design](docs/ui-design.md)
+- [Checklist de review](docs/review-checklist.md)
+- [Guía de contribución](CONTRIBUTING.md)
+
+---
+
 ## ✅ Checklist MVP (del PDF)
 
 - [x] Ingestión funcional de interacciones (loader + normalizer)
-- [ ] Análisis de sentimiento y temas con LLMs
+- [x] Análisis unificado de sentimiento/categoría/relevancia (1 llamada LLM)
 - [ ] Generación de 2+ formatos de activos
 - [x] Cliente LLM común (Gemini/Ollama/rule_based)
 - [ ] Integración OCI Object Storage
@@ -144,19 +176,19 @@ python3 -m pytest tests/ -q
 | Rol | Integrante | Módulos |
 |---|---|---|
 | Tech Lead / Backend | `emanuelperacchia` | Git, OCI, conexión Gemini, deploy |
-| Revisora de código | `Rox-0864` | Contrato, pipeline, gate de merge |
+| Revisora de código | `Rox-0864` | Contrato, análisis unificado, pipeline, gate de merge |
 | Backend | `Elias-J-Guardado` | Ingesta (Mastodon) |
-| Data Science | `Yis-ai-eng` | Generadores + decisiones |
+| Data Science | `Yis-ai-eng` | Decisiones + dudas recurrentes |
 | Data Analyst | `mrolon09` | Interfaz Streamlit |
-| Apoyo | `Antonio3051`, `itanflores` | Demo, docs, pruebas |
+| Project Manager / QA | `itanflores` | Matriz de pruebas, QA, planificación |
+| Documentación / Demo | `Antonio3051` | Docs finales, video demo |
 
 ---
 
 ## 🏆 Roadmap
 
-- [ ] Implementar análisis IA (sentimiento/categorías/relevancia)
-- [ ] Implementar motor de decisiones (ruteo por `tipo`)
-- [ ] Implementar generadores (LinkedIn/newsletter/FAQ)
+- [ ] Motor de decisiones (ruteo por `tipo`)
+- [ ] Generadores (LinkedIn/newsletter/FAQ)
 - [ ] Integrar OCI Object Storage
 - [ ] Conectar la interfaz Streamlit
 - [ ] Demo final con 3+ ejemplos
