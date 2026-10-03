@@ -5,8 +5,5 @@
 # @Rox-0864 aprueba código fuente y tests.
 # @emanuelperacchia aprueba configuración/docs y actúa como alternate para código/tests.
 
-/src/              @Rox-0864 @emanuelperacchia
-/tests/            @Rox-0864 @emanuelperacchia
-
-/.github/          @emanuelperacchia @Rox-0864
-/docs/             @emanuelperacchia @Rox-0864
+# Cualquiera de los tres puede aprobar cualquier cambio.
+*    @emanuelperacchia @Rox-0864 @itanflores

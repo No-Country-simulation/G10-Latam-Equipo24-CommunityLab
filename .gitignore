@@ -34,4 +34,6 @@ data/processed/*
 # Environment
 .env
 .env.local
+
 opencode.json
+/secrets
