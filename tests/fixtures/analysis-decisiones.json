@@ -1,0 +1,1863 @@
+{
+  "version": "1.3",
+  "descripcion": "Casos de referencia para docs/pruebas/analisis-decisiones.md (HU-S2-009, issue #48). Datos sinteticos: no duplican data/sample ni tests/test_contract.py. Cada test debe usar el id del caso en su nombre (p. ej. test_dec_05_...). Son casos especificados con datos; todavia no son tests automatizados.",
+  "convenciones": {
+    "umbral_relevancia": 0.6,
+    "sentimientos": [
+      "positivo",
+      "negativo",
+      "neutral"
+    ],
+    "categorias_analisis": [
+      "testimonio",
+      "pregunta_tecnica",
+      "feedback",
+      "logro",
+      "discusion",
+      "otro"
+    ],
+    "alias_de_categoria": {
+      "duda_tecnica": "pregunta_tecnica",
+      "pregunta_general": "otro",
+      "comentario_general": "otro"
+    },
+    "decision_D-C": "Decidida en codigo (feat/unified-analyzer, 29/9): las categorias del analisis son las del enum InteractionType.",
+    "tipo_en_casos_de_analisis": "Se fija en 'otro' para aislar la clasificacion del LLM del campo tipo de entrada.",
+    "tipo_comentario_general": "Decidido el 28/9: comentario_general se mapea a otro; la ingesta ya emite otro (PR #63).",
+    "aliases": {
+      "@<clave>": "Referencia a otra clave de la misma seccion (casos_analizador_mock). El test la sustituye por el valor de esa clave antes de usar el caso. Ej.: @respuesta_valida -> casos_analizador_mock.respuesta_valida; @respuesta_por_defecto -> casos_analizador_mock.respuesta_por_defecto.",
+      "texto con @<clave>": "Si el alias aparece dentro de un string, se sustituye por el JSON serializado de esa clave (ANL-03: respuesta envuelta en un bloque de codigo).",
+      "@relevancia_por_defecto": "Atajo de respuesta_por_defecto.relevance.",
+      "{\"excepcion\": ...}": "El mock no devuelve texto: lanza esa excepcion (ANL-06, ANL-07).",
+      "valores descriptivos": "Los campos 'lote' y los 'esperado' que son texto describen el caso en lenguaje natural; el test los implementa a mano."
+    },
+    "estados": {
+      "ESPECIFICADO": "Definido por las fichas (#68, #69, HU-S2-007) o por una decision del equipo.",
+      "PROPUESTO": "Criterio no definido en las fichas; el duenio del modulo debe confirmarlo.",
+      "FUERA_DE_ALCANCE": "Ficha quitada del MVP en la reestructuracion del 28/9 (si hay tiempo). Se conserva el caso para retomarlo."
+    },
+    "tipos_reconocidos": [
+      "testimonio",
+      "pregunta_tecnica",
+      "feedback",
+      "logro",
+      "discusion"
+    ],
+    "precedencia_tipo_vs_category": "Decidido por Rox (O-05, 29/9): si tipo es explicito y reconocido prevalece el tipo; si es otro, comentario_general o vacio, prevalece la category del analisis.",
+    "tests_por_estado": {
+      "ESPECIFICADO": "Test normal.",
+      "PROPUESTO": "@pytest.mark.xfail(strict=False, reason='criterio PROPUESTO: pendiente de confirmacion').",
+      "FUERA_DE_ALCANCE": "@pytest.mark.skip(reason='ficha fuera del MVP')."
+    }
+  },
+  "casos_analisis": [
+    {
+      "id": "SEN-01",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Camila Reyes",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "¡Me contrataron como desarrolladora junior! Gracias a toda la comunidad por el apoyo."
+      },
+      "esperado": {
+        "sentiment": "positivo"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-02",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Diego Fernández",
+        "canal": "#feedback-curso",
+        "tipo": "otro",
+        "texto": "Me encantó el taller de ayer, muy claro y útil para el proyecto."
+      },
+      "esperado": {
+        "sentiment": "positivo"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-03",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Valeria Núñez",
+        "canal": "#dudas-langgraph",
+        "tipo": "otro",
+        "texto": "Llevo tres días con este error y nadie responde. Estoy muy frustrado."
+      },
+      "esperado": {
+        "sentiment": "negativo"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-04",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Andrés Molina",
+        "canal": "#feedback-curso",
+        "tipo": "otro",
+        "texto": "El curso está desorganizado, los enlaces no funcionan y estoy pensando en abandonar."
+      },
+      "esperado": {
+        "sentiment": "negativo"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-05",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Sofía Herrera",
+        "canal": "#anuncios",
+        "tipo": "otro",
+        "texto": "El taller de LangGraph es el jueves a las 18:00 en el canal de voz."
+      },
+      "esperado": {
+        "sentiment": "neutral"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-06",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Tomás Ibarra",
+        "canal": "#dudas-langgraph",
+        "tipo": "otro",
+        "texto": "¿Alguien sabe cómo configurar un router condicional en LangGraph?"
+      },
+      "esperado": {
+        "sentiment": "neutral"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-07",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Lucía Benítez",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "El proyecto quedó bien, pero el proceso fue agotador y casi lo dejo."
+      },
+      "esperado": {
+        "validar": "estructura"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-08",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Mateo Cardozo",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "Qué genial, otra vez la plataforma caída justo antes de la entrega."
+      },
+      "esperado": {
+        "sentiment": "negativo",
+        "dificultad": "alta (sarcasmo, no bloqueante)"
+      },
+      "estado": "PROPUESTO"
+    },
+    {
+      "id": "SEN-09",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Emma Clarke",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Finally passed my cloud certification exam! Thanks everyone for the study tips."
+      },
+      "esperado": {
+        "sentiment": "positivo"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "SEN-10",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Kenji Watanabe",
+        "canal": "#dudas-oci",
+        "tipo": "otro",
+        "texto": "OCI Python SDKを試しましたが、エラーが出て困っています。"
+      },
+      "esperado": {
+        "validar": "estructura",
+        "nota": "Tambien valida que category sea una de las 6 categorias."
+      },
+      "estado": "PROPUESTO"
+    },
+    {
+      "id": "CAT-01",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Ximena Robles",
+        "canal": "#dudas-langgraph",
+        "tipo": "otro",
+        "texto": "Me sale ModuleNotFoundError al importar langgraph aunque ya reinstalé el paquete. ¿Alguna idea?"
+      },
+      "esperado": {
+        "category": "pregunta_tecnica",
+        "topics_no_vacio": true
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-02",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Bruno Salas",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Me contrataron como analista de datos junior. El proyecto final del bootcamp fue clave en la entrevista."
+      },
+      "esperado": {
+        "category": "testimonio"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-03",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Renata Quiroga",
+        "canal": "#feedback-curso",
+        "tipo": "otro",
+        "texto": "Sugiero agregar más ejemplos prácticos en el módulo de OCI, las diapositivas son muy teóricas."
+      },
+      "esperado": {
+        "category": "feedback"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-04",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Iván Paredes",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "¿A qué hora empieza la sesión del jueves y dónde se comparte el enlace?"
+      },
+      "esperado": {
+        "category": "otro",
+        "nota": "Pregunta logistica: pregunta_general es alias de otro"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-05",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Paula Ortega",
+        "canal": "#discusiones",
+        "tipo": "otro",
+        "texto": "Yo creo que LangGraph es mejor que n8n para flujos con reintentos, ¿ustedes qué opinan?"
+      },
+      "esperado": {
+        "category": "discusion"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-06",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Hugo Vidal",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "Buenos días a todos 👋"
+      },
+      "esperado": {
+        "category": "otro"
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "CAT-07",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Daniela Soto",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Usamos LangChain y Oracle Cloud Infrastructure para el proyecto final."
+      },
+      "esperado": {
+        "validar": "estructura",
+        "entities_incluye": [
+          "LangChain",
+          "Oracle Cloud Infrastructure"
+        ]
+      },
+      "estado": "PROPUESTO"
+    },
+    {
+      "id": "CAT-08",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Martina Gil",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "¡Aprobé la certificación OCI Foundations! Tres semanas de estudio con los materiales del curso."
+      },
+      "esperado": {
+        "category_en": [
+          "logro",
+          "testimonio"
+        ],
+        "nota": "Frontera logro/testimonio sin definir (O-15, D-E)"
+      },
+      "estado": "PROPUESTO"
+    },
+    {
+      "id": "CAT-09",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Joaquin Pena",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Consegui mi primer trabajo como desarrollador. Gracias a la comunidad por todo el apoyo."
+      },
+      "esperado": {
+        "category": "testimonio"
+      },
+      "estado": "ESPECIFICADO",
+      "nota": "Texto sin tildes ni signos de apertura; la clasificacion no debe depender de ellos."
+    },
+    {
+      "id": "REL-01",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Camila Reyes",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Me contrataron como Dev Jr de IA gracias a mi proyecto con LangChain y OCI. ¡Gracias, comunidad!"
+      },
+      "esperado": {
+        "is_marketing_worthy": true,
+        "score_min": 0.6
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "REL-02",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Nicolás Vera",
+        "canal": "#logros-y-empleos",
+        "tipo": "otro",
+        "texto": "Después de ocho meses buscando trabajo entré a una fintech. El portafolio con proyectos reales marcó la diferencia."
+      },
+      "esperado": {
+        "is_marketing_worthy": true,
+        "score_min": 0.6
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "REL-03",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Hugo Vidal",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "Gracias!"
+      },
+      "esperado": {
+        "is_marketing_worthy": false,
+        "score_max": 0.59
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "REL-04",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Paula Ortega",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "jajaja sí, yo también"
+      },
+      "esperado": {
+        "is_marketing_worthy": false,
+        "score_max": 0.59
+      },
+      "estado": "ESPECIFICADO"
+    },
+    {
+      "id": "REL-05",
+      "owner": "Rox-0864",
+      "entrada": {
+        "autor": "Iván Paredes",
+        "canal": "#general",
+        "tipo": "otro",
+        "texto": "¿Alguien sabe si hay sesión hoy?"
+      },
+      "esperado": {
+        "is_marketing_worthy": false,
+        "score_max": 0.59
+      },
+      "estado": "ESPECIFICADO"
+    }
+  ],
+  "casos_analizador_mock": {
+    "_nota": "Respuestas simuladas de Gemini para probar el analizador sin red. 'entrada' usa el mensaje base; 'respuesta' es el texto crudo que devuelve el mock.",
+    "mensaje_base": {
+      "id": "msg-001",
+      "autor": "Camila Reyes",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "¡Me contrataron como desarrolladora junior! Gracias a toda la comunidad por el apoyo."
+    },
+    "respuesta_valida": {
+      "sentiment": {
+        "type": "positivo",
+        "score": 0.9,
+        "reasoning": "Celebra un logro."
+      },
+      "categorization": {
+        "category": "testimonio",
+        "topics": [
+          "empleo",
+          "portafolio"
+        ],
+        "entities": [
+          "LangChain"
+        ]
+      },
+      "relevance": {
+        "score": 0.85,
+        "is_marketing_worthy": true
+      }
+    },
+    "casos": [
+      {
+        "id": "ANL-01",
+        "respuesta": "@respuesta_valida",
+        "esperado": {
+          "message_id": "msg-001",
+          "sentiment": "positivo",
+          "category": "testimonio",
+          "is_marketing_worthy": true
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-02",
+        "respuesta": "@respuesta_valida",
+        "esperado": {
+          "llamadas_al_llm": 1
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-03",
+        "respuesta": "```json\n@respuesta_valida\n```",
+        "esperado": {
+          "message_id": "msg-001",
+          "sentiment": "positivo",
+          "category": "testimonio",
+          "is_marketing_worthy": true,
+          "mismo_resultado_que": "ANL-01"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-04",
+        "respuesta": "Lo siento, no puedo analizar ese mensaje.",
+        "esperado": "@respuesta_por_defecto",
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-05",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          }
+        },
+        "esperado": {
+          "sentiment": "positivo",
+          "category": "testimonio",
+          "relevance": "@relevancia_por_defecto"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-06",
+        "respuesta": {
+          "excepcion": "ConnectionError"
+        },
+        "esperado": {
+          "resultado": "@respuesta_por_defecto",
+          "excepcion_propagada": false,
+          "llamadas_al_llm": 1
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-07",
+        "respuesta": {
+          "excepcion": "cuota agotada (HTTP 429)"
+        },
+        "esperado": {
+          "resultado": "@respuesta_por_defecto",
+          "excepcion_propagada": false,
+          "llamadas_al_llm": 1
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-08",
+        "respuesta": {
+          "sentiment": {
+            "type": "mixto",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "sentiment": "neutral"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-09",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "comentario_general",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "otro"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-10",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "spam",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "otro"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-11",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "pregunta_tecnica",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "pregunta_tecnica"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-18",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "duda_tecnica",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "pregunta_tecnica"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-19",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "pregunta_general",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "category": "otro"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-12",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.6,
+            "is_marketing_worthy": false
+          }
+        },
+        "esperado": {
+          "is_marketing_worthy": true
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-13",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.59,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "is_marketing_worthy": false
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-14",
+        "respuesta": [
+          {
+            "sentiment": {
+              "type": "positivo",
+              "score": 0.9,
+              "reasoning": "Celebra un logro."
+            },
+            "categorization": {
+              "category": "testimonio",
+              "topics": [
+                "empleo",
+                "portafolio"
+              ],
+              "entities": [
+                "LangChain"
+              ]
+            },
+            "relevance": {
+              "score": 1.3,
+              "is_marketing_worthy": true
+            }
+          },
+          {
+            "sentiment": {
+              "type": "positivo",
+              "score": 0.9,
+              "reasoning": "Celebra un logro."
+            },
+            "categorization": {
+              "category": "testimonio",
+              "topics": [
+                "empleo",
+                "portafolio"
+              ],
+              "entities": [
+                "LangChain"
+              ]
+            },
+            "relevance": {
+              "score": -0.2,
+              "is_marketing_worthy": true
+            }
+          }
+        ],
+        "esperado": [
+          {
+            "score": 1.0,
+            "is_marketing_worthy": true
+          },
+          {
+            "score": 0.0,
+            "is_marketing_worthy": false
+          }
+        ],
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-15",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.9,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.9,
+            "is_marketing_worthy": false
+          }
+        },
+        "esperado": {
+          "is_marketing_worthy": true
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-16",
+        "entrada_texto": [
+          "",
+          "   "
+        ],
+        "esperado": {
+          "llamadas_al_llm": 0,
+          "resultado": "@respuesta_por_defecto"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "ANL-17",
+        "esperado": {
+          "resultados": 3,
+          "ids_en_orden": [
+            "m1",
+            "m2",
+            "m3"
+          ],
+          "el_2o": {
+            "category": "otro",
+            "is_marketing_worthy": false
+          }
+        },
+        "estado": "ESPECIFICADO",
+        "lote": {
+          "mensajes": [
+            "m1",
+            "m2",
+            "m3"
+          ],
+          "falla_en": 2
+        }
+      },
+      {
+        "id": "ANL-20",
+        "respuesta": {
+          "sentiment": {
+            "type": "positivo",
+            "score": 0.2,
+            "reasoning": "Celebra un logro."
+          },
+          "categorization": {
+            "category": "testimonio",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ],
+            "entities": [
+              "LangChain"
+            ]
+          },
+          "relevance": {
+            "score": 0.85,
+            "is_marketing_worthy": true
+          }
+        },
+        "esperado": {
+          "sentiment": "positivo",
+          "score": 0.2
+        },
+        "nota": "El score es la confianza de la etiqueta: un score bajo no cambia la polaridad (O-08).",
+        "estado": "ESPECIFICADO"
+      }
+    ],
+    "respuesta_por_defecto": {
+      "_estado": "ESPECIFICADO (implementado asi en feat/unified-analyzer, 29/9)",
+      "sentiment": {
+        "type": "neutral",
+        "score": 0.5,
+        "reasoning": "fallback"
+      },
+      "categorization": {
+        "category": "otro",
+        "topics": [],
+        "entities": []
+      },
+      "relevance": {
+        "score": 0.0,
+        "is_marketing_worthy": false
+      }
+    }
+  },
+  "casos_decision": {
+    "_nota": "Entrada: category y sentiment vienen del analisis; tipo es el campo de entrada del contrato; recurrente indica si el tema aparece 2+ veces (RecurringTopicsDetector). Orden de evaluacion propuesto: R1, R2, R3 (la primera que aplica gana).",
+    "reglas": {
+      "R1": "testimonio + positivo + relevancia >= 0.6 -> action=publicar, asset_type=linkedin",
+      "R2": "pregunta_tecnica (duda tecnica / pregunta frecuente) -> action=crear_faq, asset_type=faq",
+      "R3": "neutral o relevancia < 0.6 -> action=descartar"
+    },
+    "casos": [
+      {
+        "id": "DEC-01",
+        "regla": "R1",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "testimonio",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-02",
+        "regla": "R1",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "testimonio",
+          "sentiment": "positivo",
+          "relevance_score": 0.6,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-03",
+        "regla": "R3",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "testimonio",
+          "sentiment": "positivo",
+          "relevance_score": 0.59,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-04",
+        "regla": "R3",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "testimonio",
+          "sentiment": "neutral",
+          "relevance_score": 0.9,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-05",
+        "regla": "R2",
+        "entrada": {
+          "category": "pregunta_tecnica",
+          "tipo": "pregunta_tecnica",
+          "sentiment": "neutral",
+          "relevance_score": 0.4,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "crear_faq",
+          "asset_type": "faq"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-06",
+        "regla": "R2",
+        "entrada": {
+          "category": "pregunta_tecnica",
+          "tipo": "pregunta_tecnica",
+          "sentiment": "neutral",
+          "relevance_score": 0.7,
+          "recurrente": true
+        },
+        "esperado": {
+          "action": "crear_faq",
+          "asset_type": "faq"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-07",
+        "regla": "R3",
+        "entrada": {
+          "category": "otro",
+          "tipo": "otro",
+          "sentiment": "neutral",
+          "relevance_score": 0.5,
+          "recurrente": true
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null,
+          "nota": "La recurrencia sola no genera FAQ si no es pregunta_tecnica (D-A, D-D)"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-08",
+        "regla": "R3",
+        "entrada": {
+          "category": "otro",
+          "tipo": "otro",
+          "sentiment": "neutral",
+          "relevance_score": 0.5,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-09",
+        "regla": "sin regla",
+        "entrada": {
+          "category": "feedback",
+          "tipo": "feedback",
+          "sentiment": "negativo",
+          "relevance_score": 0.8,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null,
+          "reason_contiene": "sin regla"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-10",
+        "regla": "sin regla",
+        "entrada": {
+          "category": "feedback",
+          "tipo": "feedback",
+          "sentiment": "positivo",
+          "relevance_score": 0.75,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null,
+          "reason_contiene": "sin regla"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-11",
+        "regla": "R3",
+        "entrada": {
+          "category": "discusion",
+          "tipo": "discusion",
+          "sentiment": "neutral",
+          "relevance_score": 0.2,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-12",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "pregunta_tecnica",
+          "sentiment": "positivo",
+          "relevance_score": 0.9,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "crear_faq",
+          "asset_type": "faq",
+          "reason_contiene": "discrepancia",
+          "nota": "La accion esta especificada (O-05); mencionar la discrepancia en reason es una propuesta."
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-13",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "otro",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-14",
+        "regla": "defensiva",
+        "entrada": {
+          "category": null,
+          "tipo": "otro",
+          "sentiment": null,
+          "relevance_score": null,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "descartar",
+          "asset_type": null,
+          "reason_contiene": "análisis incompleto"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-18",
+        "regla": "D-E",
+        "entrada": {
+          "category": "logro",
+          "tipo": "otro",
+          "sentiment": "positivo",
+          "relevance_score": 0.8,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "DEC-19",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "tipo vacio: manda la category del analisis"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-20",
+        "regla": "D-B",
+        "entrada": {
+          "category": "testimonio",
+          "tipo": "comentario_general",
+          "sentiment": "positivo",
+          "relevance_score": 0.85,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "tipo que la ingesta de Mastodon emite hoy para casi todos los mensajes"
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "DEC-21",
+        "regla": "D-B",
+        "entrada": {
+          "category": "otro",
+          "tipo": "testimonio",
+          "sentiment": "positivo",
+          "relevance_score": 0.9,
+          "recurrente": false
+        },
+        "esperado": {
+          "action": "publicar",
+          "asset_type": "linkedin",
+          "nota": "El tipo explicito y reconocido prevalece sobre el analisis; si la ingesta se equivoca, el error llega al motor (O-16)."
+        },
+        "estado": "ESPECIFICADO"
+      }
+    ]
+  },
+  "casos_riesgo": {
+    "_alcance": "FUERA_DE_ALCANCE: HU-S2-006 se quito del MVP el 28/9 (si hay tiempo). Todos los casos RSK quedan en ese estado.",
+    "_nota": "historial va de mas antiguo a mas reciente (sentimiento de cada mensaje del miembro). Umbrales PROPUESTOS (Elias confirma): ventana = ultimos 5 mensajes; negativos en ventana: 0-1 sin alerta, 2 bajo, 3 medio, 4+ alto.",
+    "casos": [
+      {
+        "id": "RSK-01",
+        "miembros": {
+          "Sofía Herrera": []
+        },
+        "esperado": {
+          "alertas": []
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-02",
+        "miembros": {
+          "Sofía Herrera": [
+            "positivo",
+            "neutral",
+            "positivo",
+            "negativo",
+            "positivo"
+          ]
+        },
+        "esperado": {
+          "alertas": []
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-03",
+        "miembros": {
+          "Sofía Herrera": [
+            "positivo",
+            "negativo",
+            "neutral",
+            "negativo",
+            "positivo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "bajo"
+            }
+          ]
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-04",
+        "miembros": {
+          "Sofía Herrera": [
+            "negativo",
+            "positivo",
+            "negativo",
+            "neutral",
+            "negativo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "medio"
+            }
+          ]
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-05",
+        "miembros": {
+          "Sofía Herrera": [
+            "negativo",
+            "negativo",
+            "positivo",
+            "negativo",
+            "negativo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "alto"
+            }
+          ],
+          "razones": "menciona 4 mensajes negativos de los ultimos 5"
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-06",
+        "miembros": {
+          "Sofía Herrera": [
+            "neutral",
+            "neutral",
+            "neutral",
+            "neutral",
+            "negativo"
+          ]
+        },
+        "esperado": {
+          "alertas": []
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-07",
+        "miembros": {
+          "Sofía Herrera": [
+            "negativo",
+            "negativo",
+            "negativo",
+            "positivo",
+            "positivo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "medio"
+            }
+          ],
+          "nota": "Una mejora reciente no baja el nivel (propuesta; Elias decide)."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-08",
+        "miembros": {
+          "Andrés Molina": [
+            "negativo",
+            "negativo",
+            "negativo"
+          ],
+          "Lucía Benítez": [
+            "positivo",
+            "positivo",
+            "neutral"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Andrés Molina",
+              "nivel": "medio"
+            }
+          ]
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-09",
+        "eventos": [
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo"
+          },
+          {
+            "autor": "andrés molina ",
+            "sentiment": "negativo"
+          },
+          {
+            "autor": "ANDRÉS MOLINA",
+            "sentiment": "negativo"
+          }
+        ],
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Andrés Molina",
+              "nivel": "medio"
+            }
+          ],
+          "nota": "Un solo miembro tras normalizar espacios y mayusculas."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-10",
+        "eventos": [
+          {
+            "autor": "",
+            "sentiment": "negativo"
+          },
+          {
+            "autor": "   ",
+            "sentiment": "negativo"
+          },
+          {
+            "autor": "",
+            "sentiment": "negativo"
+          }
+        ],
+        "esperado": {
+          "alertas": [],
+          "excepcion": false
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-11",
+        "eventos": [
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T12:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T10:00:00"
+          }
+        ],
+        "esperado": {
+          "historial_ordenado": [
+            "positivo",
+            "negativo"
+          ],
+          "nota": "Se ordena por timestamp (10:00 antes que 12:00). Con 2 eventos el nivel no cambia; ver RSK-14."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-13",
+        "miembros": {
+          "Sofía Herrera": [
+            "negativo",
+            "negativo",
+            "negativo",
+            "negativo",
+            "positivo",
+            "positivo",
+            "positivo"
+          ]
+        },
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Sofía Herrera",
+              "nivel": "bajo"
+            }
+          ],
+          "nota": "Solo cuenta la ventana de los ultimos 5: [negativo, negativo, positivo, positivo, positivo] = 2 negativos."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      },
+      {
+        "id": "RSK-14",
+        "eventos": [
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T15:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T14:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "negativo",
+            "timestamp": "2026-09-28T13:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T12:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T11:00:00"
+          },
+          {
+            "autor": "Andrés Molina",
+            "sentiment": "positivo",
+            "timestamp": "2026-09-28T10:00:00"
+          }
+        ],
+        "esperado": {
+          "alertas": [
+            {
+              "miembro": "Andrés Molina",
+              "nivel": "medio"
+            }
+          ],
+          "nota": "Por timestamp la ventana es [pos, pos, neg, neg, neg] = 3 negativos (medio); por orden de llegada seria [neg, neg, pos, pos, pos] = 2 negativos (bajo). El orden cambia el nivel."
+        },
+        "estado": "FUERA_DE_ALCANCE"
+      }
+    ]
+  },
+  "casos_recurrentes": {
+    "_nota": "Se ejecutaron contra RecurringTopicsDetector (main @ e452c0b tras el merge del PR #64, y la rama de seguimiento feat/recurring-topics @ c8fb3d1; ambas dan el mismo resultado); el resultado observado esta en el documento, no aqui.",
+    "casos": [
+      {
+        "id": "REC-01",
+        "mensajes": [
+          "No recuerdo mi contraseña",
+          "Olvidé la contraseña de mi cuenta",
+          "¿Cómo reseteo la contraseña?"
+        ],
+        "esperado": [
+          {
+            "tema": "contraseña",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": "REC-02",
+        "mensajes": [
+          "¿Cómo instalo Docker en Windows?"
+        ],
+        "esperado": []
+      },
+      {
+        "id": "REC-03",
+        "mensajes": [
+          "Error con docker al iniciar",
+          "docker no arranca",
+          "docker falla siempre",
+          "Error de git al hacer push",
+          "git rechaza mi push"
+        ],
+        "esperado": [
+          {
+            "tema": "docker",
+            "count": 3
+          },
+          {
+            "tema": "git",
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": "REC-04",
+        "mensajes": [],
+        "esperado": []
+      },
+      {
+        "id": "REC-05",
+        "mensajes": [
+          "¿Cómo puedo hacer esto?",
+          "Quiero ayuda para esto"
+        ],
+        "esperado": []
+      },
+      {
+        "id": "REC-06",
+        "mensajes": [
+          "Docker no inicia",
+          "DOCKER da error",
+          "docker se cierra"
+        ],
+        "esperado": [
+          {
+            "tema": "docker",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": "REC-07",
+        "mensajes": [
+          "Olvidé mi contraseña",
+          "Olvidé mi clave",
+          "Perdí la contraseña"
+        ],
+        "esperado": [
+          {
+            "tema": "contraseña",
+            "count": 2
+          }
+        ],
+        "nota": "El tema debe ser un sustantivo del dominio, no un verbo suelto."
+      },
+      {
+        "id": "REC-08",
+        "mensajes": [
+          "¿Cómo recupero mi cuenta?",
+          "No puedo entrar a mi cuenta",
+          "Mi cuenta fue bloqueada"
+        ],
+        "esperado": [
+          {
+            "tema": "cuenta",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": "REC-09",
+        "mensajes": [
+          "How do I install python packages?",
+          "How can I use pip with venv?",
+          "How to run python tests?"
+        ],
+        "esperado": [],
+        "nota": "Tres preguntas distintas: 'how' no es un tema."
+      },
+      {
+        "id": "REC-10",
+        "mensajes": [
+          "docker falla",
+          "docker lento"
+        ],
+        "esperado": {
+          "min_occurrences=2": [
+            {
+              "tema": "docker",
+              "count": 2
+            }
+          ],
+          "min_occurrences=3": []
+        }
+      },
+      {
+        "id": "REC-11",
+        "mensajes": [],
+        "min_occurrences": 1,
+        "esperado": "ValueError"
+      },
+      {
+        "id": "REC-12",
+        "mensajes": [
+          "¿Cómo puedo cambiar mi contraseña?",
+          "¿Dónde puedo cambiar la contraseña?"
+        ],
+        "esperado": {
+          "atributos": [
+            "topic",
+            "count",
+            "examples",
+            "faq_title"
+          ],
+          "faq_title": "Preguntas frecuentes sobre contraseña",
+          "ejemplos": 2
+        }
+      },
+      {
+        "id": "REC-13",
+        "mensajes": [
+          {
+            "texto": "docker falla"
+          },
+          null
+        ],
+        "esperado": "TypeError",
+        "nota": "Comportamiento PROPUESTO (Yis decide): fallar rapido con un TypeError claro en lugar de AttributeError.",
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "REC-14",
+        "mensajes": [
+          "docker falla",
+          "docker lento",
+          "git falla",
+          "git lento"
+        ],
+        "esperado": [
+          {
+            "tema": "docker",
+            "count": 2
+          },
+          {
+            "tema": "git",
+            "count": 2
+          }
+        ],
+        "nota": "Con empate el orden debe ser estable."
+      },
+      {
+        "id": "REC-15",
+        "topics_por_mensaje": [
+          [
+            "docker"
+          ],
+          [
+            "docker",
+            "error"
+          ],
+          [
+            "git"
+          ]
+        ],
+        "esperado": [
+          {
+            "tema": "docker",
+            "count": 2
+          }
+        ],
+        "nota": "Anticipa el follow-up #75: el detector consume los topics del analisis unificado en lugar de extraer el tema del texto.",
+        "estado": "PROPUESTO"
+      }
+    ],
+    "_convencion_de_tema": "Tema = sustantivo del dominio. Las palabras funcionales (stopwords) no son temas; el lexico vive en el codigo del detector. Tras el follow-up #75 los temas vendran de los topics del analisis."
+  },
+  "casos_pipeline": {
+    "_nota": "Cobertura a nivel pipeline (ficha #53 / HU-S3-005). Rox decidio que el lote lo itera el pipeline. Verificado el 30/9 sobre PR #73 @ 9530f90.",
+    "casos": [
+      {
+        "id": "PIP-01",
+        "descripcion": "Lote de 3 mensajes (m1, m2, m3); el analizador falla en el 2.o (ver ANL-17)",
+        "esperado": {
+          "total_interacciones_procesadas": 3,
+          "el_pipeline_no_aborta": true
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-02",
+        "descripcion": "Resumen con 4 analisis",
+        "analisis": [
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "empleo",
+              "portafolio"
+            ]
+          },
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "empleo"
+            ]
+          },
+          {
+            "sentiment": "negativo",
+            "topics": [
+              "error"
+            ]
+          },
+          {
+            "sentiment": "neutral",
+            "topics": []
+          }
+        ],
+        "esperado": {
+          "total_interacciones_procesadas": 4,
+          "sentimiento_predominante": "positivo",
+          "temas_principales": [
+            "empleo",
+            "error",
+            "portafolio"
+          ]
+        },
+        "nota": "temas_principales es la union ordenada alfabeticamente de todos los topics, sin ranking ni limite (O-17).",
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-03",
+        "descripcion": "Empate de sentimientos",
+        "analisis": [
+          {
+            "sentiment": "positivo",
+            "topics": [
+              "a"
+            ]
+          },
+          {
+            "sentiment": "negativo",
+            "topics": [
+              "b"
+            ]
+          }
+        ],
+        "esperado": {
+          "sentimiento_predominante": "positivo",
+          "nota": "Desempate por primera aparicion"
+        },
+        "estado": "PROPUESTO"
+      },
+      {
+        "id": "PIP-04",
+        "descripcion": "Lote vacio",
+        "analisis": [],
+        "esperado": {
+          "total_interacciones_procesadas": 0,
+          "sentimiento_predominante": "neutral",
+          "temas_principales": []
+        },
+        "estado": "ESPECIFICADO"
+      },
+      {
+        "id": "PIP-05",
+        "descripcion": "Dataset de demo: 3 ejemplos de transformacion (requisito R6 del jurado)",
+        "fuente": "data/sample/demo_fixed.json (PR #77, feat/demo-dataset): se referencia, no se copia",
+        "interacciones": 12,
+        "transformaciones_R6": [
+          {
+            "autor": "Mariana Souza",
+            "tipo": "testimonio",
+            "esperado": {
+              "action": "publicar",
+              "asset_type": "linkedin"
+            }
+          },
+          {
+            "autor": "Lucas Albuquerque",
+            "tipo": "pregunta_tecnica",
+            "esperado": {
+              "action": "crear_faq",
+              "asset_type": "faq"
+            }
+          },
+          {
+            "autor": "Pedro Núñez",
+            "tipo": "otro",
+            "esperado": {
+              "action": "descartar",
+              "asset_type": null
+            }
+          }
+        ],
+        "esperado": {
+          "total_interacciones_procesadas": 12,
+          "post_linkedin": "no nulo",
+          "sugerencia_contenido_faq": "no nulo"
+        },
+        "nota": "La salida del contrato tiene un solo post_linkedin y una sola sugerencia de FAQ: los 3 ejemplos son 3 transformaciones distintas, no 3 posts en una salida.",
+        "verificado": "Con el pipeline de #73 y backend rule_based: 12 interacciones, post_linkedin y FAQ presentes (el motor de decisiones aun es un stub por tipo).",
+        "estado": "ESPECIFICADO"
+      }
+    ]
+  }
+}
