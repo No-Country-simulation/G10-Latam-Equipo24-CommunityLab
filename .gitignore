@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 venv/
+.venv/
 env/
 *.env
 
@@ -33,4 +34,6 @@ data/processed/*
 # Environment
 .env
 .env.local
+
 opencode.json
+/secrets
