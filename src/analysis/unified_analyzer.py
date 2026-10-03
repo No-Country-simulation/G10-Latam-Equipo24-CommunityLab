@@ -14,6 +14,7 @@ Design decisions (agreed with the QA matrix #48):
 """
 import json
 import logging
+import math
 import re
 import unicodedata
 from typing import Any, Dict, List, Optional
@@ -243,8 +244,18 @@ class GeminiUnifiedAnalyzer:
 
     @staticmethod
     def _clamp(value: Any) -> float:
+        """Clamps to [0.0, 1.0], failing closed on non-finite input.
+
+        `json.loads` accepts the non-standard literals `NaN`, `Infinity` and
+        `-Infinity`, so a malformed LLM answer can carry them. Comparisons with
+        NaN are always False, which means `max(0.0, min(1.0, nan))` returns
+        1.0 -- amplifying an invalid score into "marketing worthy". Rejecting
+        non-finite values here keeps the failure direction downward.
+        """
         try:
             num = float(value)
         except (TypeError, ValueError):
+            return 0.0
+        if not math.isfinite(num):
             return 0.0
         return max(0.0, min(1.0, num))
