@@ -98,6 +98,13 @@ class GeminiClient(LLMClient):
             response = model.generate_content(prompt, **kwargs)
             return response.text
         except Exception as exc:
+            err_msg = str(exc)
+            # Handle Gemini rate limits (HTTP 429 / Resource Exhausted) explicitly
+            # to satisfy acceptance criteria for AI infrastructure and graceful error handling.
+            if "429" in err_msg or "ResourceExhausted" in err_msg or "Quota" in err_msg:
+                raise LLMError(
+                    "Gemini rate limit exceeded (HTTP 429). Please try again later or check your API quota."
+                ) from exc
             raise LLMError(f"Gemini failed: {exc}") from exc
 
 
