@@ -5,6 +5,8 @@ Case IDs (ANL-xx) follow the QA matrix in docs/pruebas/analisis-decisiones.md.
 """
 import json
 
+import pytest
+
 from src.analysis.unified_analyzer import GeminiUnifiedAnalyzer
 from src.domain.models import InputMessage, SentimentType
 from src.utils.llm import LLMError
@@ -165,6 +167,30 @@ def test_clamps_out_of_range_scores():
     result = analyzer.analyze(_msg())
     assert result.relevance.score == 1.0
     assert result.sentiment.score == 0.0
+
+
+# ANL-21: non-finite scores (NaN/Infinity) fail closed instead of becoming 1.0.
+# `json.loads` accepts these non-standard literals, and NaN comparisons are
+# always False, so `max(0.0, min(1.0, nan))` would yield 1.0 -- turning an
+# invalid score into "marketing worthy".
+@pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+def test_non_finite_scores_fail_closed(literal):
+    raw = '{"relevance": {"score": %s}, "sentiment": {"score": %s}}' % (literal, literal)
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient(raw))
+    result = analyzer.analyze(_msg())
+    assert result.relevance.score == 0.0
+    assert result.relevance.is_marketing_worthy is False
+    assert result.sentiment.score == 0.0
+
+
+# ANL-22: a finite score in range is unaffected by the non-finite guard.
+def test_finite_score_unaffected_by_non_finite_guard():
+    data = {"relevance": {"score": 0.9}, "sentiment": {"score": 0.9}}
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data)))
+    result = analyzer.analyze(_msg())
+    assert result.relevance.score == 0.9
+    assert result.relevance.is_marketing_worthy is True
+    assert result.sentiment.score == 0.9
 
 
 # ANL-16: empty/whitespace text skips the LLM call entirely
