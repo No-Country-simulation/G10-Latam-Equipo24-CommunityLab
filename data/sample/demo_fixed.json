@@ -1,0 +1,78 @@
+{
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacciones": [
+    {
+      "autor": "Mariana Souza",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Comunidad, quedé seleccionada para el puesto de Desarrolladora Junior de IA! El proyecto del curso de LangChain y OCI que construí en mi portfolio marcó toda la diferencia en la entrevista técnica. Muy agradecida con la comunidad por todo el apoyo!"
+    },
+    {
+      "autor": "Carlos Mendes",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Después de ocho meses estudiando en ONE, hoy firmé contrato como Desarrollador Backend Junior. La API con OCI Object Storage que armé para el portfolio fue lo que más le gustó al recruiter. ¡Gracias a todos los que me dieron feedback en el canal!"
+    },
+    {
+      "autor": "Ana Rodríguez",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Acabo de aprobar la certificación Oracle Cloud Infrastructure Foundations. Los apuntes y los simulacros que compartieron acá me salvaron. ¡Próxima parada: la certificación de IA!"
+    },
+    {
+      "autor": "Javier Prado",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "No lo puedo creer, conseguí mi primera pasantía como Data Analyst. El dashboard que hice en el proyecto final fue decisivo en la entrevista. Sin esta comunidad no llegaba ni a la mitad."
+    },
+    {
+      "autor": "Lucía Fernández",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Me ascendieron a líder técnica del equipo. El proyecto de LangChain que presenté acá para recibir feedback fue clave para demostrar lo que sabía. ¡Gracias por las devoluciones!"
+    },
+    {
+      "autor": "Diego Herrera",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Tercer mes de búsqueda y por fin se dio: quedé en una startup como DevOps. Todo lo de OCI y automatización que aprendí en el curso me sirvió para pasar la prueba técnica de una."
+    },
+    {
+      "autor": "Lucas Albuquerque",
+      "canal": "#dudas-langgraph",
+      "tipo": "pregunta_tecnica",
+      "texto": "Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de router?"
+    },
+    {
+      "autor": "Sofía Lima",
+      "canal": "#dudas-langgraph",
+      "tipo": "pregunta_tecnica",
+      "texto": "¿Alguien me puede explicar cómo se manejan los reintentos en LangGraph? No entiendo bien cuándo usar nodos condicionales con un router para reintentar la llamada al modelo."
+    },
+    {
+      "autor": "Miguel Torres",
+      "canal": "#dudas-oci",
+      "tipo": "pregunta_tecnica",
+      "texto": "Estoy configurando el SDK de OCI en Python y no me reconoce la API key. ¿Alguien sabe cómo apuntar al archivo de configuración correctamente?"
+    },
+    {
+      "autor": "Valeria Ríos",
+      "canal": "#dudas-oci",
+      "tipo": "pregunta_tecnica",
+      "texto": "Me tira error al autenticar con el SDK de OCI. Ya puse las credenciales en el config pero sigue sin funcionar, ¿alguien tuvo el mismo problema y lo pudo resolver?"
+    },
+    {
+      "autor": "Pedro Núñez",
+      "canal": "#general",
+      "tipo": "otro",
+      "texto": "¿Alguien vio el webinar de ayer sobre IA generativa? Estuvo muy bueno, recomendado."
+    },
+    {
+      "autor": "Camila Vega",
+      "canal": "#general",
+      "tipo": "otro",
+      "texto": "Buen día a todos, ¿cómo van con el sprint? Mucha energía para esta semana."
+    }
+  ]
+}
