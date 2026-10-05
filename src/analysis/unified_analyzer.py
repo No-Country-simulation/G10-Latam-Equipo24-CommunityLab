@@ -29,6 +29,7 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
 )
+from src.prompts.templates import build_analysis_prompt
 from src.utils.llm import LLMError, get_llm_client
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ class GeminiUnifiedAnalyzer:
             return self._default(message)
 
         try:
-            raw = self.client.generate(self._build_prompt(message))
+            raw = self.client.generate(build_analysis_prompt(message))
             data = self._parse_json(raw)
             return self._to_analysis(message, data)
         except (
@@ -101,31 +102,6 @@ class GeminiUnifiedAnalyzer:
         has the same length and order as the input.
         """
         return [self.analyze(message) for message in messages]
-
-    # ------------------------------------------------------------------
-    # Prompt
-    # ------------------------------------------------------------------
-
-    def _build_prompt(self, message: InputMessage) -> str:
-        """Builds the structured prompt.
-
-        TODO(HU-S2-008): move this template to src/prompts/templates.py so all
-        modules share one prompt contract.
-        """
-        return (
-            "Analizá el siguiente mensaje de una comunidad técnica y respondé "
-            "ÚNICAMENTE con un JSON válido, sin markdown ni texto extra.\n\n"
-            "Estructura exacta esperada:\n"
-            '{\n'
-            '  "sentiment": {"type": "positivo|negativo|neutral", '
-            '"score": <confianza 0.0-1.0>, "reasoning": "..."},\n'
-            '  "categorization": {"category": "testimonio|pregunta_tecnica|'
-            'feedback|logro|discusion|otro", "topics": ["..."], '
-            '"entities": ["..."]},\n'
-            '  "relevance": {"score": <0.0-1.0>, "is_marketing_worthy": true|false}\n'
-            '}\n\n'
-            f"Mensaje:\n<mensaje>\n{message.texto}\n</mensaje>\n"
-        )
 
     # ------------------------------------------------------------------
     # Parsing / mapping
