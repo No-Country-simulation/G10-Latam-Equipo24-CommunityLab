@@ -679,31 +679,24 @@ El sistema debe generar este formato:
 
 ---
 
-### FICHA HU-S3-004
-**Título:** Generador de testimonios
-**Como:** community manager
-**Quiero:** formatear testimonios de usuarios para redes sociales
-**Para qué:** compartir experiencias reales
+### FICHA HU-S3-004 — 🔀 FUSIONADA en HU-S3-001
 
-**Sprint:** 3 | **Epic:** Generadores | **Priority:** 🟡 Media | **Story Points:** 5
-**Due:** @Yis-ai-eng
-**Labels:** feat, epic:generators, priority:media
+**Título:** Generador de testimonios
+**Estado:** fusionada en `HU-S3-001` (LinkedInGenerator)
+
+**Motivo:** el "testimonio" no es un activo de salida separado en el contrato
+(`DistributionAssets` tiene 3: `post_linkedin`, `destaque_newsletter_semanal`,
+`sugerencia_contenido_faq`). El testimonio se materializa como `post_linkedin`
+(caso de Mariana en el PDF). El formato corto "Nombre → Contexto → Logro →
+Recomendación" queda como **variante de prompt** dentro de `LinkedInGenerator`.
 
 **Criterios de aceptación:**
-- [ ] Clase `TestimonialGenerator` implementada
-- [ ] Formato: Nombre → Contexto → Logro → Recomendación
-- [ ] Tono auténtico e inspirador
-- [ ] 50-150 palabras
+- [x] `testimonio`/`logro` positivo → `LinkedInGenerator` + `NewsletterGenerator`
+- [x] Variante de prompt en `src/prompts/generators.py` (no un generador aparte)
+- [x] `src/generators/testimonial.py` NO se crea
 
-**Tareas técnicas:**
-- [ ] Crear `src/generators/testimonial.py`
-- [ ] Crear prompt de testimonio
-- [ ] Tests en `tests/test_testimonial.py`
-
-**Descripción técnica:**
-- **Qué hacer:** Crear el generador de testimonios formateados
-- **Qué funciona:** Formatea experiencias positivas como testimonios
-- **Dónde:** `src/generators/testimonial.py`
+**Nota — testimonios negativos:** no generan activo de marketing. Se resuelven
+con `ActionType.DERIVAR` (ruta a humano), pendiente en el motor (#84).
 
 ---
 
