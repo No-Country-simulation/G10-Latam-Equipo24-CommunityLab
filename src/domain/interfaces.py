@@ -2,10 +2,10 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
 from src.domain.models import (
-    InputMessage,
-    SentimentResult,
     CategorizationResult,
+    InputMessage,
     RelevanceResult,
+    SentimentResult,
 )
 
 

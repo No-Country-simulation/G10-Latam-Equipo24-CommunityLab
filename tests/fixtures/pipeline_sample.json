@@ -1,0 +1,66 @@
+{
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_05",
+  "interacciones": [
+    {
+      "autor": "Mariana Souza",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Consegui mi primer empleo como Desarrolladora Junior gracias al proyecto de LangChain del curso."
+    },
+    {
+      "autor": "Lucas Albuquerque",
+      "canal": "#certificaciones",
+      "tipo": "testimonio",
+      "texto": "Aprobe la certificacion de Oracle Cloud y me abrio una puerta nueva."
+    },
+    {
+      "autor": "Carla Mendez",
+      "canal": "#logros-y-empleos",
+      "tipo": "testimonio",
+      "texto": "Termine el proyecto final y lo sume a mi portfolio, ya tengo entrevistas."
+    },
+    {
+      "autor": "Diego Rios",
+      "canal": "#comunidad",
+      "tipo": "testimonio",
+      "texto": "Gracias a la comunidad encontre una mentoria que me destrabo el camino."
+    },
+    {
+      "autor": "Lucas Albuquerque",
+      "canal": "#dudas-langgraph",
+      "tipo": "pregunta_tecnica",
+      "texto": "Como estructuro los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento?"
+    },
+    {
+      "autor": "Ana Torres",
+      "canal": "#dudas-oci",
+      "tipo": "pregunta_tecnica",
+      "texto": "Me da error al conectar con OCI Object Storage, alguien sabe como configurar el bucket?"
+    },
+    {
+      "autor": "Pedro Silva",
+      "canal": "#dudas-general",
+      "tipo": "pregunta_tecnica",
+      "texto": "No funciona el retry del ingest de Mastodon, tira error 429."
+    },
+    {
+      "autor": "Luis Romero",
+      "canal": "#general",
+      "tipo": "otro",
+      "texto": "Buenos dias a todos, por aca arrancando la semana."
+    },
+    {
+      "autor": "Sofia Perez",
+      "canal": "#general",
+      "tipo": "otro",
+      "texto": "Gracias por la info que compartieron ayer."
+    },
+    {
+      "autor": "Jorge Diaz",
+      "canal": "#feedback",
+      "tipo": "feedback",
+      "texto": "El taller del lunes estuvo bueno, me gustaria que haya mas ejemplos practicos."
+    }
+  ]
+}
