@@ -60,6 +60,7 @@ def test_suggests_faq_title():
 
     assert results[0].faq_title == "Preguntas frecuentes sobre contraseña"
 
+
 def test_topics_are_sorted_by_frequency():
     detector = RecurringTopicsDetector()
 
@@ -89,6 +90,7 @@ def test_minimum_occurrences_can_be_configured():
 
     assert results == []
 
+
 def test_groups_singular_and_plural_topics():
     detector = RecurringTopicsDetector()
     messages = [
@@ -101,6 +103,7 @@ def test_groups_singular_and_plural_topics():
     assert len(results) == 1
     assert results[0].topic == "contraseña"
     assert results[0].count == 2
+
 
 def test_rejects_min_occurrences_below_two():
     with pytest.raises(ValueError):
@@ -115,3 +118,49 @@ def test_returns_empty_for_stopwords_only_message():
 def test_returns_empty_for_empty_message_list():
     detector = RecurringTopicsDetector()
     assert detector.detect([]) == []
+
+
+@pytest.mark.parametrize("a,b", [
+    ("mensaje", "mensajes"),
+    ("clave", "claves"),
+    ("notificación", "notificaciones"),
+    ("error", "errores"),
+    ("papel", "papeles"),
+])
+def test_groups_plural_variants(a, b):
+    detector = RecurringTopicsDetector()
+    results = detector.detect([a, b])
+
+    assert len(results) == 1
+    assert results[0].count == 2
+
+
+@pytest.mark.parametrize("a,b", [
+    ("serie", "series"),
+    ("reloj", "relojes"),
+    ("servidor", "servidores"),
+    ("panel", "paneles"),
+])
+def test_es_plurals_do_not_break_s_plurals_of_e_singulars(a, b):
+    """Regression guard for the ambiguous Spanish "-es" plural.
+
+    Both "serie"/"series" and "servidor"/"servidores" end in "es", but the
+    first strips only the "s" and the second strips "es". A naive suffix rule
+    that handles one breaks the other.
+    """
+    detector = RecurringTopicsDetector()
+    results = detector.detect([a, b])
+
+    assert len(results) == 1
+    assert results[0].count == 2
+
+
+def test_every_es_plural_entry_groups_with_its_singular():
+    """Guards every entry of _ES_PLURALS, not just the parametrized ones."""
+    detector = RecurringTopicsDetector()
+
+    for plural, singular in detector._ES_PLURALS.items():
+        results = detector.detect([singular, plural])
+
+        assert len(results) == 1, f"{singular}/{plural} produced {len(results)} topics"
+        assert results[0].count == 2, f"{singular}/{plural} did not group"
