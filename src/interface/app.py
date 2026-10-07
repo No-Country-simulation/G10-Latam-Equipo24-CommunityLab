@@ -1,4 +1,6 @@
+import json
 import tempfile
+from datetime import date
 from pathlib import Path
 
 import streamlit as st
@@ -172,6 +174,18 @@ def main():
                     f"{approved_count} activos aprobados en esta sesión. "
                     "El pipeline todavía no los ha guardado en OCI."
                 )
+
+        approved_payload = {
+            key: value for key, value in payload_to_save.items() if value and value.strip()
+        }
+        st.download_button(
+            "Descargar activos aprobados (JSON)",
+            data=json.dumps(approved_payload, ensure_ascii=False, indent=2).encode("utf-8"),
+            file_name=f"activos-aprobados-{date.today()}.json",
+            mime="application/json",
+            disabled=not approved_payload,
+            width="stretch",
+        )
 
 
 if __name__ == "__main__":

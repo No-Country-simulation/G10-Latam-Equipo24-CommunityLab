@@ -52,13 +52,134 @@ class RuleBasedClient(LLMClient):
     """Deterministic backend that simulates the LLM with simple rules.
 
     It never calls an API and always returns the same result for the same
-    prompt, which makes it ideal for tests and CI. The result is NOT a real
-    analysis: it is a placeholder so the pipeline can run end-to-end without
-    credentials. When real rules are implemented, this method returns the
-    correct simulated result.
+    prompt, which makes it ideal for tests and CI. The result is contract-shaped
+    JSON for supported prompt types, or a safe fallback otherwise.
     """
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
+        if not prompt:
+            return json.dumps(
+                {
+                    "simulado": True,
+                    "nota": "rule_based response (no real LLM)",
+                },
+                ensure_ascii=False,
+            )
+
+        prompt_lower = prompt.lower()
+
+        # Analysis prompt (unified analyzer)
+        if "analizá el mensaje de una comunidad técnica" in prompt_lower:
+            text_lower = prompt_lower
+            # Question-like content
+            question_indicators = (
+                "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
+                "no funciona", "problema", "falla", "duda"
+            )
+            has_question = any(ind in text_lower for ind in question_indicators)
+
+            # Achievement/testimonial-like content
+            testimonial_indicators = (
+                "logré", "conseguí", "obtuve", "gracias", "feliz", "orgulloso",
+                "nuevo trabajo", "promoción", "aprobé", "exito", "éxito"
+            )
+            has_testimonial = "!" in text_lower or any(
+                ind in text_lower for ind in testimonial_indicators
+            )
+
+            if has_question and not has_testimonial:
+                payload = {
+                    "sentiment": {
+                        "type": "neutral",
+                        "score": 0.5,
+                        "reasoning": "Deterministic rule: question detected",
+                    },
+                    "categorization": {
+                        "category": "pregunta_tecnica",
+                        "confidence": 0.9,
+                        "topics": ["consulta"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.4},
+                }
+            elif has_testimonial:
+                payload = {
+                    "sentiment": {
+                        "type": "positivo",
+                        "score": 0.9,
+                        "reasoning": "Deterministic rule: achievement detected",
+                    },
+                    "categorization": {
+                        "category": "testimonio",
+                        "confidence": 0.9,
+                        "topics": ["logro"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.8},
+                }
+            else:
+                payload = {
+                    "sentiment": {
+                        "type": "neutral",
+                        "score": 0.5,
+                        "reasoning": "Deterministic rule: discussion default",
+                    },
+                    "categorization": {
+                        "category": "discusion",
+                        "confidence": 0.9,
+                        "topics": ["comunidad"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.3},
+                }
+            # Clamp scores to [0,1]
+            payload["sentiment"]["score"] = max(
+                0.0, min(1.0, float(payload["sentiment"]["score"]))
+            )
+            payload["relevance"]["score"] = max(
+                0.0, min(1.0, float(payload["relevance"]["score"]))
+            )
+            return json.dumps(payload, ensure_ascii=False)
+
+        # LinkedIn generator prompt
+        if "post de linkedin" in prompt_lower:
+            return json.dumps(
+                {
+                    "titulo": "Logro destacado de la comunidad",
+                    "copy": (
+                        "Hoy celebramos un logro que refleja el esfuerzo y la "
+                        "constancia de nuestra comunidad técnica."
+                    ),
+                    "canal_recomendado": "LinkedIn Oficial",
+                    "potencial_engagement": "Medio",
+                },
+                ensure_ascii=False,
+            )
+
+        # Newsletter generator prompt
+        if "destaque de newsletter semanal" in prompt_lower:
+            return json.dumps(
+                {
+                    "seccion": "Logro de la Semana",
+                    "titular": "Logro destacado de la semana",
+                    "resumen": (
+                        "Un integrante de la comunidad alcanzó un hito que "
+                        "inspira a seguir construyendo juntos."
+                    ),
+                },
+                ensure_ascii=False,
+            )
+
+        # FAQ generator prompt
+        if "tema de una faq" in prompt_lower:
+            return json.dumps(
+                {
+                    "tema": "Consulta técnica sobre desarrollo",
+                },
+                ensure_ascii=False,
+            )
+
+        # Unknown prompt - safe fallback
         return json.dumps(
             {
                 "simulado": True,
@@ -140,17 +261,30 @@ class OpenAIClient(LLMClient):
 # ---------------------------------------------------------------------------
 
 class OllamaClient(LLMClient):
-    """Ollama client (local models). No API key or internet needed.
+    """Ollama client with two modes, selected by the presence of a key.
 
-    Requires Ollama running on localhost. Recommended models: llama3.1,
-    mistral, qwen2.5, gemma2. Use the OLLAMA_MODEL env var to pick the model
-    (default: llama3.1).
+    - Local mode (default): no API key needed. Talks to a running `ollama
+      serve` on localhost through the `ollama` package. Model from
+      OLLAMA_MODEL (default: llama3.1).
+    - Cloud mode: set OLLAMA_API_KEY. Uses the OpenAI-compatible endpoint
+      `https://ollama.com/v1` (override with OLLAMA_BASE_URL) with the
+      `openai` SDK — no local server required. The model must be a cloud
+      catalog id (see https://ollama.com/api/tags), e.g. `gemma4:31b`.
     """
+
+    CLOUD_BASE_URL = "https://ollama.com/v1"
 
     def __init__(self, model: Optional[str] = None) -> None:
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1")
+        self.api_key = os.getenv("OLLAMA_API_KEY")
+        self.base_url = os.getenv("OLLAMA_BASE_URL", self.CLOUD_BASE_URL)
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
+        if self.api_key:
+            return self._generate_cloud(prompt, **kwargs)
+        return self._generate_local(prompt, **kwargs)
+
+    def _generate_local(self, prompt: str, **kwargs: Any) -> str:
         try:
             import ollama
         except ImportError as exc:  # pragma: no cover
@@ -169,6 +303,25 @@ class OllamaClient(LLMClient):
             raise LLMError(
                 f"Ollama failed (is `ollama serve` running?): {exc}"
             ) from exc
+
+    def _generate_cloud(self, prompt: str, **kwargs: Any) -> str:
+        try:
+            from openai import OpenAI
+        except ImportError as exc:  # pragma: no cover
+            raise LLMError(
+                "openai is not installed. Run: pip install openai"
+            ) from exc
+
+        try:
+            client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                **kwargs,
+            )
+            return response.choices[0].message.content
+        except Exception as exc:
+            raise LLMError(f"Ollama Cloud failed: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 - **Decidir** automáticamente qué activo generar (LinkedIn, FAQ, newsletter) según el `tipo`.
 - **Generar** los activos de marketing listos para publicar.
 - **Persistir** todo en **OCI Object Storage** (capa Always Free).
+- **Automatizar** el flujo completo en un pipeline único y testeable — objetivo 4 del desafío (n8n / LangChain / LangGraph **o equivalentes**: elegimos pipeline Python pura, ver [arquitectura](docs/arquitectura.md)).
 
 ---
 
@@ -20,17 +21,18 @@
 | Módulo | Estado |
 |---|---|
 | Contrato de datos (modelos) | ✅ Listo |
-| Cliente LLM (Gemini / OpenAI / Ollama / rule_based) | ✅ Listo |
+| Cliente LLM (Gemini / OpenAI / Ollama local+nube / rule_based) | ✅ Listo |
 | Ingesta (loader + normalizer + Mastodon) | ✅ Listo |
 | Detector de dudas recurrentes | ✅ Listo |
-| Análisis unificado (sentimiento/categoría/relevancia) | 🟡 PR #73 (en review) |
-| Motor de decisiones | ❌ Pendiente |
-| Generadores (LinkedIn / newsletter / FAQ) | ❌ Pendiente |
-| OCI Object Storage | 🟡 PR #76 (en review) |
-| Interfaz Streamlit | 🟡 PR #74 (MVP) |
-| Tests | ✅ 72 tests |
+| Análisis unificado (sentimiento/categoría/relevancia) | ✅ Listo |
+| Motor de decisiones | ✅ Listo (reglas + LLM) |
+| Generadores (LinkedIn / newsletter / FAQ) | ✅ PR #86 mergeado |
+| Automatización del flujo (pipeline) | 🟡 Cableado S3-005 en PR #90 (en revisión) |
+| OCI Object Storage | ✅ Listo (cliente + upload en pipeline con fallback local) |
+| Interfaz Streamlit | ✅ Listo (curaduría + edición + descarga de activos) |
+| Tests | ✅ 159 tests |
 
-> Este README describe el **objetivo**. El estado real se rastrea en los issues del repo.
+> Este README describe el **objetivo**. El estado real se rastrea en los issues del repo (#86 y #89 mergeados; el cableado del pipeline viaja en el PR #90).
 
 ---
 
@@ -98,12 +100,13 @@ communitylab/
 │   ├── ingest/             # Loader + normalizer + Mastodon
 │   ├── utils/              # Cliente LLM (gemini/ollama/openai/rule_based)
 │   ├── analysis/           # Análisis unificado (GeminiUnifiedAnalyzer)
-│   ├── decisions/          # Detector de dudas recurrentes (motor de decisiones: pendiente)
-│   ├── generators/         # LinkedIn, newsletter, FAQ (pendiente)
-│   ├── oci/                # Object Storage (en review)
-│   ├── interface/          # Streamlit (MVP)
+│   ├── decisions/          # Motor de decisiones (reglas + LLM)
+│   ├── generators/         # LinkedIn, newsletter, FAQ
+│   ├── oci/                # Object Storage (cliente + fallback local)
+│   ├── interface/          # Streamlit (panel de curaduría)
 │   └── pipeline.py         # Orquestador end-to-end
-├── tests/                  # 72 tests
+├── scripts/run_demo.py     # Runner de demo (online / --offline)
+├── tests/                  # 159 tests
 ├── data/                   # Datos (raw/processed/sample)
 ├── docs/                   # Documentación
 └── README.md
@@ -138,7 +141,17 @@ GEMINI_API_KEY=...
 python3 -m src.pipeline data/sample/demo_fixed.json
 ```
 
-### 4. Tests
+### 4. Demo del proyecto
+
+```bash
+python3 scripts/run_demo.py --offline    # sin key ni red, determinista (plan B)
+python3 scripts/run_demo.py              # online: Ollama Cloud + gemma4:31b
+streamlit run src/interface/app.py       # panel de curaduría (editar + aprobar + descargar)
+```
+
+> Detalle, salida esperada y troubleshooting en [docs/demo.md](docs/demo.md).
+
+### 5. Tests
 
 ```bash
 python3 -m pytest tests/ -q
@@ -162,11 +175,11 @@ python3 -m pytest tests/ -q
 
 - [x] Ingestión funcional de interacciones (loader + normalizer)
 - [x] Análisis unificado de sentimiento/categoría/relevancia (1 llamada LLM)
-- [ ] Generación de 2+ formatos de activos
-- [x] Cliente LLM común (Gemini/Ollama/rule_based)
-- [ ] Integración OCI Object Storage
-- [ ] Interfaz Streamlit
-- [ ] Demo de 3+ ejemplos
+- [x] Generación de 2+ formatos de activos (LinkedIn, newsletter, FAQ)
+- [x] Cliente LLM común (Gemini/Ollama local+nube/rule_based)
+- [x] Integración OCI Object Storage (con fallback local)
+- [x] Interfaz Streamlit (curaduría/edición/descarga)
+- [x] Demo de 3+ ejemplos (ver [docs/demo.md](docs/demo.md))
 - [x] Repositorio con documentación y diagrama
 
 ---
@@ -187,11 +200,14 @@ python3 -m pytest tests/ -q
 
 ## 🏆 Roadmap
 
-- [ ] Motor de decisiones (ruteo por `tipo`)
-- [ ] Generadores (LinkedIn/newsletter/FAQ)
-- [ ] Integrar OCI Object Storage
-- [ ] Conectar la interfaz Streamlit
-- [ ] Demo final con 3+ ejemplos
+- [x] Motor de decisiones (ruteo por `tipo`)
+- [x] Generadores (LinkedIn/newsletter/FAQ) — PR #86 mergeado
+- [x] Integrar OCI Object Storage (fallback local incluido)
+- [x] Conectar la interfaz Streamlit (edición + descarga)
+- [x] Demo final con 3+ ejemplos (runner + runbook)
+- [x] Mergear #86 (generadores) y #89 (robustez del analizador)
+- [ ] Aprobar y mergear el PR #90 (cableado del pipeline)
+- [ ] Subir el snapshot a OCI con credenciales reales desde el panel
 
 ---
 
