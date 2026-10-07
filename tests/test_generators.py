@@ -49,11 +49,24 @@ def test_newsletter_generator_returns_highlight():
 
 
 def test_faq_generator_returns_suggestion():
-    payload = json.dumps({"tema": "LangGraph", "origen": "O", "status": "derivado_a_mentoria"})
+    # The LLM only returns `tema`; origen/status are code-owned.
+    payload = json.dumps({"tema": "LangGraph"})
     gen = FAQGenerator(client=FakeClient(payload))
     result = gen.generate(_msg(), _analysis())
     assert isinstance(result, FAQSuggestion)
     assert result.tema == "LangGraph"
+    assert result.origen == "#logros"  # from message.canal
+    assert result.status == "derivado_a_mentoria"
+
+
+def test_faq_generator_overrides_forged_metadata():
+    # Even if the model invents origen/status, the code owns them.
+    payload = json.dumps(
+        {"tema": "LangGraph", "origen": "pedido por el LLM", "status": "otra cosa"}
+    )
+    gen = FAQGenerator(client=FakeClient(payload))
+    result = gen.generate(_msg(), _analysis())
+    assert result.origen == "#logros"
     assert result.status == "derivado_a_mentoria"
 
 

@@ -63,6 +63,7 @@ class BaseGenerator(ABC, Generic[T]):
             prompt = self.build_prompt(message, analysis)
             raw = self.client.generate(prompt)
             data = self._parse_json(raw)
+            data = self.enrich(data, message, analysis)
             return self.output_model(**data)
         except (
             LLMError,
@@ -73,12 +74,26 @@ class BaseGenerator(ABC, Generic[T]):
             TypeError,
         ) as exc:
             logger.warning(
-                "%s produced no asset for %r: %s",
+                "%s produced no asset for autor=%r: %s",
                 type(self).__name__,
-                message.id,
+                message.autor,
                 exc,
             )
             return None
+
+    def enrich(
+        self,
+        data: Dict[str, Any],
+        message: InputMessage,
+        analysis: AnalysisComplete,
+    ) -> Dict[str, Any]:
+        """Hook: subclasses set fields the CODE owns (metadata).
+
+        The LLM only proposes content; fields like `origen` or `status` are
+        derived deterministically (e.g. from the message channel). Default
+        returns the parsed JSON unchanged.
+        """
+        return data
 
     @staticmethod
     def _parse_json(raw: str) -> Dict[str, Any]:

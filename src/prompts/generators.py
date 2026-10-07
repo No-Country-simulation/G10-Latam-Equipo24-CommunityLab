@@ -4,6 +4,10 @@ Same conventions as src/prompts/templates.py: string.Template (literal JSON
 braces), XML delimiters around the user content, and an explicit anti-injection
 clause. Each builder returns a prompt whose JSON schema matches its contract
 model.
+
+The `<mensaje>` block carries the full interacción context (autor, canal and
+texto) so the model can name the person or the channel — the PDF examples use
+both. Every field is sanitized against delimiter injection.
 """
 import re
 from string import Template
@@ -36,6 +40,7 @@ Estructura del post:
 - CTA: cierre con llamado a la acción.
 
 Reglas:
+- Si el mensaje tiene un autor, nombralo en la historia (no lo inventes).
 - Tono profesional pero cercano.
 - 150-300 palabras.
 - 3-5 emojis estratégicos y 3-5 hashtags relevantes.
@@ -45,7 +50,9 @@ Respondé ÚNICAMENTE con un objeto JSON válido, sin markdown ni texto extra, c
 {"titulo": "...", "copy": "...", "canal_recomendado": "LinkedIn Oficial", "potencial_engagement": "Alto|Medio|Bajo"}
 
 <mensaje>
-$texto
+Autor: $autor
+Canal: $canal
+Texto: $texto
 </mensaje>
 """
 )
@@ -57,7 +64,7 @@ $anti_injection
 
 Estructura:
 - Highlight: lo más destacable del logro o aporte.
-- Contexto: una frase que lo ubique en la comunidad.
+- Contexto: una frase que lo ubique en la comunidad (nombrá el canal o al autor si aporta contexto).
 - Aprendizaje / recurso: qué se puede llevar la comunidad.
 
 Reglas:
@@ -69,31 +76,32 @@ Respondé ÚNICAMENTE con un objeto JSON válido, sin markdown ni texto extra:
 {"seccion": "Logro de la Semana", "titular": "...", "resumen": "..."}
 
 <mensaje>
-$texto
+Autor: $autor
+Canal: $canal
+Texto: $texto
 </mensaje>
 """
 )
 
 _FAQ = Template(
-    """Generá una FAQ en español a partir de la duda técnica delimitada.
+    """Generá el TEMA de una FAQ en español a partir de la duda técnica delimitada.
 
 $anti_injection
 
-Estructura de la respuesta:
-- Pregunta: la duda expresada con claridad.
-- Respuesta: la solución o explicación.
-- Explicación: el porqué o cómo funciona.
-- Ejemplo: un ejemplo corto (incluí código si es una duda de programación).
+El tema debe ser corto y descriptivo (una o dos oraciones), para indexar la
+pregunta en la FAQ de la comunidad (ej: "Configurar el retry del ingest en Mastodon").
 
 Reglas:
-- Máximo 300 palabras.
+- No copies la pregunta completa: resumila.
 - No inventes datos que no estén en el mensaje.
 
 Respondé ÚNICAMENTE con un objeto JSON válido, sin markdown ni texto extra:
-{"tema": "...", "origen": "...", "status": "derivado_a_mentoria"}
+{"tema": "..."}
 
 <mensaje>
-$texto
+Autor: $autor
+Canal: $canal
+Texto: $texto
 </mensaje>
 """
 )
@@ -102,6 +110,8 @@ $texto
 def _render(template: Template, message: InputMessage) -> str:
     return template.substitute(
         anti_injection=_ANTI_INJECTION,
+        autor=_sanitize(message.autor),
+        canal=_sanitize(message.canal),
         texto=_sanitize(message.texto),
     )
 
