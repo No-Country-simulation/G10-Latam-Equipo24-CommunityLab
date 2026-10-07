@@ -202,7 +202,9 @@ def test_empty_text_skips_llm():
     assert result.categorization.category == "otro"
 
 
-# Review (Emmanuel, blocker 1): valid JSON with unexpected types -> default
+# ANL-23: valid JSON with unexpected types returns the default (not a raise).
+# Review blocker 1 from #73 ({"sentiment": "positivo"} -> AttributeError before
+# the fix); the default is returned by design.
 def test_unexpected_types_return_default():
     data = {"sentiment": "positivo"}  # a string where an object is expected
     analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data)))
@@ -222,3 +224,45 @@ def test_batch_isolates_failures():
     assert results[0].categorization.category == "testimonio"
     assert results[1].categorization.category == "otro"      # falló -> default
     assert results[2].categorization.category == "testimonio"
+
+
+# ANL-24: topics/entities as a string must not explode into characters.
+def test_topics_as_string_returns_empty_list():
+    data = {"categorization": {"category": "testimonio", "topics": "empleo"}}
+    analyzer = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data)))
+    result = analyzer.analyze(_msg())
+    assert result.categorization.category == "testimonio"
+    assert result.categorization.topics == []
+
+
+# ANL-25: an integer score too large for a float fails closed, never raises.
+def test_overflowing_score_fails_closed():
+    # 10**400 parses as an int; float(10**400) raises OverflowError.
+    raw = '{"relevance": {"score": 1%s}}' % ("0" * 400)
+    result = GeminiUnifiedAnalyzer(client=FakeClient(raw)).analyze(_msg())
+    assert result.relevance.score == 0.0
+    assert result.relevance.is_marketing_worthy is False
+
+
+# ANL-26: sentiment.score defaults to 0.5 for a missing key OR an explicit
+# null (unified with `_default`; issue #87).
+def test_null_sentiment_score_defaults_to_half():
+    data = {"sentiment": {"type": "positivo", "score": None}}
+    result = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(data))).analyze(_msg())
+    assert result.sentiment.score == 0.5
+
+
+# ANL-27: normalization handles accents and capitals ("Positivo", "discusión").
+@pytest.mark.parametrize(
+    ("payload", "expected_sentiment", "expected_category"),
+    [
+        ({"sentiment": {"type": "Positivo"}}, "positivo", "otro"),
+        ({"categorization": {"category": "discusión"}}, "neutral", "discusion"),
+    ],
+)
+def test_normalization_accents_and_capitals(
+    payload, expected_sentiment, expected_category
+):
+    result = GeminiUnifiedAnalyzer(client=FakeClient(json.dumps(payload))).analyze(_msg())
+    assert result.sentiment.sentiment.value == expected_sentiment
+    assert result.categorization.category == expected_category

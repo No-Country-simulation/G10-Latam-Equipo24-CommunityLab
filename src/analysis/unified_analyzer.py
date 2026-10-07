@@ -85,12 +85,13 @@ class GeminiUnifiedAnalyzer:
             ValueError,
             AttributeError,
             TypeError,
+            OverflowError,
             ValidationError,
         ) as exc:
             logger.warning(
                 "Unified analyzer fell back to default for %r: %s",
                 message.id,
-                exc,
+                type(exc).__name__,
             )
             return self._default(message)
 
@@ -140,19 +141,26 @@ class GeminiUnifiedAnalyzer:
         # may contradict the score (ANL-15); the score wins.
         is_worthy = relevance_score >= 0.6
 
+        sentiment_score_raw = sentiment_data.get("score")
+        # Missing key and explicit null both mean "no signal": use the same
+        # default as _default (0.5) instead of None -> 0.0 (ANL-26).
+        sentiment_score = self._clamp(
+            0.5 if sentiment_score_raw is None else sentiment_score_raw
+        )
+
         return AnalysisComplete(
             message_id=mid,
             sentiment=SentimentResult(
                 message_id=mid,
                 sentiment=sentiment,
-                score=self._clamp(sentiment_data.get("score", 0.5)),
+                score=sentiment_score,
                 reasoning=str(sentiment_data.get("reasoning", "")),
             ),
             categorization=CategorizationResult(
                 message_id=mid,
                 category=category,
-                topics=list(categorization_data.get("topics") or []),
-                entities=list(categorization_data.get("entities") or []),
+                topics=self._as_str_list(categorization_data.get("topics")),
+                entities=self._as_str_list(categorization_data.get("entities")),
             ),
             relevance=RelevanceResult(
                 message_id=mid,
@@ -219,6 +227,18 @@ class GeminiUnifiedAnalyzer:
         return token
 
     @staticmethod
+    def _as_str_list(value: Any) -> List[str]:
+        """Coerces the LLM's topics/entities into a list of strings.
+
+        `list("empleo")` would explode a plain string into single characters
+        while still passing `List[str]` validation; the contract expects a
+        list of items or nothing at all (ANL-24).
+        """
+        if not isinstance(value, list):
+            return []
+        return [str(item) for item in value]
+
+    @staticmethod
     def _clamp(value: Any) -> float:
         """Clamps to [0.0, 1.0], failing closed on non-finite input.
 
@@ -230,7 +250,7 @@ class GeminiUnifiedAnalyzer:
         """
         try:
             num = float(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return 0.0
         if not math.isfinite(num):
             return 0.0
