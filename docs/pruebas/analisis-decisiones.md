@@ -122,6 +122,8 @@ Las respuestas simuladas están en el fixture (`casos_analizador_mock`). "Respue
 
 Resultado al 30/9 sobre el PR #73 @ `9530f90`: **20 de 20 casos coinciden** con el código de Rox. 15 tienen test dedicado y 5 los verifiqué con un cliente simulado (ANL-05, 07, 11, 19 y 20); conviene convertirlos en tests en el mismo PR.
 
+Al 6/10 se incorporan los follow-ups del issue #87 (PR #73): la matriz agrega ANL-21 a ANL-27 (ver filas).
+
 | ID | Entrada (respuesta simulada de Gemini) | Comportamiento esperado | Resultado esperado | Caso de error / nota | Prueba · estado |
 |---|---|---|---|---|---|
 | ANL-01 | JSON válido con los 3 dominios | Mapea a `AnalysisComplete` | `message_id` del mensaje; la clave `type` se guarda en `SentimentResult.sentiment` | El LLM no devuelve `message_id`: lo inyecta el analizador | `test_maps_valid_json_to_analysis` · ✅ |
@@ -144,6 +146,13 @@ Resultado al 30/9 sobre el PR #73 @ `9530f90`: **20 de 20 casos coinciden** con 
 | ANL-16 | Texto vacío `""` o solo espacios | No llama al LLM | Respuesta por defecto; 0 llamadas | Ahorra cuota | `test_empty_text_skips_llm` · ✅ |
 | ANL-17 | Lote de 3 mensajes (m1, m2, m3); el segundo falla | Un fallo no aborta el lote | `analyze_batch` devuelve 3 resultados en el orden m1, m2, m3; el 2.º con la respuesta por defecto (`otro`, no publicable) | Rox decidió que el lote lo itera el pipeline (PIP-01); aun así el analizador lo implementa | `test_batch_isolates_failures` · ✅ |
 | ANL-20 | `sentiment.score = 0.2` con la etiqueta `positivo` | El score es la confianza, no la polaridad (O-08) | La etiqueta sigue siendo `positivo`; el score se conserva en 0.2 | Evita que un score bajo se lea como "negativo" | Verificado por QA, sin test dedicado · ✅ |
+| ANL-21 | `NaN` / `Infinity` / `-Infinity` en `relevance.score` y `sentiment.score` | Falla cerrado; nunca escribe 1.0 | Ambas en 0.0; `is_marketing_worthy = false` | Issue #87 (ya estaba en #73, faltaba en la matriz) | `test_non_finite_scores_fail_closed` · ✅ |
+| ANL-22 | Score finito en rango (`0.9`) | Sin cambios por el guard de no finitos | Se conserva `0.9` | Issue #87 | `test_finite_score_unaffected_by_non_finite_guard` · ✅ |
+| ANL-23 | JSON válido con tipos inesperados (`"sentiment": "positivo"`) | Respuesta por defecto, sin excepción | Default completo (neutral / otro) | Blockers 1-3 de la review de Emmanuel (#73), ya resueltos; antes `AttributeError` | `test_unexpected_types_return_default` · ✅ |
+| ANL-24 | `categorization.topics = "empleo"` (string en vez de lista) | No desarma en caracteres | `topics == []`, categoría intacta | Issue #87 | `test_topics_as_string_returns_empty_list` · ✅ |
+| ANL-25 | `relevance.score = 10**400` (int gigante) | Falla cerrado; nunca lanza | score `0.0`, no publicable | Issue #87: `float()` lanza `OverflowError`, que no es `ValueError` | `test_overflowing_score_fails_closed` · ✅ |
+| ANL-26 | `sentiment.score = null` (clave presente, valor nulo) | Default unificado | `0.5` (igual que clave ausente, como `_default`) | Issue #87: antes `0.0` por el camino del `null` | `test_null_sentiment_score_defaults_to_half` · ✅ |
+| ANL-27 | `"Positivo"` y `"discusión"` (mayúscula y tilde) | Normalización tildes/mayúsculas | `positivo` / `discusion` | Issue #87 | `test_normalization_accents_and_capitals` · ✅ |
 
 ## B. Motor de decisiones — Yis-ai-eng (#69)
 
