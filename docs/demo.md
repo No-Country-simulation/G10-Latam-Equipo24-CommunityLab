@@ -29,7 +29,7 @@ El archivo `.env` está en `.gitignore`: **nunca se commitea**.
 2. **Análisis** de cada mensaje (sentimiento, categoría, relevancia) en una llamada por mensaje.
 3. **Decisión** (motor de reglas) → qué activo genera cada mensaje.
 4. **Generación** de los activos: post de LinkedIn, destacado de newsletter y FAQ.
-5. **Almacenamiento**: OCI Object Storage si hay credenciales, si no un **snapshot local** en `storage/activos/paquete-distribucion-<fecha>.json` (gitignored) con estado `pendiente`.
+5. **Almacenamiento**: OCI Object Storage si hay credenciales (status `guardado_con_exito`, ruta `activos/<año>-semana-<n>/paquete-distribucion.json`); si no, un **snapshot local** en `storage/activos/paquete-distribucion-<fecha>.json` (gitignored) con estado `pendiente`.
 
 ### Salida esperada (online)
 
@@ -40,7 +40,13 @@ El archivo `.env` está en `.gitignore`: **nunca se commitea**.
   [LinkedIn]   titulo: Caso de éxito: De estudiante a Desarrolladora de IA
   [Newsletter] titular: Nueva Desarrolladora Junior de IA
   [FAQ]        tema: Estructurar nodos condicionales y routers...
-  [storage]    status: pendiente -> snapshot local (sin OCI)
+  [storage]    status: guardado_con_exito -> activos/2026-semana-04/paquete-distribucion.json
+```
+
+Sin credenciales OCI (lo típico en las máquinas del equipo) el último renglón pasa a mostrar el fallback:
+
+```
+  [storage]    status: pendiente -> storage/activos/paquete-distribucion-2026-10-07.json (snapshot local)
 ```
 
 ### Salida esperada (offline)
@@ -53,6 +59,7 @@ Determinista y ~instantánea (0s): el cliente `rule_based` genera activos simula
 - [ ] `python scripts/run_demo.py` termina con `status : EXITO` y activos no vacíos
 - [ ] `python scripts/run_demo.py --offline` termina en segundos sin red
 - [ ] Versión con `openai` instalado en el venv (`pip install openai`)
+- [ ] (Opcional, subir a OCI) `OCI_USER_ID`, `OCI_PRIVATE_KEY_PATH`, `OCI_FINGERPRINT`, `OCI_TENANCY_ID` y `OCI_REGION` en `.env` → la demo muestra `guardado_con_exito`
 
 ## Troubleshooting
 
@@ -70,4 +77,4 @@ Los modelos **gratis** de la cuenta son `gemma4:31b` (elegido: rápido y confiab
 
 ## Next step
 
-Cuando aprueben los PRs pendientes (#86 / #89), el cableado S3-005 — pipeline, clientes y este demo — viaja en el PR final sobre `main`.
+Los PRs de base (#86 generadores, #89 robustez del analizador) ya están **mergeados**; el cableado S3-005 — pipeline, clientes y este demo — viaja en el **PR #90**, aprobado cuando quede en verde.

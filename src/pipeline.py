@@ -16,6 +16,7 @@ Wiring:
 """
 import logging
 import os
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -95,7 +96,7 @@ def run_pipeline(source: str) -> OutputBatch:
         status="exito",
         resumen_comunidad=_summarize(batch, results),
         activos_distribucion_generados=assets,
-        almacenamiento_oci=_store(assets),
+        almacenamiento_oci=_store(assets, batch),
     )
 
 
@@ -105,10 +106,11 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     Each channel is driven by the FIRST matching decision (never by `tipo`
     directly):
         - LinkedIn post  -> first PUBLISH + LINKEDIN decision.
+        - Newsletter highlight -> the SAME message as the LinkedIn post when
+          one exists, so the "logro de la semana" comes from the published
+          testimonio and never from an earlier technical question; it falls
+          back to the first non-discarded interaction.
         - FAQ suggestion -> first CREAR_FAQ decision.
-        - Newsletter highlight -> first non-discarded interaction: the
-          newsletter is decoupled from LinkedIn and appears whenever there is
-          any actionable interaction.
     A generator that returns None (LLM/JSON/validation failure) leaves its
     asset as None instead of failing the batch.
     """
@@ -117,7 +119,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     faq_gen = FAQGenerator(client=llm)
 
     linkedin_target = _first_target(results, _is_linkedin_decision)
-    newsletter_target = _first_target(
+    newsletter_target = linkedin_target or _first_target(
         results, lambda d: d.action != ActionType.DESCARTAR
     )
     faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
@@ -186,20 +188,23 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     )
 
 
-def _store(assets: DistributionAssets) -> OCIStorage:
+def _store(assets: DistributionAssets, batch: InputBatch) -> OCIStorage:
     """Persists the asset package: OCI first, local snapshot as a fallback.
 
     Never raises on storage problems. If the `oci` SDK is missing, the OCI
     credentials are absent, or the upload fails, the assets are written to a
     local JSON snapshot (`storage/activos/paquete-distribucion-<date>.json`,
     relative to the working directory) and the record points at that path with
-    `status="pendiente"`. A successful upload returns `status="subido"` and the
-    object key.
+    `status="pendiente"`. A successful upload returns the contract status
+    `status="guardado_con_exito"` and a period-scoped object key
+    (`activos/<año>-semana-<n>/paquete-distribucion.json`, per the PDF).
     """
     bucket = os.getenv("OCI_BUCKET_NAME", _DEFAULT_BUCKET)
     today = date.today().isoformat()
     payload = assets.model_dump_json(indent=2)
-    object_key = f"activos/paquete-distribucion-{today}.json"
+    object_key = (
+        f"activos/{_period_folder(batch.periodo_referencia)}/paquete-distribucion.json"
+    )
 
     if _oci_credentials_present():
         try:
@@ -213,7 +218,9 @@ def _store(assets: DistributionAssets) -> OCIStorage:
                 put_object_body=payload.encode("utf-8"),
             )
             logger.info("Uploaded asset package to OCI: %s/%s", bucket, object_key)
-            return OCIStorage(bucket=bucket, ruta_objeto=object_key, status="subido")
+            return OCIStorage(
+                bucket=bucket, ruta_objeto=object_key, status="guardado_con_exito"
+            )
         except Exception as exc:  # ImportError, SDK/network/auth errors, ...
             logger.warning(
                 "OCI upload failed (%s); degrading to a local snapshot.", exc
@@ -228,6 +235,20 @@ def _store(assets: DistributionAssets) -> OCIStorage:
     snapshot.write_text(payload, encoding="utf-8")
     logger.warning("Degraded storage: asset snapshot written to %s", snapshot)
     return OCIStorage(bucket=bucket, ruta_objeto=str(snapshot), status="pendiente")
+
+
+def _period_folder(periodo_referencia: str) -> str:
+    """Contract-shaped storage folder: `2026-semana-04`.
+
+    Uses the week number from `periodo_referencia` when present (the input
+    stamp "Semana_04", or "Semana_40_2026" for the Mastodon samples), falling
+    back to today's ISO week, always with the current ISO year so the object
+    path `activos/<año>-semana-<n>/...` matches the PDF example.
+    """
+    year, week, _ = date.today().isocalendar()
+    match = re.search(r"(\d+)", periodo_referencia)
+    number = match.group(1) if match else f"{week:02d}"
+    return f"{year}-semana-{number}"
 
 
 def _oci_credentials_present() -> bool:

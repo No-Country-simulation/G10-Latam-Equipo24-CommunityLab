@@ -121,7 +121,7 @@ def main() -> int:
     print("-" * 68)
     print(f"  status : {storage.status}")
     print(f"  ruta   : {storage.ruta_objeto}")
-    if storage.status != "subido" and "storage/activos" in storage.ruta_objeto:
+    if storage.status != "guardado_con_exito" and "storage/activos" in storage.ruta_objeto:
         print("  nota   : sin credenciales OCI -> snapshot local (gitignored)")
     print("=" * 68)
     print("RESUMEN DE LA COMUNIDAD")

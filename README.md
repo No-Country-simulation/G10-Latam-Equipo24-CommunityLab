@@ -26,13 +26,13 @@
 | Detector de dudas recurrentes | ✅ Listo |
 | Análisis unificado (sentimiento/categoría/relevancia) | ✅ Listo |
 | Motor de decisiones | ✅ Listo (reglas + LLM) |
-| Generadores (LinkedIn / newsletter / FAQ) | 🟡 PR #86 (aprobación pendiente) |
-| Automatización del flujo (pipeline) | 🟡 Implementado y testeado, PR pendiente |
+| Generadores (LinkedIn / newsletter / FAQ) | ✅ PR #86 mergeado |
+| Automatización del flujo (pipeline) | 🟡 Cableado S3-005 en PR #90 (en revisión) |
 | OCI Object Storage | ✅ Listo (cliente + upload en pipeline con fallback local) |
 | Interfaz Streamlit | ✅ Listo (curaduría + edición + descarga de activos) |
-| Tests | ✅ 154 tests |
+| Tests | ✅ 159 tests |
 
-> Este README describe el **objetivo**. El estado real se rastrea en los issues del repo (PRs pendientes: #86 y #89).
+> Este README describe el **objetivo**. El estado real se rastrea en los issues del repo (#86 y #89 mergeados; el cableado del pipeline viaja en el PR #90).
 
 ---
 
@@ -101,12 +101,12 @@ communitylab/
 │   ├── utils/              # Cliente LLM (gemini/ollama/openai/rule_based)
 │   ├── analysis/           # Análisis unificado (GeminiUnifiedAnalyzer)
 │   ├── decisions/          # Motor de decisiones (reglas + LLM)
-│   ├── generators/         # LinkedIn, newsletter, FAQ (PR #86)
+│   ├── generators/         # LinkedIn, newsletter, FAQ
 │   ├── oci/                # Object Storage (cliente + fallback local)
 │   ├── interface/          # Streamlit (panel de curaduría)
 │   └── pipeline.py         # Orquestador end-to-end
 ├── scripts/run_demo.py     # Runner de demo (online / --offline)
-├── tests/                  # 154 tests
+├── tests/                  # 159 tests
 ├── data/                   # Datos (raw/processed/sample)
 ├── docs/                   # Documentación
 └── README.md
@@ -201,11 +201,12 @@ python3 -m pytest tests/ -q
 ## 🏆 Roadmap
 
 - [x] Motor de decisiones (ruteo por `tipo`)
-- [x] Generadores (LinkedIn/newsletter/FAQ) — en PR #86
+- [x] Generadores (LinkedIn/newsletter/FAQ) — PR #86 mergeado
 - [x] Integrar OCI Object Storage (fallback local incluido)
 - [x] Conectar la interfaz Streamlit (edición + descarga)
 - [x] Demo final con 3+ ejemplos (runner + runbook)
-- [ ] Aprobar #86 y #89, abrir el PR del cableado del pipeline
+- [x] Mergear #86 (generadores) y #89 (robustez del analizador)
+- [ ] Aprobar y mergear el PR #90 (cableado del pipeline)
 - [ ] Subir el snapshot a OCI con credenciales reales desde el panel
 
 ---

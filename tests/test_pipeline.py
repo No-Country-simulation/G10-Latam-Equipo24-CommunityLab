@@ -304,3 +304,59 @@ def test_pipeline_with_rule_based_backend_offline_end_to_end(
     assert storage.status == "pendiente"
     snapshot_path = tmp_path / storage.ruta_objeto
     assert snapshot_path.exists()
+
+
+def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
+    monkeypatch, tmp_path
+):
+    """R5: the OCI success path must report `guardado_con_exito` and the
+    period-scoped object key from the contract example, using a simulated
+    Object Storage client (no `oci` SDK required)."""
+    monkeypatch.chdir(tmp_path)
+    for var in (
+        "OCI_USER_ID",
+        "OCI_PRIVATE_KEY_PATH",
+        "OCI_FINGERPRINT",
+        "OCI_TENANCY_ID",
+        "OCI_REGION",
+    ):
+        monkeypatch.setenv(var, "fake")
+
+    calls = {}
+
+    class _FakeObjectStorage:
+        """Stands in for the real `oci.object_storage.ObjectStorageClient`."""
+
+        def put_object(self, **kwargs):
+            calls.update(kwargs)
+
+    class _FakeOCI:
+        """Stands in for `src.oci.client.OCIClient` (no SDK, no network)."""
+
+        namespace = "axcyr94oehmi"
+
+        def get_object_storage_client(self):
+            return _FakeObjectStorage()
+
+    monkeypatch.setattr("src.pipeline.OCIClient", _FakeOCI)
+
+    output = run_pipeline(str(SAMPLE))
+    storage = output.almacenamiento_oci
+
+    assert storage.status == "guardado_con_exito"
+    assert storage.bucket == "communitylab-activos-marketing"
+    # Contract shape from the PDF: activos/<año>-semana-<n>/paquete-distribucion.json
+    # (week "05" comes from SAMPLE's periodo_referencia; the ISO year tolerates
+    # a year rollover).
+    iso_year = date.today().isocalendar()[0]
+    assert storage.ruta_objeto == f"activos/{iso_year}-semana-05/paquete-distribucion.json"
+
+    # The simulated client really received the package.
+    assert calls["bucket_name"] == "communitylab-activos-marketing"
+    assert calls["object_name"] == storage.ruta_objeto
+    assert calls["namespace_name"] == "axcyr94oehmi"
+    body = json.loads(calls["put_object_body"].decode("utf-8"))
+    assert body["post_linkedin"]["titulo"] == "Titulo generado"
+
+    # The fallback snapshot must not be written on the happy path.
+    assert not (tmp_path / "storage").exists()
