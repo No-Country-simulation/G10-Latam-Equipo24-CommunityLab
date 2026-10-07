@@ -6,6 +6,7 @@ from src.domain.models import (
     AnalysisComplete,
     AssetType,
     DecisionResult,
+    InputMessage,
 )
 
 
@@ -14,15 +15,31 @@ class RuleBasedDecisionEngine(DecisionEngine):
 
     RELEVANCE_THRESHOLD = 0.6
 
-    def decide(self, analysis: AnalysisComplete) -> DecisionResult:
+    def decide(
+        self, message: InputMessage, analysis: AnalysisComplete
+    ) -> DecisionResult:
         """Evaluate an analysis and return the corresponding decision."""
 
         message_id = analysis.message_id
 
+        # Explicit message type takes precedence over LLM category.
+        recognized_types = {
+            "testimonio",
+            "pregunta_tecnica",
+            "feedback",
+            "logro",
+            "discusion",
+        }
+
+        if message.tipo in recognized_types:
+            effective_type = message.tipo
+        elif analysis.categorization is not None:
+            effective_type = analysis.categorization.category
+        else:
+            effective_type = None
+
         # Rule 1: positive testimonial with sufficient relevance -> LinkedIn.
-        is_testimonial = False
-        if analysis.categorization is not None:
-            is_testimonial = analysis.categorization.category == "testimonio"
+        is_testimonial = effective_type == "testimonio"
 
         is_positive = False
         if analysis.sentiment is not None:
@@ -41,11 +58,7 @@ class RuleBasedDecisionEngine(DecisionEngine):
             )
 
         # Rule 2: technical question -> FAQ.
-        is_technical_question = False
-        if analysis.categorization is not None:
-            is_technical_question = (
-                analysis.categorization.category == "pregunta_tecnica"
-            )
+        is_technical_question = effective_type == "pregunta_tecnica"
 
         if is_technical_question:
             return DecisionResult(

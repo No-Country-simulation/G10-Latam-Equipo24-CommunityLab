@@ -37,7 +37,9 @@ class RelevanceScorer(ABC):
 
 class DecisionEngine(ABC):
     @abstractmethod
-    def decide(self, analysis: AnalysisComplete) -> DecisionResult:
+    def decide(
+        self, message: InputMessage, analysis: AnalysisComplete
+    ) -> DecisionResult:
         pass
 
 
