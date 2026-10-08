@@ -245,18 +245,16 @@ def test_ignores_empty_topics():
     assert results == []
 
 
-def test_rejects_none_input():
+def test_returns_empty_for_none_input():
     detector = RecurringTopicsDetector()
 
-    with pytest.raises(TypeError):
-        detector.detect(None)
+    assert detector.detect(None) == []
 
 
-def test_rejects_invalid_input_type():
+def test_returns_empty_for_invalid_input_type():
     detector = RecurringTopicsDetector()
 
-    with pytest.raises(TypeError):
-        detector.detect({"message": "esto no es válido"})
+    assert detector.detect({"message": "esto no es válido"}) == []
 
 
 def test_keeps_message_analysis_pair_associated():
@@ -296,4 +294,46 @@ def test_deduplicates_topics_within_same_message():
 
     assert len(results) == 1
     assert results[0].topic == "docker"
+    assert results[0].count == 2
+
+
+def test_normalizes_topic_case_across_messages():
+    detector = RecurringTopicsDetector()
+
+    inputs = [
+        (
+            make_message("1", "Tengo problemas con Docker"),
+            make_analysis("1", ["Docker"]),
+        ),
+        (
+            make_message("2", "No puedo usar docker"),
+            make_analysis("2", ["docker"]),
+        ),
+    ]
+
+    results = detector.detect(inputs)
+
+    assert len(results) == 1
+    assert results[0].topic == "docker"
+    assert results[0].count == 2
+
+
+def test_normalizes_topic_accents_across_messages():
+    detector = RecurringTopicsDetector()
+
+    inputs = [
+        (
+            make_message("1", "Olvidé mi CONTRASEÑA"),
+            make_analysis("1", ["CONTRASEÑA"]),
+        ),
+        (
+            make_message("2", "No recuerdo mi contraseña"),
+            make_analysis("2", ["contraseña"]),
+        ),
+    ]
+
+    results = detector.detect(inputs)
+
+    assert len(results) == 1
+    assert results[0].topic == "contraseña"
     assert results[0].count == 2

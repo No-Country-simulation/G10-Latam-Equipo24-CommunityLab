@@ -5,6 +5,7 @@ from src.domain.models import (
     InputMessage,
     RecurringTopic,
 )
+from src.utils.topics import rank_topics
 
 
 class RecurringTopicsDetector:
@@ -22,49 +23,58 @@ class RecurringTopicsDetector:
     ) -> list[RecurringTopic]:
         """Detect recurring topics from unified analysis results."""
         if not isinstance(inputs, list):
-            raise TypeError("inputs must be a list")
+            return []
 
         topic_messages = defaultdict(list)
 
         for item in inputs:
             if not isinstance(item, tuple) or len(item) != 2:
-                raise TypeError(
-                    "each input must be a tuple of InputMessage and AnalysisComplete"
-                )
+                continue
 
             message, analysis = item
 
             if not isinstance(message, InputMessage):
-                raise TypeError("input message must be an InputMessage")
+                continue
 
             if not isinstance(analysis, AnalysisComplete):
-                raise TypeError("analysis must be an AnalysisComplete")
+                continue
 
             if analysis.categorization is None:
                 continue
 
-            topics = set(analysis.categorization.topics)
+            message_topics = rank_topics(
+                analysis.categorization.topics,
+                top_n=None,
+            )
 
-            for topic in topics:
-                if topic:
-                    topic_messages[topic].append(message.texto)
+            for topic, _ in message_topics:
+                topic_messages[topic].append(message.texto)
+
+        all_topics = [
+            topic
+            for topic, examples in topic_messages.items()
+            for _ in examples
+        ]
+
+        ranked_topics = rank_topics(
+            all_topics,
+            top_n=None,
+        )
 
         results = []
 
-        for topic, examples in topic_messages.items():
-            count = len(examples)
-
+        for topic, count in ranked_topics:
             if count >= self.min_occurrences:
                 results.append(
                     RecurringTopic(
                         topic=topic,
                         count=count,
-                        examples=examples,
+                        examples=topic_messages[topic],
                         faq_title=self._suggest_faq_title(topic),
                     )
                 )
 
-        return sorted(results, key=lambda item: item.count, reverse=True)
+        return results
 
     def _suggest_faq_title(self, topic: str) -> str:
         """Generate a simple FAQ title for a recurring topic."""
