@@ -163,16 +163,21 @@ def main():
         st.caption(
             f"OCI: {storage['status']} | {storage['bucket']}/{storage['ruta_objeto']}"
         )
-        st.write("Los activos aprobados quedan seleccionados en esta sesión. El guardado en OCI aún no está integrado.")
+        st.write(
+            "El pipeline guarda automáticamente el paquete generado en OCI cuando hay "
+            "credenciales configuradas; de lo contrario, conserva un snapshot local. "
+            "Las ediciones aprobadas se descargan como un JSON aparte."
+        )
 
         if st.button("Aprobar activos seleccionados", type="primary", width="stretch"):
             if not any(value and value.strip() for value in payload_to_save.values()):
                 st.warning("⚠️ Debes aprobar al menos un activo para poder guardarlo.")
             else:
                 approved_count = sum(bool(value and value.strip()) for value in payload_to_save.values())
-                st.warning(
+                st.info(
                     f"{approved_count} activos aprobados en esta sesión. "
-                    "El pipeline todavía no los ha guardado en OCI."
+                    f"El paquete generado tiene estado de almacenamiento {storage['status']}; "
+                    "descarga el JSON para conservar estas ediciones."
                 )
 
         approved_payload = {
