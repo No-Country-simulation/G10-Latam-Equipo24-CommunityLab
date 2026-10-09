@@ -327,16 +327,9 @@ Generar el diagrama con **draw.io** (free) usando los mismos componentes. La ver
 
 ---
 
-## 🎯 Resumen de decisiones de arquitectura (para DECISIONS.md)
+## 🎯 Decisiones de arquitectura
 
-| Decisión | Opción elegida | Alternativa | Por qué |
-|----------|----------------|-------------|---------|
-| Orquestación | Python puro + async | n8n | Mayor control, testing fácil, integración directa con módulos |
-| LLM principal | Google Gemini | OpenAI | Gratis y generoso en capa free, bueno en español/portugués |
-| Interfaz | Streamlit | Gradio | Mejor para paneles de curaduría con estado |
-| Persistencia | OCI Object Storage | Base de datos | Requisito obligatorio del hackathon + compatible con Always Free |
-| Módulo de decisiones | Reglas + LLM híbrido | Solo LLM | Determinismo en reglas críticas + contexto en matices |
-| Deploy | Local + OCI opcional | Solo OCI | MVP rápido + diferencial si hay tiempo |
+Las decisiones (orquestación, LLM, interfaz, persistencia, módulo de decisiones, deploy) y su justificación viven en **[`DECISIONS.md`](DECISIONS.md)** — única fuente de verdad. Acá no se duplican.
 
 ---
 
