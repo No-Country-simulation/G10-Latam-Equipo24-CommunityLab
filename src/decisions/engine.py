@@ -42,8 +42,10 @@ class RuleBasedDecisionEngine(DecisionEngine):
         is_testimonial = effective_type == "testimonio"
 
         is_positive = False
+        is_negative = False
         if analysis.sentiment is not None:
             is_positive = analysis.sentiment.sentiment.value == "positivo"
+            is_negative = analysis.sentiment.sentiment.value == "negativo"
 
         is_relevant = False
         if analysis.relevance is not None:
@@ -66,6 +68,17 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 action=ActionType.CREAR_FAQ,
                 asset_type=AssetType.FAQ,
                 reason="Duda tecnica o pregunta frecuente",
+            )
+
+        # Rule 4: negative feedback -> derive to a human (community manager).
+        # No relevance threshold and no type check: R2 already handled technical
+        # questions, so any remaining negative message needs personal attention.
+        if is_negative:
+            return DecisionResult(
+                message_id=message_id,
+                action=ActionType.DERIVAR,
+                asset_type=None,
+                reason="Feedback negativo: requiere atención personalizada por el community manager",
             )
 
         # Rule 3: all other cases -> discard.

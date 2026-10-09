@@ -123,7 +123,8 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         - Newsletter highlight -> the SAME message as the LinkedIn post when
           one exists, so the "logro de la semana" comes from the published
           testimonio and never from an earlier technical question; it falls
-          back to the first non-discarded interaction.
+          back to the first interaction that is neither discarded nor derived
+          to a human (a DERIVAR message is not a marketing asset).
         - FAQ suggestion -> first CREAR_FAQ decision.
     A generator that returns None (LLM/JSON/validation failure) leaves its
     asset as None instead of failing the batch.
@@ -134,7 +135,8 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
 
     linkedin_target = _first_target(results, _is_linkedin_decision)
     newsletter_target = linkedin_target or _first_target(
-        results, lambda d: d.action != ActionType.DESCARTAR
+        results,
+        lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
     faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
@@ -216,11 +218,18 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
             len(results),
         )
 
+    # Negative feedback routed to a human by rule R4 (decision D-F, #97):
+    # expose how many messages need personal attention.
+    feedback_negativo = sum(
+        1 for _, _, decision in results if decision.action == ActionType.DERIVAR
+    )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
         temas_principales=topics,
         analisis_degradados=degraded,
+        feedback_negativo=feedback_negativo,
     )
 
 
