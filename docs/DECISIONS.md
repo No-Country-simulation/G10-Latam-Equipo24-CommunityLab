@@ -4,7 +4,8 @@
 > en el código y qué evidencia lo respalda. Cuando una decisión se aparta del PDF del
 > hackathon, el desvío queda explícito acá.
 >
-> Formato: `D-NN`, en orden de registro.
+> IDs: `ARQ-NN` para arquitectura; `D-A`, `D-B`, … para contrato y producto. Los IDs no se
+> renumeran: los documentos de prueba los referencian.
 
 ---
 
@@ -141,18 +142,20 @@ contrato.
 (FAQ → mentoría); R4 lo usa para decir *"este mensaje necesita intervención humana"*. Por eso el
 `reason` lo explicita y nombra al community manager.
 
-**Visibilidad en el demo.** El dataset de demo no tiene mensajes negativos: sin uno,
-`feedback_negativo` sale `0` y la regla queda invisible para el evaluador. La implementación
+**Visibilidad en el demo.** El dataset de demo no tenía mensajes negativos: sin uno,
+`feedback_negativo` salía `0` y la regla quedaba invisible para el evaluador. La implementación
 reemplazó un mensaje de relleno por un mensaje negativo de ejemplo, así que el lote sigue en 12
-mensajes. El demo ahora incluye el mensaje de feedback negativo y el conteo se muestra como `1`
-con un backend LLM real.
+mensajes. El demo muestra el conteo en su resumen y con un backend LLM real se ve como `1`; con el
+backend `rule_based` (default de un clon limpio) sale `0`, porque ese cliente nunca emite `negativo`.
 
 **Dónde vive.**
 
 - `src/decisions/engine.py` — regla R4
 - `src/domain/models.py` — `CommunitySummary.feedback_negativo` (aditivo, default `0`)
+- `src/pipeline.py` — conteo de `DERIVAR` en el resumen; `DERIVAR` excluido del fallback del newsletter
 - `data/sample/demo_fixed.json` — mensaje negativo de ejemplo
-- `docs/fichas-historias-usuario.md` — ficha HU que hoy marca DERIVAR como "pendiente"
+- `scripts/run_demo.py` — muestra el conteo en el resumen del demo
+- `docs/fichas-historias-usuario.md` — ficha HU actualizada a R4/D-F (PR #98)
 
 ---
 
