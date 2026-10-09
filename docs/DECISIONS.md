@@ -62,5 +62,62 @@ campo nuevo en el schema del LLM, no un umbral sobre el score.
 
 ---
 
+## D-F — Feedback negativo: ruta a humano (`DERIVAR`)
+
+**Fecha:** 2026-10-09
+**Estado:** decidida — implementación pendiente
+**Due:** @Rox-0864
+
+**Qué decide.** Qué hace el motor con un mensaje de **sentimiento negativo que no es pregunta
+técnica**. Hoy cae en R3 (`descartar`) y se pierde.
+
+**Decisión.** Se agrega la regla **R4**:
+
+```
+R4 (después de R2): sentimiento == negativo
+    → action = DERIVAR, asset_type = None
+    → reason = "Feedback negativo: requiere atención personalizada por el community manager"
+```
+
+- **Sin umbral de relevancia.** El prompt de #85 define relevancia alta como "historia de éxito,
+  hito o aporte de valor": una queja nunca califica. Exigir relevancia dejaría R4 como código
+  muerto, y lo que se quiere es rutear *todo* el feedback negativo.
+- **Destino del feedback: B.** Conteo aditivo en `resumen_comunidad` (`feedback_negativo: N`), sin
+  exponer el contenido. Mismo patrón que `analisis_degradados`.
+- **Orden:** R1 → R2 → R4 → R3. La condición `!= pregunta_tecnica` del borrador original es
+  redundante: R2 ya captura las preguntas técnicas y retorna antes.
+
+**Por qué.**
+
+1. **Producto:** R3 borra quejas en silencio; se pierde la señal y no se le puede responder a la
+   persona.
+2. **Contrato:** `ActionType.DERIVAR = "derivar"` ya existía en `src/domain/models.py` y estaba
+   huérfano. Se usa un valor ya diseñado, no uno inventado.
+3. **Precedente del PDF:** ya usa "derivar" como "enrutar a un humano/mentoría"
+   (`sugerencia_contenido_faq.status = "derivado_a_mentoria"`, PDF línea 224).
+4. **Costo:** una condición en el motor; los generadores **no se tocan** (DERIVAR no genera activo).
+5. **Es un plus, no un requisito.** El PDF nunca pide rutear feedback negativo: suma sin tocar las
+   claves obligatorias del contrato.
+
+**Desvío respecto al PDF.** Ninguno. Es una capacidad adicional sobre un enum que ya estaba en el
+contrato.
+
+**Nota de vocabulario.** El PDF usa "derivar" para decir *"el contenido lo produce un mentor"*
+(FAQ → mentoría); R4 lo usa para decir *"este mensaje necesita intervención humana"*. Por eso el
+`reason` lo explicita y nombra al community manager.
+
+**Visibilidad en el demo.** El dataset de demo no tiene mensajes negativos: sin agregar uno,
+`feedback_negativo` sale `0` y la regla queda invisible para el evaluador. Se agrega un mensaje
+negativo de ejemplo.
+
+**Dónde vive.**
+
+- `src/decisions/engine.py` — regla R4
+- `src/domain/models.py` — `CommunitySummary.feedback_negativo` (aditivo, default `0`)
+- `data/sample/demo_fixed.json` — mensaje negativo de ejemplo
+- `docs/fichas-historias-usuario.md` — ficha HU que hoy marca DERIVAR como "pendiente"
+
+---
+
 <!-- Pendiente: migrar acá la tabla "Resumen de decisiones de arquitectura (para DECISIONS.md)"
      que hoy vive en `docs/arquitectura.md`. -->
