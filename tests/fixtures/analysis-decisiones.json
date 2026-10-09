@@ -1781,7 +1781,7 @@
             "portafolio"
           ]
         },
-        "nota": "temas_principales es la union ordenada alfabeticamente de todos los topics, sin ranking ni limite (O-17).",
+        "nota": "temas_principales se ordena por frecuencia descendente con desempate alfabético y se recorta a los _MAX_TOPICS = 5 más frecuentes (O-17 resuelto, issue #87)",
         "estado": "ESPECIFICADO"
       },
       {
