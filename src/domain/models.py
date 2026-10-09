@@ -133,6 +133,9 @@ class AnalysisComplete(BaseModel):
     sentiment: Optional[SentimentResult] = None
     categorization: Optional[CategorizationResult] = None
     relevance: Optional[RelevanceResult] = None
+    # True ONLY when the safe default was caused by an LLM failure; an empty
+    # message short-circuits before any LLM call and is not degraded (#87).
+    is_degraded: bool = False
 
 
 class DecisionResult(BaseModel):
@@ -152,6 +155,9 @@ class CommunitySummary(BaseModel):
     total_interacciones_procesadas: int
     sentimiento_predominante: str
     temas_principales: List[str] = Field(default_factory=list)
+    # How many analyses fell back to the safe default because of an LLM
+    # failure (issue #87). Additive: OutputBatch top-level keys stay intact.
+    analisis_degradados: int = 0
 
 
 class LinkedInPost(BaseModel):

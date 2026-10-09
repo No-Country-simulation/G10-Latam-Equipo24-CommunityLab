@@ -73,6 +73,8 @@ class GeminiUnifiedAnalyzer:
         safe default. Makes exactly ONE LLM call per non-empty message.
         """
         if not message.texto or not message.texto.strip():
+            # Empty input short-circuits BEFORE any LLM call: no failure
+            # happened, so this default is NOT a degradation (issue #87).
             return self._default(message)
 
         try:
@@ -93,7 +95,7 @@ class GeminiUnifiedAnalyzer:
                 message.id,
                 type(exc).__name__,
             )
-            return self._default(message)
+            return self._default(message, degraded=True)
 
     def analyze_batch(self, messages: List[InputMessage]) -> List[AnalysisComplete]:
         """Analyzes a batch of messages; a failure in one never aborts the rest.
@@ -169,11 +171,19 @@ class GeminiUnifiedAnalyzer:
             ),
         )
 
-    def _default(self, message: InputMessage) -> AnalysisComplete:
-        """Safe default used when the LLM fails or the input is empty."""
+    def _default(
+        self, message: InputMessage, *, degraded: bool = False
+    ) -> AnalysisComplete:
+        """Safe default used when the LLM fails or the input is empty.
+
+        `degraded=True` marks the default as caused by a FAILURE; the empty
+        message path never sets it, so only real LLM failures are counted
+        as degraded (issue #87).
+        """
         mid = message.id or ""
         return AnalysisComplete(
             message_id=mid,
+            is_degraded=degraded,
             sentiment=SentimentResult(
                 message_id=mid,
                 sentiment=SentimentType.NEUTRO,

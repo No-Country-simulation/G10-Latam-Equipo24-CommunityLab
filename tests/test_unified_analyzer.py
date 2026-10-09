@@ -73,6 +73,8 @@ def test_maps_valid_json_to_analysis():
     assert result.categorization.category == "testimonio"
     assert result.categorization.topics == ["empleo"]
     assert result.relevance.is_marketing_worthy is True
+    # A successful analysis is never marked as degraded (issue #87).
+    assert result.is_degraded is False
 
 
 # ANL-02: exactly one LLM call per message
@@ -98,6 +100,8 @@ def test_free_text_returns_default():
     assert result.sentiment.sentiment == SentimentType.NEUTRO
     assert result.categorization.category == "otro"
     assert result.relevance.score == 0.0
+    # Invalid JSON from the LLM IS a failure: the default is degraded.
+    assert result.is_degraded is True
 
 
 # ANL-06: network failure returns the default, no exception propagates
@@ -106,6 +110,8 @@ def test_connection_error_returns_default():
     result = analyzer.analyze(_msg())
     assert result.sentiment.sentiment == SentimentType.NEUTRO
     assert result.categorization.category == "otro"
+    # A raised LLM error IS a failure: the default is degraded.
+    assert result.is_degraded is True
 
 
 # ANL-08: unknown sentiment value falls back to neutral
@@ -200,6 +206,9 @@ def test_empty_text_skips_llm():
     result = analyzer.analyze(_msg(texto="   "))
     assert client.calls == 0
     assert result.categorization.category == "otro"
+    # An empty message short-circuits BEFORE any LLM call: no failure
+    # happened, so it must NOT be counted as degraded (issue #87).
+    assert result.is_degraded is False
 
 
 # ANL-23: valid JSON with unexpected types returns the default (not a raise).
