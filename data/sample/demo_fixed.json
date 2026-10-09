@@ -71,8 +71,8 @@
     {
       "autor": "Camila Vega",
       "canal": "#general",
-      "tipo": "otro",
-      "texto": "Buen día a todos, ¿cómo van con el sprint? Mucha energía para esta semana."
+      "tipo": "feedback",
+      "texto": "Me prometieron mentoría personalizada y nunca llegué a tenerla. Escribí tres veces al canal de soporte y nadie me respondió."
     }
   ]
 }
