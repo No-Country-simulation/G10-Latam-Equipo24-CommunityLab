@@ -226,3 +226,15 @@ El PM/QA (`itanflores`) revisó el cableado S3-005 sobre el PR #90. Antes de opi
 | 4 | `.env.example` había perdido `COMMUNITYLAB_LLM_BACKEND`, `GEMINI_API_KEY` y `OPENAI_API_KEY` (quedaba solo OLLAMA); el README decía "154 tests" y "PR #86 pendiente" (stale: #86 ya mergeado). | Se restauraron las variables del backend y se actualizó el estado: 160 tests, #86 y #89 mergeados, PR #90 como pendiente; `docs/demo.md` refleja los statuses y rutas de almacenamiento. | `.env.example`, `README.md`, `docs/demo.md` |
 
 **Aprendizaje para endurecer después:** `tests/test_contract.py` valida los modelos Pydantic contra el ejemplo del PDF, pero **no corre el pipeline real** — por eso el desvío de `subido` pasaba en verde. Una mejora futura es agregar una aserción de contrato que corra `run_pipeline` sobre un batch mínimo y valide la salida contra el contrato (al menos `almacenamiento_oci.status` y la forma de `ruta_objeto`), para que la red de seguridad pinne el flujo completo y no solo los modelos.
+
+---
+
+# Parte 4 — Follow-ups del issue #87 (posterior al PR #90)
+
+Los tres pendientes del PR #73 que quedaron desbloqueados cuando la pipeline se cableó de punta a punta (PR #90). Resueltos como está, sin rediseñar:
+
+| # | Observación | Resolución | Dónde |
+|---|---|---|---|
+| 1 | `temas_principales` era la unión ordenada alfabéticamente de **todos** los topics, sin tope: con 100 mensajes la lista crecía sin límite (O-17). | Se cuentan ocurrencias con `Counter` y se ordenan por frecuencia **descendente** con desempate alfabético (determinístico), recortados a `_MAX_TOPICS = 5`. El caso PIP-02 sigue produciendo `[empleo, error, portafolio]`. | `src/pipeline.py` — `_summarize`, `_MAX_TOPICS` |
+| 2 | Un fallo del LLM (cuota/429, JSON inválido, excepción) degradaba al default con solo un warning por mensaje: el lote seguía reportando `exito` y la salida no mostraba cuántas interacciones se degradaron. | `AnalysisComplete` gana `is_degraded`, que solo es `True` cuando el default viene de un **fallo** (un mensaje vacío corta antes de llamar al LLM y no cuenta). `_summarize` emite el warning agregado `N/M interacciones degradadas al default` cuando N > 0 y expone `analisis_degradados` dentro de `resumen_comunidad`; `OutputBatch` no gana claves top-level (contrato PDF intacto). Firmas de `analyze()` / `analyze_batch()` sin cambios. | `src/domain/models.py`, `src/analysis/unified_analyzer.py`, `src/pipeline.py` |
+| 3 | `sentimiento_predominante` salía con el valor crudo del enum en minúsculas (`positivo`), mientras el ejemplo del PDF muestra una frase. | Mapa de presentación único (decisión B): `POSITIVO → Positivo`, `NEGATIVO → Negativo`, `NEUTRO → Neutro`. El enum `SentimentType` no cambia; solo cambia el string del resumen, que la interfaz Streamlit lee tal cual. | `src/pipeline.py` — `_SENTIMENT_PHRASES` |

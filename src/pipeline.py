@@ -37,6 +37,7 @@ from src.domain.models import (
     InputMessage,
     OCIStorage,
     OutputBatch,
+    SentimentType,
 )
 from src.generators.base import BaseGenerator
 from src.generators.faq import FAQGenerator
@@ -63,6 +64,19 @@ _OCI_REQUIRED_ENV = (
 )
 _DEFAULT_BUCKET = "communitylab-activos-marketing"
 _SNAPSHOT_DIR = Path("storage") / "activos"
+
+# Maximum number of topics exposed in `temas_principales` (issue #87): the
+# single place to change the cap.
+_MAX_TOPICS = 5
+
+# Presentation phrase for `sentimiento_predominante` (decision B, issue #87):
+# the PDF example shows a phrase, not the raw enum value. The single place to
+# change how a sentiment is presented; `SentimentType` itself is untouched.
+_SENTIMENT_PHRASES = {
+    SentimentType.POSITIVO: "Positivo",
+    SentimentType.NEGATIVO: "Negativo",
+    SentimentType.NEUTRO: "Neutro",
+}
 
 T = TypeVar("T")
 
@@ -166,25 +180,47 @@ def _run(
 def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     """Builds the community summary from the batch's analysis results."""
     sentiments = [
-        analysis.sentiment.sentiment.value
+        analysis.sentiment.sentiment
         for _, analysis, _ in results
         if analysis.sentiment is not None
     ]
-    predominant = (
-        Counter(sentiments).most_common(1)[0][0] if sentiments else "neutral"
+    predominant_value = (
+        Counter(sentiments).most_common(1)[0][0]
+        if sentiments
+        else SentimentType.NEUTRO
     )
+    predominant = _SENTIMENT_PHRASES[predominant_value]
 
-    topics = sorted({
+    topic_counts = Counter(
         topic
         for _, analysis, _ in results
         if analysis.categorization is not None
         for topic in analysis.categorization.topics
-    })
+    )
+    # Frequency descending; ties broken alphabetically (deterministic); capped
+    # to the _MAX_TOPICS most frequent topics (issue #87).
+    topics = [
+        topic
+        for topic, _ in sorted(
+            topic_counts.items(), key=lambda item: (-item[1], item[0])
+        )[:_MAX_TOPICS]
+    ]
+
+    # Analyses that fell back to the safe default because of an LLM failure
+    # (issue #87): expose the count and log one aggregate warning.
+    degraded = sum(1 for _, analysis, _ in results if analysis.is_degraded)
+    if degraded > 0:
+        logger.warning(
+            "%d/%d interacciones degradadas al default",
+            degraded,
+            len(results),
+        )
 
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
         temas_principales=topics,
+        analisis_degradados=degraded,
     )
 
 
