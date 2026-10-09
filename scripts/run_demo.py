@@ -2,7 +2,7 @@
 """Demo runner for CommunityLab: pipeline completo sobre un dataset de ejemplo.
 
 Uso:
-    python scripts/run_demo.py [dataset.json] [--offline] [--backend X] [--model Y]
+    python scripts/run_demo.py dataset.json [dataset2.csv ...] [--offline] [--backend X] [--model Y]
 
 Rutas:
     Online (por defecto): usa el backend de .env (COMMUNITYLAB_LLM_BACKEND).
@@ -50,11 +50,17 @@ def _resolve_backend(offline: bool, backend: str | None) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Corre el pipeline de CommunityLab sobre un dataset.")
-    parser.add_argument("input", nargs="?", default=str(DEFAULT_INPUT), help="JSON de entrada (default: data/sample/demo_fixed.json)")
+    parser.add_argument(
+        "input",
+        nargs="*",
+        help="Archivo(s) de entrada .json o .csv (default: data/sample/demo_fixed.json)",
+    )
     parser.add_argument("--offline", action="store_true", help="Fuerza rule_based (sin key, sin red).")
     parser.add_argument("--backend", choices=["auto", "ollama", "openai", "gemini", "rule_based"], default="auto")
     parser.add_argument("--model", help="Modelo a usar (ej. gemma4:31b). Omite el de .env.")
     args = parser.parse_args()
+    if not args.input:
+        args.input = [str(DEFAULT_INPUT)]
 
     load_dotenv(REPO_ROOT / ".env")
     if args.model:
@@ -68,14 +74,15 @@ def main() -> int:
     print("=" * 68)
     print("CommunityLab — demo del pipeline")
     print("=" * 68)
-    print(f"  dataset : {args.input}")
+    print(f"  dataset : {', '.join(args.input)}")
     print(f"  backend : {backend}" + (f" (Ollama Cloud, modelo {model})" if backend == "ollama" and has_key else ""))
     if backend == "ollama" and not has_key:
         print("  aviso   : no hay OLLAMA_API_KEY en .env -> el cliente caera a modo local")
     print("-" * 68)
 
-    if not Path(args.input).exists():
-        print(f"ERROR: no existe el dataset {args.input}")
+    faltantes = [path for path in args.input if not Path(path).exists()]
+    if faltantes:
+        print(f"ERROR: no existe el dataset {faltantes[0]}")
         return 1
 
     sys.path.insert(0, str(REPO_ROOT))

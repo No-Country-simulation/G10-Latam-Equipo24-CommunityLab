@@ -43,7 +43,7 @@ from src.generators.base import BaseGenerator
 from src.generators.faq import FAQGenerator
 from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
-from src.ingest.input_loader import JSONInputLoader
+from src.ingest.loader import load_batch
 from src.oci.client import OCIClient
 from src.utils.llm import LLMClient, get_llm_client
 
@@ -88,7 +88,7 @@ def run_pipeline(source: str) -> OutputBatch:
     load_dotenv()
 
     # 1. Ingest
-    batch: InputBatch = JSONInputLoader().load_batch(source)
+    batch: InputBatch = load_batch(source)
 
     # 2. LLM client (gemini / ollama / rule_based via COMMUNITYLAB_LLM_BACKEND)
     llm = get_llm_client()
