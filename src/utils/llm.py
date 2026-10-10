@@ -70,7 +70,16 @@ class RuleBasedClient(LLMClient):
 
         # Analysis prompt (unified analyzer)
         if "analizá el mensaje de una comunidad técnica" in prompt_lower:
-            text_lower = prompt_lower
+            # Indicators must look ONLY at the user message, not at the whole
+            # prompt: the instructions contain words ("éxito", "error", "?")
+            # that would bias the classification. Extract the content between
+            # <mensaje> ... </mensaje> instead.
+            text_lower = _extract_mensaje(prompt_lower)
+            # Never fall back to the full prompt: if <mensaje> is missing or empty,
+            # there is nothing to classify. The instructions themselves contain
+            # "éxito" and "?" which would bias classification (e.g. false
+            # testimonial). If no rules match, fall through to the final else
+            # (fail closed) returning "discusion"/"neutral".
             # Question-like content
             question_indicators = (
                 "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
