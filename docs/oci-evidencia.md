@@ -34,6 +34,43 @@ python -c "from src.oci.storage import OCIStorage; print(OCIStorage().test_conne
 
 ## 3. Comprobación en la Consola de OCI
 Al ingresar a la OCI Console en **Object Storage → Buckets → communitylab-activos-marketing**, se constata la presencia del archivo `test-integration.txt` generado automáticamente por el script de prueba, confirmando que las operaciones de lectura y escritura (`GET` y `PUT`) funcionan sin fricciones.
+---
 
+## Evidencia de subida del pipeline (R5)
+
+Se ejecutó el pipeline completo con `python scripts/run_demo.py` con las credenciales OCI cargadas en `.env`. El almacenamiento devolvió `guardado_con_exito` y el paquete quedó subido al bucket `communitylab-activos-marketing`.
+
+- **Fecha de la corrida:** 10/10/2026
+- **Entorno:** Lubuntu, Python 3.12 en entorno virtual (`.venv`)
+- **Backend de análisis:** `rule_based` (sin `GEMINI_API_KEY` cargada en esta corrida)
+- **Dataset:** `data/sample/demo_fixed.json` (12 interacciones)
+- **Estado del pipeline:** `EXITO`
+- **Estado del almacenamiento:** `guardado_con_exito`
+- **Ruta del objeto:** `activos/2026-semana-04/paquete-distribucion.json`
+
+### 1. Salida de la terminal
+
+![Evidencia terminal: almacenamiento guardado_con_exito](img/01-terminal-exito.png)
+
+### 2. Bucket en la consola de OCI
+
+Raíz del bucket, con el prefijo `activos/` creado por el pipeline y el objeto `test-integration.txt` de la prueba de conectividad previa:
+
+![Raíz del bucket communitylab-activos-marketing](img/02-bucket-raiz.png)
+
+Prefijo `activos/` con la carpeta de la corrida:
+
+![Prefijo activos/ con la carpeta 2026-semana-04](img/03-bucket-activos.png)
+
+Objeto subido por el pipeline (655 bytes, 10/10/2026 22:56 UTC):
+
+![Objeto paquete-distribucion.json en el bucket](img/04-bucket-paquete.png)
+
+### Reproducción
+
+1. Cargar las credenciales OCI en `.env` (ver `.env.example`).
+2. Activar el entorno virtual e instalar `requirements.txt`.
+3. Ejecutar `python scripts/run_demo.py`.
+4. Verificar `status : guardado_con_exito` en la sección ALMACENAMIENTO y el objeto en el bucket.
 ---
 *Documento generado como evidencia técnica para el equipo de desarrollo y validación del QA.*
