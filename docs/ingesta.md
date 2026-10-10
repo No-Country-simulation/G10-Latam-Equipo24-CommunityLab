@@ -183,3 +183,57 @@ implementen la HU-S4-006 (endpoint de API) y la HU-S5-007 (webhooks), el
 webhook converge con ellas: el contrato de entrada (`InputBatch` + array
 plano), el helper `_run_with_batch` y la forma de la respuesta se reutilizan
 tal cual.
+
+## Bot interactivo
+
+El escalón 4 de ingesta (stretch opcional S5) es un bot de Telegram que
+responde en tiempo real a cada mensaje con el análisis del pipeline: arma un
+batch de 1 mensaje en memoria (envelope `Telegram-bot-<fecha>`), lo pasa al
+helper `_run_with_batch` (el mismo del webhook) y responde con un texto corto
+en español con el sentimiento, los temas principales (hasta 3) y la decisión
+(PUBLICAR, CREAR_FAQ o DESCARTAR), incluido el estado del activo FAQ cuando
+hay una duda técnica.
+
+Este camino es el diferencial de la demo y NUNCA el camino obligatorio: el
+camino por archivo siempre funciona.
+
+### Crear el bot
+
+1. Abrí un chat con @BotFather y enviá `/newbot` (igual que la fuente de
+   Telegram documentada más arriba).
+2. BotFather devuelve el token. Guardalo en la variable de entorno
+   `TELEGRAM_BOT_TOKEN`; no lo subas al repositorio.
+
+### Arrancarlo
+
+```bash
+export TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
+
+# rule_based (default): determinista, sin red, sin costo.
+python scripts/run_bot.py
+
+# Con otro backend LLM o long polling a medida.
+python scripts/run_bot.py --backend ollama --model gemma4:31b
+python scripts/run_bot.py --backend rule_based --poll-timeout 60
+```
+
+El backend se resuelve igual que el webhook: `--backend` >
+`COMMUNITYLAB_LLM_BACKEND` > `rule_based`. `--poll-timeout` ajusta el long
+polling de la Bot API (default 30 segundos). El bot imprime "bot listo" y se
+apaga con Ctrl-C (salida 0).
+
+### Probarlo
+
+Con el bot corriendo, mandale un mensaje desde Telegram: un testimonio, una
+duda técnica o un logro. El bot responde con el análisis del pipeline. Los
+comandos `/start` y `/help` muestran la bienvenida; los demás comandos se
+ignoran. Ante errores de red o de la Bot API, el bot reintenta con backoff
+exponencial (1s, 2s, 4s, tope 30s) y no se cae; el token nunca aparece en los
+logs ni en los mensajes de error.
+
+### Convergencia
+
+Este bot es la demostración interactiva del pipeline en tiempo real. Cuando
+se implemente la HU-S5-007 (webhooks), reutiliza el mismo helper
+`_run_with_batch` y el mismo contrato de entrada (`InputBatch`), por lo que
+converge con ella sin cambios de arquitectura.
