@@ -25,6 +25,7 @@ from typing import Any, Optional
 
 import json
 import os
+import re
 
 
 class LLMError(Exception):
@@ -48,6 +49,19 @@ class LLMClient(ABC):
 # Deterministic backend (demo / tests / CI, no API key)
 # ---------------------------------------------------------------------------
 
+_MENSAJE_RE = re.compile(r"<mensaje>(.*?)</mensaje>", re.DOTALL | re.IGNORECASE)
+
+
+def _extract_mensaje(prompt: str) -> str:
+    """Devuelve el contenido de `<mensaje> ... </mensaje>` (o "" si no está).
+
+    El prompt de análisis delimita el mensaje del usuario con esas etiquetas;
+    para clasificar solo se debe mirar ese fragmento, nunca las instrucciones.
+    """
+    match = _MENSAJE_RE.search(prompt)
+    return match.group(1).strip() if match else ""
+
+
 class RuleBasedClient(LLMClient):
     """Deterministic backend that simulates the LLM with simple rules.
 
@@ -70,7 +84,11 @@ class RuleBasedClient(LLMClient):
 
         # Analysis prompt (unified analyzer)
         if "analizá el mensaje de una comunidad técnica" in prompt_lower:
-            text_lower = prompt_lower
+            # Los indicadores deben mirar SOLO el mensaje del usuario, no el
+            # prompt completo: las instrucciones contienen palabras ("éxito",
+            # "error", "?") que sesgarían la clasificación. Se extrae el
+            # contenido entre <mensaje> ... </mensaje>.
+            text_lower = _extract_mensaje(prompt_lower) or prompt_lower
             # Question-like content
             question_indicators = (
                 "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
