@@ -69,7 +69,6 @@ python scripts/generate_dataset.py                          # data/sample/sintet
 python scripts/generate_dataset.py --filas 50 --semilla 7   # otro tamaño y otra semilla
 ```
 
-<<<<<<< HEAD
 ## Ingesta desde Telegram
 
 La fuente Telegram usa la **Bot API** (HTTP) a través de `requests`, sin
@@ -184,63 +183,57 @@ implementen la HU-S4-006 (endpoint de API) y la HU-S5-007 (webhooks), el
 webhook converge con ellas: el contrato de entrada (`InputBatch` + array
 plano), el helper `_run_with_batch` y la forma de la respuesta se reutilizan
 tal cual.
-=======
-## Ingesta desde Telegram
 
-La fuente Telegram usa la **Bot API** (HTTP) a través de `requests`, sin
-dependencias nuevas. Convierte los mensajes de un grupo/canal en un JSON con el
-mismo contrato del pipeline, listo para mergear con las demás fuentes.
+## Bot interactivo
+
+El escalón 4 de ingesta (stretch opcional S5) es un bot de Telegram que
+responde en tiempo real a cada mensaje con el análisis del pipeline: arma un
+batch de 1 mensaje en memoria (envelope `Telegram-bot-<fecha>`), lo pasa al
+helper `_run_with_batch` (el mismo del webhook) y responde con un texto corto
+en español con el sentimiento, los temas principales (hasta 3) y la decisión
+(PUBLICAR, CREAR_FAQ o DESCARTAR), incluido el estado del activo FAQ cuando
+hay una duda técnica.
+
+Este camino es el diferencial de la demo y NUNCA el camino obligatorio: el
+camino por archivo siempre funciona.
 
 ### Crear el bot
 
-1. Abrí un chat con **@BotFather** en Telegram y enviá `/newbot`.
-2. Elegí un nombre y un usuario para el bot (debe terminar en `bot`).
-3. BotFather devuelve el **token** (formato `123456:ABC-DEF...`). Guardalo como
-   variable de entorno; no lo subas al repositorio.
+1. Abrí un chat con @BotFather y enviá `/newbot` (igual que la fuente de
+   Telegram documentada más arriba).
+2. BotFather devuelve el token. Guardalo en la variable de entorno
+   `TELEGRAM_BOT_TOKEN`; no lo subas al repositorio.
 
-### Obtener el chat_id
-
-1. Agregá el bot al grupo o canal (en un canal, como administrador).
-2. Enviá un mensaje en ese chat.
-3. El chat_id aparece en la respuesta de `getUpdates`
-   (`https://api.telegram.org/bot<TOKEN>/getUpdates`) dentro de
-   `result[].message.chat.id`. En grupos y supergrupos suele ser negativo.
-   También podés reenviar un mensaje del grupo a un bot de utilidades como
-   @userinfobot.
-
-### Uso del CLI
+### Arrancarlo
 
 ```bash
 export TELEGRAM_BOT_TOKEN="123456:ABC-DEF..."
 
-# El token toma la variable de entorno si no se pasa --token.
-python scripts/ingest_telegram.py --chat -1001234567890 --verbose
+# rule_based (default): determinista, sin red, sin costo.
+python scripts/run_bot.py
 
-# Con origen explícito y salida a medida.
-python scripts/ingest_telegram.py --token "123456:ABC-DEF..." \
-    --chat -1001234567890 --origen Comunidad_Telegram \
-    --out data/sample/telegram_interacciones.json --limit 100
+# Con otro backend LLM o long polling a medida.
+python scripts/run_bot.py --backend ollama --model gemma4:31b
+python scripts/run_bot.py --backend rule_based --poll-timeout 60
 ```
 
-Opciones: `--token`, `--chat`, `--out`, `--limit`, `--offset`, `--origen` y
-`--verbose`. Sale con código 0 en éxito y 1 ante error (token faltante, error
-de red/API o de escritura). El token nunca se imprime en los logs.
+El backend se resuelve igual que el webhook: `--backend` >
+`COMMUNITYLAB_LLM_BACKEND` > `rule_based`. `--poll-timeout` ajusta el long
+polling de la Bot API (default 30 segundos). El bot imprime "bot listo" y se
+apaga con Ctrl-C (salida 0).
 
-El archivo generado se puede mergear con las demás fuentes:
+### Probarlo
 
-```bash
-python scripts/run_demo.py data/sample/telegram_interacciones.json \
-    data/sample/sintetico_120.csv --offline
-```
+Con el bot corriendo, mandale un mensaje desde Telegram: un testimonio, una
+duda técnica o un logro. El bot responde con el análisis del pipeline. Los
+comandos `/start` y `/help` muestran la bienvenida; los demás comandos se
+ignoran. Ante errores de red o de la Bot API, el bot reintenta con backoff
+exponencial (1s, 2s, 4s, tope 30s) y no se cae; el token nunca aparece en los
+logs ni en los mensajes de error.
 
-### Limitación de getUpdates
+### Convergencia
 
-- Un bot solo ve los mensajes que llegan **después** de que lo agregaron al
-  grupo/canal; no puede leer el historial anterior a su incorporación.
-- `getUpdates` entrega únicamente el backlog reciente (ventana por defecto de
-  24 h) y cada update se entrega una sola vez salvo que se juegue con
-  `offset`. No existe forma de leer historial viejo arbitrario con la Bot API.
-
-Por eso esta fuente es **hacia adelante**: conviene correrla periódicamente y
-acumular los mensajes nuevos.
->>>>>>> d4f61a0 (feat(ingest): add Telegram source with Bot API, CLI and tests)
+Este bot es la demostración interactiva del pipeline en tiempo real. Cuando
+se implemente la HU-S5-007 (webhooks), reutiliza el mismo helper
+`_run_with_batch` y el mismo contrato de entrada (`InputBatch`), por lo que
+converge con ella sin cambios de arquitectura.

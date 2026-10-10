@@ -53,21 +53,27 @@ _AUTOR_DESCONOCIDO = "usuario_desconocido"
 
 def fetch_updates(
     token: str,
-    chat: str,
+    chat: Optional[str] = None,
     offset: Optional[int] = None,
     limit: Optional[int] = None,
+    poll_timeout: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Trae los updates recientes con getUpdates, filtrados por el chat pedido.
+    """Trae los updates recientes con getUpdates.
 
     - `token`: token del bot (lo emite @BotFather).
     - `chat`: chat_id del grupo/canal a ingestar. getUpdates no acepta chat_id,
-      así que la respuesta se filtra acá comparando el id del mensaje.
+      así que la respuesta se filtra acá comparando el id del mensaje. Si es
+      None, devuelve TODOS los updates crudos (el bot interactivo filtra por
+      tipo y calcula el offset sobre el total, para no re-recibir updates).
     - `offset`: update_id desde el cual empezar; se reenvía tal cual a la API.
     - `limit`: cantidad máxima de updates a pedir (la API acepta 1..100).
+    - `poll_timeout`: long polling de la Bot API en segundos; se reenvía como
+      `timeout` y el timeout HTTP local se estira para no cortar la espera.
 
     Devuelve la lista de updates (dicts con update_id + message) del chat.
     Levanta ValueError si falta el token, y RuntimeError con un mensaje claro
-    si la API responde "ok": false o si hay un error HTTP/red.
+    si la API responde "ok": false o si hay un error HTTP/red (nunca incluye
+    el token ni la URL cruda).
     """
     if not token:
         raise ValueError(
@@ -81,9 +87,17 @@ def fetch_updates(
         params["offset"] = offset
     if limit is not None:
         params["limit"] = limit
+    if poll_timeout is not None:
+        params["timeout"] = poll_timeout
+
+    # Con long polling el server retiene la conexión hasta `poll_timeout`
+    # segundos; el timeout HTTP local debe ser mayor o la request se cortaría.
+    http_timeout = _TIMEOUT
+    if poll_timeout is not None:
+        http_timeout = max(_TIMEOUT, poll_timeout + 5)
 
     try:
-        respuesta = requests.get(url, params=params, timeout=_TIMEOUT)
+        respuesta = requests.get(url, params=params, timeout=http_timeout)
         respuesta.raise_for_status()
     except requests.HTTPError as err:
         codigo = err.response.status_code if err.response is not None else "?"
@@ -104,6 +118,8 @@ def fetch_updates(
         raise RuntimeError(f"Telegram devolvió ok=false: {descripcion}")
 
     result = datos.get("result") or []
+    if chat is None:
+        return list(result)
     return [u for u in result if _es_mensaje_del_chat(u, chat)]
 
 
