@@ -127,3 +127,59 @@ python scripts/run_demo.py data/sample/telegram_interacciones.json \
 
 Por eso esta fuente es **hacia adelante**: conviene correrla periódicamente y
 acumular los mensajes nuevos.
+
+## Webhook de ingesta
+
+El escalón 3 de ingesta expone un servidor HTTP mínimo (solo librería estándar,
+`http.server.ThreadingHTTPServer`) que recibe un lote en memoria por
+`POST /ingest`, corre el pipeline completo y devuelve el resumen del contrato.
+No escribe archivos temporales: el pipeline se ejecuta sobre el `InputBatch`
+armado en memoria (helper `_run_with_batch` en `src/pipeline.py`).
+
+Rutas:
+
+- `POST /ingest`: acepta un InputBatch completo (con `interacciones`) o un
+  array plano de mensajes crudos (con alias en inglés `author`/`channel`/
+  `content`, igual que el CSV). Responde 200 con
+  `{status, resumen, activos, almacenamiento}`; 400 si el body es inválido;
+  500 si el pipeline falla.
+- `GET /health`: 200 `{"status": "ok"}`.
+
+Cualquier otra ruta o método responde 404/405. El backend LLM lo decide
+`COMMUNITYLAB_LLM_BACKEND` (por defecto `rule_based`); el CLI permite
+sobreescribirlo.
+
+### Levantarlo
+
+```bash
+python scripts/run_webhook.py                          # http://127.0.0.1:8765, backend auto
+python scripts/run_webhook.py --port 9000 --backend rule_based
+python scripts/run_webhook.py --backend ollama --model gemma4:31b
+```
+
+El server imprime ejemplos de curl al arrancar y se apaga con Ctrl-C (salida 0).
+
+### Ejemplos con los datasets existentes
+
+```bash
+# InputBatch completo desde un archivo del repo.
+curl -X POST http://127.0.0.1:8765/ingest \
+     -H 'Content-Type: application/json' \
+     -d @data/sample/demo_fixed.json
+
+# Array plano de mensajes crudos.
+curl -X POST http://127.0.0.1:8765/ingest \
+     -H 'Content-Type: application/json' \
+     -d '[{"autor":"Ana","canal":"#general","tipo":"testimonio","texto":"Logré mi primer empleo!"}]'
+
+# Chequeo de vida.
+curl http://127.0.0.1:8765/health
+```
+
+### Convergencia
+
+Este servidor es una demostración local de ingesta en tiempo real. Cuando se
+implementen la HU-S4-006 (endpoint de API) y la HU-S5-007 (webhooks), el
+webhook converge con ellas: el contrato de entrada (`InputBatch` + array
+plano), el helper `_run_with_batch` y la forma de la respuesta se reutilizan
+tal cual.
