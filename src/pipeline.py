@@ -21,6 +21,7 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, TypeVar
+from src.utils.topics import rank_topics
 
 from dotenv import load_dotenv
 
@@ -191,19 +192,17 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     )
     predominant = _SENTIMENT_PHRASES[predominant_value]
 
-    topic_counts = Counter(
+    all_topics = [
         topic
         for _, analysis, _ in results
         if analysis.categorization is not None
         for topic in analysis.categorization.topics
-    )
-    # Frequency descending; ties broken alphabetically (deterministic); capped
-    # to the _MAX_TOPICS most frequent topics (issue #87).
+    ]
+
+    # Frequency descending; alphabetical tie-break; capped at _MAX_TOPICS.
     topics = [
         topic
-        for topic, _ in sorted(
-            topic_counts.items(), key=lambda item: (-item[1], item[0])
-        )[:_MAX_TOPICS]
+        for topic, _ in rank_topics(all_topics, top_n=_MAX_TOPICS)
     ]
 
     # Analyses that fell back to the safe default because of an LLM failure
@@ -270,7 +269,7 @@ def _store(assets: DistributionAssets, batch: InputBatch) -> OCIStorage:
     snapshot.parent.mkdir(parents=True, exist_ok=True)
     snapshot.write_text(payload, encoding="utf-8")
     logger.warning("Degraded storage: asset snapshot written to %s", snapshot)
-    return OCIStorage(bucket=bucket, ruta_objeto=str(snapshot), status="pendiente")
+    return OCIStorage(bucket=bucket, ruta_objeto=snapshot.as_posix(), status="pendiente")
 
 
 def _period_folder(periodo_referencia: str) -> str:
