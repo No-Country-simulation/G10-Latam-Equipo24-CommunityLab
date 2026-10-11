@@ -43,7 +43,7 @@ Se ejecutó el pipeline completo con `python scripts/run_demo.py` con las creden
 
 - **Fecha de la corrida:** 10/10/2026
 - **Entorno:** Lubuntu, Python 3.12 en entorno virtual (`.venv`)
-- **Backend de análisis:** `rule_based` (sin `GEMINI_API_KEY` cargada en esta corrida)
+- **Backend de análisis:** `rule_based` (corrida sin LLM externo; el backend se elige con `COMMUNITYLAB_LLM_BACKEND`)
 - **Dataset:** `data/sample/demo_fixed.json` (12 interacciones)
 - **Estado del pipeline:** `EXITO`
 - **Estado del almacenamiento:** `guardado_con_exito`
