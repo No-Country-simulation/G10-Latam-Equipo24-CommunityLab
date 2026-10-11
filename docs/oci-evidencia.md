@@ -2,7 +2,7 @@
 
 > **Autor:** @emanuelperacchia  
 > **Fecha de validación:** Octubre 2026  
-> **Estado:** ✅ Verificado y operativo en capa Always Free (`sa-valparaiso-1`)
+> **Estado:** ✅ Conectividad y subida del pipeline verificadas en capa Always Free (`sa-valparaiso-1`)
 
 ---
 
@@ -34,6 +34,7 @@ python -c "from src.oci.storage import OCIStorage; print(OCIStorage().test_conne
 
 ## 3. Comprobación en la Consola de OCI
 Al ingresar a la OCI Console en **Object Storage → Buckets → communitylab-activos-marketing**, se constata la presencia del archivo `test-integration.txt` generado automáticamente por el script de prueba, confirmando que las operaciones de lectura y escritura (`GET` y `PUT`) funcionan sin fricciones.
+
 ---
 
 ## Evidencia de subida del pipeline (R5)
