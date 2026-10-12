@@ -18,7 +18,7 @@ La trazabilidad de cada decisión a sus casos de prueba vive en `docs/pruebas/an
 | ID | Decisión | Opción elegida | Alternativa | Por qué |
 |----------|----------------|-------------|---------|---------|
 | ARQ-01 | Orquestación | Python puro + async | n8n | Mayor control, testing fácil, integración directa con módulos |
-| ARQ-02 | LLM principal | Google Gemini | OpenAI | Gratis y generoso en capa free, bueno en español/portugués |
+| ARQ-02 | LLM principal | Gemma (Ollama) | OpenAI | Gratis (local o vía Ollama Cloud) y confiable para JSON |
 | ARQ-03 | Interfaz | Streamlit | Gradio | Mejor para paneles de curaduría con estado |
 | ARQ-04 | Persistencia | OCI Object Storage | Base de datos | Requisito obligatorio del hackathon + compatible con Always Free |
 | ARQ-05 | Módulo de decisiones | Reglas + LLM híbrido | Solo LLM | Determinismo en reglas críticas + contexto en matices |
