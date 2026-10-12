@@ -128,6 +128,9 @@ def main() -> int:
     print("-" * 68)
     print(f"  interacciones : {summary.total_interacciones_procesadas}")
     print(f"  sentimiento   : {summary.sentimiento_predominante}")
+    # Rule R4 (decision D-F): negative feedback routed to a human. Shown so the
+    # capability is visible in the demo, not just in the JSON contract output.
+    print(f"  feedback neg. : {summary.feedback_negativo} derivado(s) a atencion humana")
     topics = summary.temas_principales
     if topics:
         shown = topics[:12]

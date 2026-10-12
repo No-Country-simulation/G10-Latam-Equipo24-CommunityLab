@@ -385,7 +385,7 @@ def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
 # ---------------------------------------------------------------------------
 
 
-def _summary_result(idx, sentiment, topics):
+def _summary_result(idx, sentiment, topics, action=ActionType.DESCARTAR):
     """Builds a (message, analysis, decision) triple for `_summarize` tests."""
     mid = f"m{idx}"
     msg = InputMessage(
@@ -404,7 +404,7 @@ def _summary_result(idx, sentiment, topics):
         ),
     )
     decision = DecisionResult(
-        message_id=mid, action=ActionType.DESCARTAR, reason="test"
+        message_id=mid, action=action, reason="test"
     )
     return msg, analysis, decision
 
@@ -571,3 +571,61 @@ def test_pip_04_empty_batch_summary():
     assert summary.sentimiento_predominante == "Neutro"
     assert summary.temas_principales == []
     assert summary.analisis_degradados == 0
+    assert summary.feedback_negativo == 0
+
+
+# ---------------------------------------------------------------------------
+# Feedback negativo derivado a humano: conteo en el resumen (D-F, issue #97)
+# ---------------------------------------------------------------------------
+
+
+def test_summary_feedback_negativo_counts_derivar_decisions():
+    # R4: una interacción negativa no técnica se deriva a un humano; el resumen
+    # debe exponer cuántas decisiones DERIVAR hubo.
+    results = [
+        _summary_result(
+            0, SentimentType.NEGATIVO, [], action=ActionType.DERIVAR
+        ),
+        _summary_result(1, SentimentType.POSITIVO, []),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.feedback_negativo == 1
+
+
+def test_summary_feedback_negativo_defaults_to_zero():
+    summary = _summarize_results(
+        [_summary_result(0, SentimentType.POSITIVO, [])]
+    )
+
+    assert summary.feedback_negativo == 0
+
+
+def test_feedback_negativo_counted_end_to_end(tmp_path):
+    # End-to-end: solo el mensaje negativo se deriva; el positivo se descarta,
+    # por lo que el conteo es exactamente 1.
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Nora",
+                "canal": "#general",
+                "tipo": "feedback",
+                "texto": (
+                    "Me prometieron mentoría personalizada y nunca llegué a "
+                    f"tenerla. {NEGATIVE_MARKER}"
+                ),
+            },
+            {
+                "autor": "Ana",
+                "canal": "#general",
+                "tipo": "feedback",
+                "texto": "El taller estuvo bueno, gracias.",
+            },
+        ],
+    )
+    output = run_pipeline(source)
+
+    assert output.status == "exito"
+    assert output.resumen_comunidad.feedback_negativo == 1
+    assert output.resumen_comunidad.total_interacciones_procesadas == 2
