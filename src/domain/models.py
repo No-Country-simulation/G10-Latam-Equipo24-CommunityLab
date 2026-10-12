@@ -127,6 +127,12 @@ class RecurringTopic(BaseModel):
     faq_title: str
 
 
+class TopicFrequency(BaseModel):
+    """A topic ranked by frequency with its occurrence count (Option A)."""
+    tema: str
+    conteo: int
+
+
 class AnalysisComplete(BaseModel):
     """Consolidated analysis result for a single message."""
     message_id: str
@@ -161,6 +167,13 @@ class CommunitySummary(BaseModel):
     # How many messages were routed to a human on negative feedback (rule R4,
     # decision D-F, issue #97). Additive: existing keys are unchanged.
     feedback_negativo: int = 0
+    # Option A (HU-S4-003): counts per SentimentType value across the analyzed
+    # batch. Keys are the sentiment values ("positivo", "negativo", "neutral").
+    # Additive via default_factory: an empty batch yields {}.
+    distribucion_sentimiento: Dict[str, int] = Field(default_factory=dict)
+    # Option A (HU-S4-003): the top topics ranked by frequency with their
+    # counts. Additive via default_factory: an empty batch yields [].
+    temas_principales_conteo: List[TopicFrequency] = Field(default_factory=list)
 
 
 class LinkedInPost(BaseModel):

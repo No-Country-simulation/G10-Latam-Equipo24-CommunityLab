@@ -29,7 +29,7 @@ from src.domain.models import (
     SentimentType,
 )
 from src.pipeline import _summarize, run_pipeline
-from src.utils.llm import LLMClient, LLMError
+from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "pipeline_sample.json"
 
@@ -629,3 +629,184 @@ def test_feedback_negativo_counted_end_to_end(tmp_path):
     assert output.status == "exito"
     assert output.resumen_comunidad.feedback_negativo == 1
     assert output.resumen_comunidad.total_interacciones_procesadas == 2
+
+
+# ---------------------------------------------------------------------------
+# Option A additive fields (HU-S4-003): sentiment distribution + counted topics
+# ---------------------------------------------------------------------------
+
+
+def _degraded_result(idx):
+    """Builds a (message, analysis, decision) triple with a degraded analysis.
+
+    A degraded analysis still carries the safe-default sentiment (NEUTRO) and
+    no topics, mirroring what the analyzer returns after an LLM failure.
+    """
+    mid = f"d{idx}"
+    msg = InputMessage(autor="Autor", canal="#canal", tipo="otro", texto="x", id=mid)
+    analysis = AnalysisComplete(
+        message_id=mid,
+        is_degraded=True,
+        sentiment=SentimentResult(
+            message_id=mid,
+            sentiment=SentimentType.NEUTRO,
+            score=0.5,
+            reasoning="default",
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="otro", topics=[], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=0.0, is_marketing_worthy=False
+        ),
+    )
+    decision = DecisionResult(message_id=mid, action=ActionType.DESCARTAR, reason="x")
+    return msg, analysis, decision
+
+
+def test_option_a_distribucion_sentimiento_counts_all_sentiments():
+    results = [
+        _summary_result(0, SentimentType.POSITIVO, []),
+        _summary_result(1, SentimentType.POSITIVO, []),
+        _summary_result(2, SentimentType.NEUTRO, []),
+        _summary_result(3, SentimentType.NEGATIVO, []),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.distribucion_sentimiento == {
+        "positivo": 2,
+        "neutral": 1,
+        "negativo": 1,
+    }
+    # The counts are consistent with the predominant label.
+    assert summary.sentimiento_predominante == "Positivo"
+
+
+def test_option_a_distribucion_sentimiento_counts_degraded_fallback():
+    # A degraded analysis still carries a sentiment (the NEUTRO default), so it
+    # must be counted in the distribution.
+    results = [
+        _degraded_result(0),
+        _summary_result(1, SentimentType.POSITIVO, ["logro"]),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.distribucion_sentimiento == {"neutral": 1, "positivo": 1}
+
+
+def test_option_a_ranked_topics_desc_by_count_then_alphabetical():
+    results = [
+        _summary_result(0, SentimentType.NEUTRO, ["python", "ia", "error"]),
+        _summary_result(1, SentimentType.NEUTRO, ["python", "empleo"]),
+        _summary_result(2, SentimentType.NEUTRO, ["python", "empleo", "datos"]),
+        _summary_result(3, SentimentType.NEUTRO, ["empleo", "error"]),
+    ]
+    summary = _summarize_results(results)
+
+    # python 3, empleo 3 (tie -> alphabetical), error 2, "datos" 1, ia 1.
+    # Labels come from rank_topics, so "datos" is normalized to "dato"
+    # (singular), exactly as it would be in `temas_principales`.
+    assert [(tf.tema, tf.conteo) for tf in summary.temas_principales_conteo] == [
+        ("empleo", 3),
+        ("python", 3),
+        ("error", 2),
+        ("dato", 1),
+        ("ia", 1),
+    ]
+
+
+def test_option_a_ranked_topics_capped_at_ten():
+    results = []
+    idx = 0
+    for i in range(12):
+        topic = f"tema{i:02d}"
+        for _ in range(12 - i):
+            results.append(_summary_result(idx, SentimentType.NEUTRO, [topic]))
+            idx += 1
+    summary = _summarize_results(results)
+
+    ranked = summary.temas_principales_conteo
+    # _TOP_TOPICS_COUNTED = 10: the two least frequent topics are dropped.
+    assert len(ranked) == 10
+    assert [tf.tema for tf in ranked] == [f"tema{i:02d}" for i in range(10)]
+    assert [tf.conteo for tf in ranked] == [12, 11, 10, 9, 8, 7, 6, 5, 4, 3]
+
+
+def test_option_a_counted_topics_extend_temas_principales():
+    results = [
+        _summary_result(0, SentimentType.NEUTRO, ["python", "ia", "error"]),
+        _summary_result(1, SentimentType.NEUTRO, ["python", "empleo"]),
+        _summary_result(2, SentimentType.NEUTRO, ["python", "empleo", "datos"]),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.temas_principales_conteo[0].tema == "python"
+    assert summary.temas_principales_conteo[0].conteo == 3
+    # `temas_principales` (cap 5) is the prefix of the counted ranking (cap 10):
+    # both share normalization, tie-break and ordering.
+    assert summary.temas_principales == [
+        tf.tema
+        for tf in summary.temas_principales_conteo[: len(summary.temas_principales)]
+    ]
+
+
+def test_option_a_empty_batch_defaults():
+    summary = _summarize_results([])
+
+    assert summary.distribucion_sentimiento == {}
+    assert summary.temas_principales_conteo == []
+
+
+def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
+    """Option A fields populated end-to-end by the deterministic rule_based
+    backend (offline, no API key)."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
+    # The autouse fixture fakes the LLM client; re-point it at the real factory
+    # so this test genuinely exercises the rule_based backend end-to-end.
+    monkeypatch.setattr("src.pipeline.get_llm_client", real_get_llm_client)
+    for var in (
+        "OCI_USER_ID",
+        "OCI_PRIVATE_KEY_PATH",
+        "OCI_FINGERPRINT",
+        "OCI_TENANCY_ID",
+        "OCI_REGION",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Test User",
+                "canal": "#logros",
+                "tipo": "testimonio",
+                "texto": "Logré mi primer empleo como desarrollador!",
+            },
+            {
+                "autor": "Dev",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo hago para configurar esto?",
+            },
+            {
+                "autor": "Otro",
+                "canal": "#general",
+                "tipo": "otro",
+                "texto": "Solo pasando por acá, nada importante",
+            },
+        ],
+    )
+    output = run_pipeline(source)
+    summary = output.resumen_comunidad
+
+    assert output.status == "exito"
+    # rule_based: testimonial -> positivo, the two others -> neutral.
+    assert summary.distribucion_sentimiento == {"positivo": 1, "neutral": 2}
+    # One topic each, all count 1 -> alphabetical ordering.
+    assert [tf.tema for tf in summary.temas_principales_conteo] == [
+        "comunidad",
+        "consulta",
+        "logro",
+    ]
+    assert [tf.conteo for tf in summary.temas_principales_conteo] == [1, 1, 1]
