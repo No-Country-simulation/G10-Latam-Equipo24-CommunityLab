@@ -17,7 +17,7 @@ def cargar_fuente(ruta) -> dict:
     ext = Path(ruta).suffix.lower()
     cargador = cargadores.get(ext)
     if cargador is None:
-        raise ValueError(f"Formato no soportadp '{ext}' en {Path(ruta).name} (usa .json o .csv)")
+        raise ValueError(f"Formato no soportado '{ext}' en {Path(ruta).name} (usa .json o .csv)")
     return cargador(ruta)
 
 
