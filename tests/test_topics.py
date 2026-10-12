@@ -110,3 +110,35 @@ def test_rank_topics_plural_grouping_keeps_frequency_order():
 )
 def test_rank_topics_preserves_invariable_words(word):
     assert rank_topics([word]) == [(word, 1)]
+
+
+def test_rank_topics_issue_100_pdf_labels_stay_valid():
+    # Real topics seen in the video corpus (issue #100): the generic vowel
+    # rule turned "condicionales" into the invalid word "condicionale".
+    assert rank_topics(["LangGraph / Nodos Condicionales"]) == [
+        ("langgraph / nodo condicional", 1),
+    ]
+    assert rank_topics(["Nodos Condicionales", "Nodo Condicional"]) == [
+        ("nodo condicional", 2),
+    ]
+    assert rank_topics(["Contratacion / Logros"]) == [
+        ("contratacion / logro", 1),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("singular", "plural"),
+    [
+        ("canal", "canales"),
+        ("condicional", "condicionales"),
+        ("bus", "buses"),
+        ("inglés", "ingleses"),
+    ],
+)
+def test_rank_topics_issue_100_groups_consonant_plurals(singular, plural):
+    assert rank_topics([singular, plural]) == [(singular, 2)]
+
+
+def test_rank_topics_issue_100_unaccented_invariable_groups():
+    assert rank_topics(["análisis", "analisis"]) == [("análisis", 2)]
+    assert rank_topics(["crisis"]) == [("crisis", 1)]

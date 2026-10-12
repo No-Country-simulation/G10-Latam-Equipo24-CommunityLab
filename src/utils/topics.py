@@ -21,6 +21,12 @@ _ES_PLURALS = {
     "paneles": "panel",
     "perfiles": "perfil",
     "jardines": "jardín",
+    # Consonant-ending "-es" plurals the generic vowel rule would mangle:
+    # "condicionales" -> "condicionale" instead of "condicional" (issue #100).
+    "condicionales": "condicional",
+    "canales": "canal",
+    "ingleses": "inglés",
+    "buses": "bus",
 }
 
 _INVARIABLE_WORDS = {
@@ -34,7 +40,23 @@ _INVARIABLE_WORDS = {
     "dosis",
     "análisis",
     "paréntesis",
+    "inglés",
 }
+
+
+def _fold(text: str) -> str:
+    """Strip combining marks so lookups ignore accents (issue #100)."""
+    return "".join(
+        char
+        for char in unicodedata.normalize("NFD", text)
+        if unicodedata.category(char) != "Mn"
+    )
+
+
+_FOLDED_ES_PLURALS = {
+    _fold(word): singular for word, singular in _ES_PLURALS.items()
+}
+_FOLDED_INVARIABLE = {_fold(word) for word in _INVARIABLE_WORDS}
 
 
 def _normalize_word(word: str) -> str:
@@ -42,11 +64,12 @@ def _normalize_word(word: str) -> str:
     if word.endswith("iones") and len(word) > 6:
         return word[:-5] + "ión"
 
-    if word in _INVARIABLE_WORDS:
+    folded = _fold(word)
+    if folded in _FOLDED_INVARIABLE:
         return word
 
-    if word in _ES_PLURALS:
-        return _ES_PLURALS[word]
+    if folded in _FOLDED_ES_PLURALS:
+        return _FOLDED_ES_PLURALS[folded]
 
     # Remove the final "s" only when the resulting word ends in a vowel.
     # This preserves forms such as "serie" from "series".
@@ -70,12 +93,7 @@ def _normalize_label(topic: str) -> str:
 
 def _normalize_key(topic: str) -> str:
     """Return a lowercase, accent-free key for grouping equivalent topics."""
-    normalized = unicodedata.normalize("NFD", _normalize_label(topic))
-    return "".join(
-        char
-        for char in normalized
-        if unicodedata.category(char) != "Mn"
-    )
+    return _fold(_normalize_label(topic))
 
 
 def rank_topics(
