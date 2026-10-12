@@ -1,0 +1,61 @@
+autor,canal,tipo,texto
+Mariana,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Jorge,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Elena,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Mariana,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Jorge,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Elena,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Elena,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Federico,ayuda,pregunta_tecnica,¿Cómo conecto el backend con una base de datos en la nube?
+Mariana,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Diego,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Diego,ayuda,pregunta_tecnica,¿Cómo valido un token JWT en una API con FastAPI?
+Carlos,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Federico,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Ramiro,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Valentina,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Federico,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Carlos,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Ana,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Carlos,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Diego,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Jorge,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Carlos,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Elena,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Ramiro,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Elena,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Mariana,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Diego,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Jorge,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Diego,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Valentina,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Ana,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Elena,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Federico,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Valentina,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Luciana,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Mariana,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Luciana,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Carlos,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Ramiro,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Elena,ayuda,pregunta_tecnica,¿Cómo valido un token JWT en una API con FastAPI?
+Carlos,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Ana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Valentina,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Ana,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Elena,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Ana,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Luciana,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Elena,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Ramiro,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Diego,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Jorge,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Carlos,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Elena,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Ramiro,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Elena,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Jorge,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Jorge,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Diego,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Ramiro,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Carlos,ayuda,pregunta_tecnica,¿Cómo conecto el backend con una base de datos en la nube?
