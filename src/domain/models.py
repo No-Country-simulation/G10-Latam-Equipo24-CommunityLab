@@ -158,6 +158,9 @@ class CommunitySummary(BaseModel):
     # How many analyses fell back to the safe default because of an LLM
     # failure (issue #87). Additive: OutputBatch top-level keys stay intact.
     analisis_degradados: int = 0
+    # How many messages were routed to a human on negative feedback (rule R4,
+    # decision D-F, issue #97). Additive: existing keys are unchanged.
+    feedback_negativo: int = 0
 
 
 class LinkedInPost(BaseModel):

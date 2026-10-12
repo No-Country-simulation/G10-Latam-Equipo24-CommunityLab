@@ -696,7 +696,9 @@ Recomendación" queda como **variante de prompt** dentro de `LinkedInGenerator`.
 - [x] `src/generators/testimonial.py` NO se crea
 
 **Nota — testimonios negativos:** no generan activo de marketing. Se resuelven
-con `ActionType.DERIVAR` (ruta a humano), pendiente en el motor (#84).
+con `ActionType.DERIVAR` (ruta a humano). Ya está implementado en el motor como
+la regla **R4** (decisión **D-F**, issue #97): todo mensaje negativo que no sea
+una pregunta técnica se deriva y se cuenta en `resumen_comunidad.feedback_negativo`.
 
 ---
 

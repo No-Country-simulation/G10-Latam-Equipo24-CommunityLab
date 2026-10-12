@@ -21,6 +21,7 @@ from collections import Counter
 from datetime import date
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, TypeVar
+from src.utils.topics import rank_topics
 
 from dotenv import load_dotenv
 
@@ -135,7 +136,8 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         - Newsletter highlight -> the SAME message as the LinkedIn post when
           one exists, so the "logro de la semana" comes from the published
           testimonio and never from an earlier technical question; it falls
-          back to the first non-discarded interaction.
+          back to the first interaction that is neither discarded nor derived
+          to a human (a DERIVAR message is not a marketing asset).
         - FAQ suggestion -> first CREAR_FAQ decision.
     A generator that returns None (LLM/JSON/validation failure) leaves its
     asset as None instead of failing the batch.
@@ -146,7 +148,8 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
 
     linkedin_target = _first_target(results, _is_linkedin_decision)
     newsletter_target = linkedin_target or _first_target(
-        results, lambda d: d.action != ActionType.DESCARTAR
+        results,
+        lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
     faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
@@ -203,19 +206,17 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     )
     predominant = _SENTIMENT_PHRASES[predominant_value]
 
-    topic_counts = Counter(
+    all_topics = [
         topic
         for _, analysis, _ in results
         if analysis.categorization is not None
         for topic in analysis.categorization.topics
-    )
-    # Frequency descending; ties broken alphabetically (deterministic); capped
-    # to the _MAX_TOPICS most frequent topics (issue #87).
+    ]
+
+    # Frequency descending; alphabetical tie-break; capped at _MAX_TOPICS.
     topics = [
         topic
-        for topic, _ in sorted(
-            topic_counts.items(), key=lambda item: (-item[1], item[0])
-        )[:_MAX_TOPICS]
+        for topic, _ in rank_topics(all_topics, top_n=_MAX_TOPICS)
     ]
 
     # Analyses that fell back to the safe default because of an LLM failure
@@ -228,11 +229,18 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
             len(results),
         )
 
+    # Negative feedback routed to a human by rule R4 (decision D-F, #97):
+    # expose how many messages need personal attention.
+    feedback_negativo = sum(
+        1 for _, _, decision in results if decision.action == ActionType.DERIVAR
+    )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
         temas_principales=topics,
         analisis_degradados=degraded,
+        feedback_negativo=feedback_negativo,
     )
 
 
@@ -282,7 +290,7 @@ def _store(assets: DistributionAssets, batch: InputBatch) -> OCIStorage:
     snapshot.parent.mkdir(parents=True, exist_ok=True)
     snapshot.write_text(payload, encoding="utf-8")
     logger.warning("Degraded storage: asset snapshot written to %s", snapshot)
-    return OCIStorage(bucket=bucket, ruta_objeto=str(snapshot), status="pendiente")
+    return OCIStorage(bucket=bucket, ruta_objeto=snapshot.as_posix(), status="pendiente")
 
 
 def _period_folder(periodo_referencia: str) -> str:
