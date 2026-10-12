@@ -82,7 +82,7 @@ def test_positive_testimonial_below_relevance_threshold_is_discarded():
     assert result.asset_type is None
 
 
-def test_negative_testimonial_is_discarded():
+def test_negative_testimonial_is_derived_to_human():
     engine = RuleBasedDecisionEngine()
     analysis = build_analysis(
         category="testimonio",
@@ -93,7 +93,60 @@ def test_negative_testimonial_is_discarded():
     message = build_message(tipo="testimonio")
     result = engine.decide(message, analysis)
 
-    assert result.action == ActionType.DESCARTAR
+    assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
+    assert result.reason == (
+        "Feedback negativo: requiere atención personalizada por el community manager"
+    )
+
+
+def test_negative_feedback_is_derived_to_human():
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="feedback",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.2,
+    )
+
+    message = build_message(tipo="feedback")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
+    assert result.reason == (
+        "Feedback negativo: requiere atención personalizada por el community manager"
+    )
+
+
+def test_negative_technical_question_still_goes_to_faq():
+    # R2 runs before R4: a negative technical question is still a FAQ.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="pregunta_tecnica",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.9,
+    )
+
+    message = build_message(tipo="pregunta_tecnica")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.CREAR_FAQ
+    assert result.asset_type == AssetType.FAQ
+
+
+def test_negative_message_without_relevance_is_still_derived():
+    # R4 has no relevance threshold, unlike R1.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="testimonio",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.0,
+    )
+
+    message = build_message(tipo="testimonio")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DERIVAR
     assert result.asset_type is None
 
 

@@ -1,5 +1,6 @@
 """Tests for domain models (contract)."""
 from src.domain.models import (
+    CommunitySummary,
     InputMessage,
     InputBatch,
     SentimentResult,
@@ -92,3 +93,21 @@ def test_output_batch_uses_contract_keys():
         "activos_distribucion_generados",
         "almacenamiento_oci",
     }
+
+
+def test_community_summary_feedback_negativo_defaults_to_zero():
+    """`feedback_negativo` is additive: existing summaries keep working."""
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+    )
+    assert summary.feedback_negativo == 0
+
+
+def test_community_summary_feedback_negativo_accepts_value():
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Negativo",
+        feedback_negativo=2,
+    )
+    assert summary.feedback_negativo == 2
