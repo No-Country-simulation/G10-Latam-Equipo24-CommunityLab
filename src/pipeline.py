@@ -39,6 +39,7 @@ from src.domain.models import (
     OCIStorage,
     OutputBatch,
     SentimentType,
+    TopicFrequency,
 )
 from src.generators.base import BaseGenerator
 from src.generators.faq import FAQGenerator
@@ -69,6 +70,10 @@ _SNAPSHOT_DIR = Path("storage") / "activos"
 # Maximum number of topics exposed in `temas_principales` (issue #87): the
 # single place to change the cap.
 _MAX_TOPICS = 5
+
+# Option A (HU-S4-003): maximum number of topics exposed with their counts in
+# `temas_principales_conteo`. The single place to change the cap.
+_TOP_TOPICS_COUNTED = 10
 
 # Presentation phrase for `sentimiento_predominante` (decision B, issue #87):
 # the PDF example shows a phrase, not the raw enum value. The single place to
@@ -192,6 +197,21 @@ def _run(
     return asset
 
 
+def _ranked_topics(
+    topics: List[str], top_n: int = _TOP_TOPICS_COUNTED
+) -> List[TopicFrequency]:
+    """Top topics ranked by frequency with their counts (Option A, HU-S4-003).
+
+    Reuses `rank_topics` so `temas_principales` and `temas_principales_conteo`
+    share normalization (plural singularization), the alphabetical tie-break
+    and the ordering. Frequency descending; capped at `top_n`.
+    """
+    return [
+        TopicFrequency(tema=topic, conteo=count)
+        for topic, count in rank_topics(topics, top_n=top_n)
+    ]
+
+
 def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     """Builds the community summary from the batch's analysis results."""
     sentiments = [
@@ -199,12 +219,20 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         for _, analysis, _ in results
         if analysis.sentiment is not None
     ]
+    # Option A (HU-S4-003): one Counter feeds both the predominant label and
+    # the per-value distribution, so the two can never disagree. Every analyzed
+    # message with a sentiment counts, including degraded fallbacks (NEUTRO).
+    sentiment_counts = Counter(sentiments)
     predominant_value = (
-        Counter(sentiments).most_common(1)[0][0]
+        sentiment_counts.most_common(1)[0][0]
         if sentiments
         else SentimentType.NEUTRO
     )
     predominant = _SENTIMENT_PHRASES[predominant_value]
+    distribucion_sentimiento = {
+        sentiment.value: count
+        for sentiment, count in sentiment_counts.items()
+    }
 
     all_topics = [
         topic
@@ -218,6 +246,9 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         topic
         for topic, _ in rank_topics(all_topics, top_n=_MAX_TOPICS)
     ]
+
+    # Option A (HU-S4-003): the same ranking, with counts, capped at 10.
+    temas_principales_conteo = _ranked_topics(all_topics)
 
     # Analyses that fell back to the safe default because of an LLM failure
     # (issue #87): expose the count and log one aggregate warning.
@@ -241,6 +272,8 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         temas_principales=topics,
         analisis_degradados=degraded,
         feedback_negativo=feedback_negativo,
+        distribucion_sentimiento=distribucion_sentimiento,
+        temas_principales_conteo=temas_principales_conteo,
     )
 
 
