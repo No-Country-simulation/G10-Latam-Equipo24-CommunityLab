@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
 from src.interface import app
@@ -73,3 +74,43 @@ def test_reset_batch_state_clears_results_and_previous_edits():
     app.reset_batch_state(session_state)
 
     assert session_state == {"processing_done": False, "llm_results": None}
+
+
+def test_build_sentiment_distribution_df_with_data():
+    distribucion = {"positivo": 5, "negativo": 2, "neutral": 3}
+    df = app.build_sentiment_distribution_df(distribucion)
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["sentimiento", "conteo"]
+    assert len(df) == 3
+
+
+def test_build_sentiment_distribution_df_empty():
+    df = app.build_sentiment_distribution_df({})
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["sentimiento", "conteo"]
+    assert len(df) == 0
+
+
+def test_build_top_topics_df_with_data():
+    temas = [
+        {"tema": "aprendizaje", "conteo": 10},
+        {"tema": "empleos", "conteo": 5},
+        {"tema": "proyectos", "conteo": 3},
+    ]
+    df = app.build_top_topics_df(temas)
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["tema", "conteo"]
+    assert len(df) == 3
+    # Should be sorted desc by conteo
+    assert df.iloc[0]["tema"] == "aprendizaje"
+
+
+def test_build_top_topics_df_empty():
+    df = app.build_top_topics_df([])
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["tema", "conteo"]
+    assert len(df) == 0

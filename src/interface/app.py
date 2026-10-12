@@ -3,6 +3,7 @@ import tempfile
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 from src.pipeline import run_pipeline
 
@@ -26,6 +27,73 @@ def process_json_input(content):
     if result.get("status") != "exito":
         raise ValueError(f"El pipeline devolvió un estado inesperado: {result.get('status')!r}")
     return result
+
+
+def build_sentiment_distribution_df(distribucion_sentimiento):
+    """Construye un DataFrame para el gráfico de distribución de sentimiento.
+
+    Parámetros
+    ----------
+    distribucion_sentimiento : dict
+        Conteos por sentimiento (claves: "positivo", "negativo", "neutral").
+
+    Retorna
+    -------
+    pandas.DataFrame
+        Columnas ["sentimiento", "conteo"] listas para graficar.
+    """
+    if not distribucion_sentimiento:
+        return pd.DataFrame(columns=["sentimiento", "conteo"])
+
+    data = []
+    for sentiment, count in distribucion_sentimiento.items():
+        try:
+            data.append({"sentimiento": str(sentiment), "conteo": int(count)})
+        except (ValueError, TypeError):
+            continue
+
+    df = pd.DataFrame(data)
+    if df.empty:
+        return pd.DataFrame(columns=["sentimiento", "conteo"])
+    return df
+
+
+def build_top_topics_df(temas_principales_conteo):
+    """Construye un DataFrame para el gráfico de temas principales (horizontal).
+
+    Parámetros
+    ----------
+    temas_principales_conteo : list
+        Lista de objetos con "tema" y "conteo".
+
+    Retorna
+    -------
+    pandas.DataFrame
+        Columnas ["tema", "conteo"] ordenadas desc por conteo.
+    """
+    if not temas_principales_conteo:
+        return pd.DataFrame(columns=["tema", "conteo"])
+
+    data = []
+    for item in temas_principales_conteo:
+        if isinstance(item, dict):
+            tema = item.get("tema")
+            conteo = item.get("conteo")
+        else:
+            tema = getattr(item, "tema", None)
+            conteo = getattr(item, "conteo", None)
+        if tema is None or conteo is None:
+            continue
+        try:
+            data.append({"tema": str(tema), "conteo": int(conteo)})
+        except (ValueError, TypeError):
+            continue
+
+    df = pd.DataFrame(data)
+    if df.empty:
+        return pd.DataFrame(columns=["tema", "conteo"])
+    df = df.sort_values(by="conteo", ascending=False).reset_index(drop=True)
+    return df
 
 
 def reset_batch_state(session_state):
@@ -106,6 +174,43 @@ def main():
         with kpi_col3:
             st.markdown("**Temas Principales:**")
             st.info(", ".join(summary["temas_principales"]))
+
+        st.write("")
+
+        # Charts for Option A contract fields
+        if "resumen_comunidad" in results:
+            resumen = results["resumen_comunidad"]
+            distribucion_df = build_sentiment_distribution_df(
+                resumen.get("distribucion_sentimiento") or {}
+            )
+            temas_df = build_top_topics_df(
+                resumen.get("temas_principales_conteo") or []
+            )
+
+            chart_col1, chart_col2 = st.columns(2)
+            with chart_col1:
+                st.subheader("Distribución de Sentimiento")
+                if distribucion_df.empty:
+                    st.info("No hay datos suficientes para mostrar la distribución de sentimiento.")
+                else:
+                    st.bar_chart(
+                        distribucion_df,
+                        x="sentimiento",
+                        y="conteo",
+                        color="sentimiento",
+                    )
+
+            with chart_col2:
+                st.subheader("Temas Principales (Top)")
+                if temas_df.empty:
+                    st.info("No hay datos suficientes para mostrar temas principales.")
+                else:
+                    st.bar_chart(
+                        temas_df,
+                        x="conteo",
+                        y="tema",
+                        orientation="horizontal",
+                    )
 
         st.write("")
 
