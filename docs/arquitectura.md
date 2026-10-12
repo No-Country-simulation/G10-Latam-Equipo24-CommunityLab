@@ -71,8 +71,8 @@ flowchart TB
     end
 
     subgraph LLM["🧠 Proveedor LLM"]
-        GEMINI["Google Gemini\n(principal)"]
-        OPENAI["OpenAI GPT\n(respaldo)"]
+        GEMMA["Gemma (Ollama)\n(principal)"]
+        GEMINI["Google Gemini\n(segunda opción)"]
     end
 
     FUENTES --> INGEST
@@ -160,8 +160,8 @@ flowchart LR
     end
 
     subgraph LLMS["🌐 LLM Providers"]
-        L_GEMINI["Gemini"]
-        L_OPENAI["OpenAI (resp)"]
+        L_GEMMA["Gemma (Ollama)"]
+        L_GEMINI["Gemini (resp)"]
     end
 
     FRONT -->|"HTTP"| API
@@ -194,7 +194,7 @@ sequenceDiagram
     participant API as Webhook / API
     participant ING as Ingest<br/>(loader+normalize)
     participant ANL as Analysis<br/>(sentimiento+temas)
-    participant LLM as LLM<br/>(Gemini)
+    participant LLM as LLM<br/>(Gemma/Ollama)
     participant DEC as Decision Engine
     participant GEN as Generators
     participant OCI as OCI Object Storage
@@ -265,7 +265,7 @@ flowchart TB
     INTERNET -->|"POST /webhook"| PIPELINE
 
     subgraph EXT["Externals"]
-        LLM_API["LLM APIs<br/>(Gemini/OpenAI)"]
+        LLM_API["LLM APIs<br/>(Ollama/Gemini)"]
     end
     PIPELINE -->|"API Calls"| LLM_API
 ```
