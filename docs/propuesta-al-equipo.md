@@ -4,6 +4,8 @@
 **Rama local:** `feat/ingesta-mejoras` (7 commits, sin pushear, sin PR)
 **Estado:** borrador para discutir en la reunión
 
+> **Nota de estado (13/10/2026, QA).** La propuesta se aprobó en la sesión del lunes 12/10 y se dividió en una cadena de PRs: #102 CSV → #103 webhook → #104 bot → #105 contrato → #107 dashboard, y #106 docs y timeline (tracker: #108). #94 y #98 ya están en `main`. La rama `feat/ingesta-mejoras` creció a ~4.8k líneas; la suite de la cadena da **267 passed, 1 skipped** (#106) y flake8 limpio. El resto del documento se conserva como registro de la propuesta original.
+
 ## 1. Resumen
 
 Traemos para discutir tres cosas que hoy viven **fuera del repositorio**:
@@ -134,7 +136,7 @@ Agregar al resumen dos campos nuevos, sin tocar los existentes:
 
 ```jsonc
 {
-  "distribucion_sentimiento": { "Positivo": 42, "Negativo": 18, "Neutral": 31 },
+  "distribucion_sentimiento": { "Positivo": 42, "Negativo": 18, "Neutro": 31 },
   "temas_principales_conteo": [
     { "tema": "empleo", "frecuencia": 12 },
     { "tema": "entrevista", "frecuencia": 9 }
@@ -194,7 +196,7 @@ Telegram ──(pull: fetch_updates)──►  Streamlit (dashboard)  ──► 
    encadenados** por escalón (CSV → Telegram → webhook → bot), cada uno
    revisable por separado.
 4. **Orden de merge:** sugerimos cerrar primero `#94` (`feat/decision-engine`,
-   ya aprobado) y recién después subir la rama de ingesta.
+   ya aprobado) y recién después subir la rama de ingesta. *(Hecho: #94 se mergeó el 11/10.)*
 
 ## 6. Cómo reproducirlo (evidencia)
 
@@ -204,7 +206,7 @@ demos conviene forzar `--offline`.
 
 ```bash
 # Suite completa al cierre de esta sesión:
-#   230 passed, 1 skipped
+#   230 passed, 1 skipped (al 11/10; en la cadena del 13/10: 267 passed, 1 skipped)
 venv/bin/python -m pytest -q
 
 # Demo por archivo y merge de fuentes
