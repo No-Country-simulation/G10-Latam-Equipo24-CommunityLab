@@ -1363,3 +1363,25 @@ def test_selecting_another_candidate_reenables_publish_button(monkeypatch):
     assert len(llamadas) == 2
     assert llamadas[1]["titulo"] == "Titulo de Lucas"
 
+
+def test_publish_button_requires_approval_and_unsent_signature(monkeypatch):
+    """Gate combinado: sin Aprobado y ya publicado, ambos deshabilitan."""
+    llamadas = _fake_publish_recorder(monkeypatch)
+
+    # Nunca publicado, pero NO aprobado: el gate de curaduría lo deshabilita.
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_PENDING)
+    assert _publish_button(at).disabled is True
+    assert llamadas == []
+
+    # Aprobado y recién enviado: el gate de firma lo deja deshabilitado.
+    at = _run_app_with_candidates(linkedin_estado=app.CURATION_STATUS_APPROVED)
+    assert _publish_button(at).disabled is False
+
+    _publish_button(at).click().run()
+    assert not at.exception
+    assert len(llamadas) == 1
+
+    at.run()
+    assert not at.exception
+    assert _publish_button(at).disabled is True
+
