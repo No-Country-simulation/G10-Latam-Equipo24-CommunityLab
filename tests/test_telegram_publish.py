@@ -146,6 +146,62 @@ def test_telegram_config_error_is_a_value_error():
 
 
 # ---------------------------------------------------------------------------
+# describe_destination — destino sin lanzar excepciones
+# ---------------------------------------------------------------------------
+
+
+def test_describe_destination_returns_chat_when_configured():
+    destino = telegram_publish.describe_destination(
+        env={"TELEGRAM_BOT_TOKEN": "tok-que-no-debe-aparecer", "TELEGRAM_CHAT_ID": "7191785744"}
+    )
+
+    assert destino == "Se va a publicar en el chat 7191785744"
+    assert "tok-que-no-debe-aparecer" not in destino
+
+
+def test_describe_destination_returns_none_when_token_missing():
+    destino = telegram_publish.describe_destination(env={"TELEGRAM_CHAT_ID": "12345"})
+
+    assert destino is None
+
+
+def test_describe_destination_returns_none_when_chat_id_missing():
+    destino = telegram_publish.describe_destination(env={"TELEGRAM_BOT_TOKEN": "tok"})
+
+    assert destino is None
+
+
+def test_describe_destination_returns_none_without_any_config():
+    assert telegram_publish.describe_destination(env={}) is None
+
+
+# ---------------------------------------------------------------------------
+# publish_signature — identidad del candidato + copy editado
+# ---------------------------------------------------------------------------
+
+
+def test_publish_signature_changes_when_copy_is_edited():
+    base = {"titulo": "T", "autor": "A", "copy": "original"}
+    editado = dict(base, copy="editado")
+
+    assert telegram_publish.publish_signature(base) != telegram_publish.publish_signature(editado)
+
+
+def test_publish_signature_changes_for_a_different_candidate():
+    uno = {"titulo": "T uno", "autor": "A", "copy": "mismo copy"}
+    otro = {"titulo": "T otro", "autor": "B", "copy": "mismo copy"}
+
+    assert telegram_publish.publish_signature(uno) != telegram_publish.publish_signature(otro)
+
+
+def test_publish_signature_is_stable_for_same_candidate_and_copy():
+    a = {"titulo": "T", "autor": "A", "copy": "C"}
+    b = {"titulo": "  T  ", "autor": "A", "copy": "C\n"}
+
+    assert telegram_publish.publish_signature(a) == telegram_publish.publish_signature(b)
+
+
+# ---------------------------------------------------------------------------
 # publish_candidate — success and error paths
 # ---------------------------------------------------------------------------
 

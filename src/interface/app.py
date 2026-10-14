@@ -1,6 +1,6 @@
 import json
 import tempfile
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import altair as alt
@@ -249,6 +249,29 @@ def merge_post_view(linkedin, seleccionado):
             if value:
                 view[key] = value
     return view
+
+
+def _curation_metadata_line(candidato):
+    """Curator-only metadata (canal/autor/relevancia) shown near the publish area.
+
+    This line is for the human reviewing the post; it is NEVER part of the
+    published message, which is built exclusively by
+    ``telegram_publish.format_candidate_message``.
+    """
+    partes = []
+    canal = str(candidato.get("canal_recomendado") or "").strip()
+    if canal:
+        partes.append(f"Canal sugerido: {canal}")
+    autor = str(candidato.get("autor") or "").strip()
+    if autor:
+        partes.append(f"Autor: {autor}")
+    relevancia = candidato.get("relevancia")
+    if relevancia not in (None, ""):
+        try:
+            partes.append(f"Relevancia: {float(relevancia):.0%}")
+        except (TypeError, ValueError):
+            partes.append(f"Relevancia: {relevancia}")
+    return " · ".join(partes)
 
 
 def merged_newsletter(newsletter, seleccionado):
@@ -551,7 +574,8 @@ def main():
                 # El mensaje de Telegram sale del post que se está editando: el
                 # copy del editor manda y se conserva el autor/relevancia del
                 # testimonio seleccionado. La preview y el envío usan el MISMO
-                # dict, así nada sale sin verse antes.
+                # dict y la MISMA función de formato, así la preview nunca
+                # puede mentir sobre lo que se publica.
                 candidato_telegram = dict(post_view)
                 if seleccionado:
                     candidato_telegram["autor"] = seleccionado.get("autor", "")
@@ -561,21 +585,58 @@ def main():
                 with st.expander("👁️ Vista previa del mensaje de Telegram"):
                     st.text(telegram_publish.format_candidate_message(candidato_telegram))
 
-                if st.button("📨 Publicar en Telegram", key="telegram_publish_button"):
-                    try:
-                        enviado = telegram_publish.publish_candidate(candidato_telegram)
-                    except telegram_publish.TelegramConfigError as exc:
-                        st.warning(
-                            f"{exc} Configurá TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID "
-                            "en tu archivo .env (ver .env.example)."
-                        )
-                    except (ValueError, RuntimeError) as exc:
-                        st.error(f"No se pudo publicar en Telegram: {exc}")
-                    else:
-                        st.success(
-                            "✅ Publicado en Telegram "
-                            f"({len(enviado)} caracteres enviados)."
-                        )
+                # Metadata de curaduría: visible para el humano, FUERA del
+                # mensaje publicado.
+                metadata_line = _curation_metadata_line(candidato_telegram)
+                if metadata_line:
+                    st.caption(metadata_line)
+
+                # El destino se muestra ANTES del click: si falta la
+                # configuración se ve una advertencia accionable en lugar de
+                # una excepción recién tras el click. El token jamás llega
+                # aquí: describe_destination solo devuelve el chat.
+                destino = telegram_publish.describe_destination()
+                if destino:
+                    st.caption(destino)
+                else:
+                    st.warning(
+                        "Falta configuración de Telegram: definí TELEGRAM_BOT_TOKEN "
+                        "y TELEGRAM_CHAT_ID en tu archivo .env (ver .env.example)."
+                    )
+
+                # Firma = identidad del candidato + copy editado. Una firma ya
+                # publicada queda marcada en st.session_state: el botón se
+                # deshabilita y un click viejo no puede reenviar.
+                firma = telegram_publish.publish_signature(candidato_telegram)
+                publicadas = st.session_state.setdefault("telegram_published_times", {})
+                hora_envio = publicadas.get(firma)
+
+                if st.button(
+                    "📨 Publicar en Telegram",
+                    key="telegram_publish_button",
+                    disabled=hora_envio is not None,
+                ):
+                    # Guardia defensiva: un click encolado de una firma ya
+                    # publicada no debe generar un segundo envío.
+                    if hora_envio is None:
+                        try:
+                            enviado = telegram_publish.publish_candidate(candidato_telegram)
+                        except telegram_publish.TelegramConfigError as exc:
+                            st.warning(
+                                f"{exc} Configurá TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID "
+                                "en tu archivo .env (ver .env.example)."
+                            )
+                        except (ValueError, RuntimeError) as exc:
+                            st.error(f"No se pudo publicar en Telegram: {exc}")
+                        else:
+                            publicadas[firma] = datetime.now().strftime("%H:%M")
+                            st.success(
+                                "✅ Publicado en Telegram "
+                                f"({len(enviado)} caracteres enviados)."
+                            )
+
+                if publicadas.get(firma):
+                    st.caption(f"✅ Publicado a las {publicadas[firma]}")
             else:
                 st.info("No se generó un post de LinkedIn para este lote.")
                 linkedin_edited = ""

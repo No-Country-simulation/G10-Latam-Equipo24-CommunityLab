@@ -1023,3 +1023,163 @@ def test_telegram_publish_success_renders_success(monkeypatch):
     assert llamadas[0]["copy"] == "Copy de Mariana"
     successes = [success.value for success in at.success]
     assert any("Publicado en Telegram" in text for text in successes)
+
+
+def test_destination_caption_shows_chat_before_button(monkeypatch):
+    """Con configuración, el panel muestra el destino ANTES del botón."""
+    from src.interface import telegram_publish
+
+    monkeypatch.setattr(telegram_publish, "_ENV_LOADED", True)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-falso-que-nunca-debe-aparecer")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "999888777")
+
+    at = _run_app_with_candidates()
+
+    assert not at.exception
+    captions = [caption.value for caption in at.caption]
+    assert any("Se va a publicar en el chat 999888777" in text for text in captions)
+    assert all("token-falso-que-nunca-debe-aparecer" not in text for text in captions)
+    assert _publish_button(at).disabled is False
+
+
+def test_destination_warning_before_click_when_unconfigured(monkeypatch):
+    """Sin configuración, la advertencia nombra las variables SIN clickear."""
+    from src.interface import telegram_publish
+
+    monkeypatch.setattr(telegram_publish, "_ENV_LOADED", True)
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+
+    at = _run_app_with_candidates()
+
+    assert not at.exception
+    warnings = [warning.value for warning in at.warning]
+    assert any(
+        "TELEGRAM_BOT_TOKEN" in text and "TELEGRAM_CHAT_ID" in text for text in warnings
+    )
+
+
+def test_metadata_caption_keeps_canal_autor_relevancia_for_curator():
+    """La metadata de curaduría sigue visible en el panel, junto al publicar."""
+    at = _run_app_with_candidates()
+
+    assert not at.exception
+    captions = [caption.value for caption in at.caption]
+    assert any("Canal sugerido: LinkedIn de Mariana" in text for text in captions)
+    assert any("Autor: Mariana Souza" in text for text in captions)
+    assert any("Relevancia: 95%" in text for text in captions)
+
+
+def test_preview_shows_only_the_post_body():
+    """La vista previa (la misma que se envía) no muestra metadata."""
+    at = _run_app_with_candidates()
+
+    assert not at.exception
+    previews = [text.value for text in at.text if "Copy de Mariana" in text.value]
+    assert previews, "no se encontró la vista previa del mensaje"
+    for preview in previews:
+        assert "Canal sugerido" not in preview
+        assert "Autor:" not in preview
+        assert "Relevancia" not in preview
+    assert "Titulo de Mariana\n\nCopy de Mariana" in previews
+
+
+def _fake_publish_recorder(monkeypatch):
+    from src.interface import telegram_publish
+
+    llamadas = []
+
+    def fake_publish(candidato, **kwargs):
+        llamadas.append(candidato)
+        return "texto publicado"
+
+    monkeypatch.setattr(telegram_publish, "publish_candidate", fake_publish)
+    return llamadas
+
+
+def test_publish_button_disables_and_blocks_second_send(monkeypatch):
+    """Tras un envío exitoso el botón queda deshabilitado para esa firma."""
+    from streamlit.testing.v1 import AppTestError
+
+    llamadas = _fake_publish_recorder(monkeypatch)
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+    assert not at.exception
+    assert len(llamadas) == 1
+
+    # Re-run: mismo candidato, mismo copy -> deshabilitado + hora del envío.
+    at.run()
+    assert not at.exception
+    button = _publish_button(at)
+    assert button.disabled is True
+    assert any("✅ Publicado a las" in caption.value for caption in at.caption)
+    assert len(llamadas) == 1
+
+    # A browser user cannot click a disabled widget: AppTest rejects it.
+    with pytest.raises(AppTestError):
+        button.click()
+    assert len(llamadas) == 1
+
+
+def test_stale_click_does_not_resend_the_same_signature(monkeypatch):
+    """Guardia defensiva: un click viejo sobre la misma firma no reenvía."""
+    from streamlit.testing.v1.element_tree import Widget
+
+    llamadas = _fake_publish_recorder(monkeypatch)
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+    assert len(llamadas) == 1
+    at.run()
+    assert _publish_button(at).disabled is True
+
+    # Simulate a queued click reaching the disabled widget: bypass AppTest's
+    # interaction guard so the handler itself must defend against a resend.
+    monkeypatch.setattr(Widget, "_assert_can_interact", lambda self: None)
+    _publish_button(at).click().run()
+
+    assert not at.exception
+    assert len(llamadas) == 1
+
+
+def test_editing_copy_reenables_publish_button(monkeypatch):
+    """Editar el copy cambia la firma y el botón vuelve a habilitarse."""
+    llamadas = _fake_publish_recorder(monkeypatch)
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+    assert len(llamadas) == 1
+    at.run()
+    assert _publish_button(at).disabled is True
+
+    at.text_area(key="linkedin_edit_0").set_value("Copy editado despues de publicar").run()
+    assert not at.exception
+    button = _publish_button(at)
+    assert button.disabled is False
+
+    button.click().run()
+    assert not at.exception
+    assert len(llamadas) == 2
+    assert llamadas[1]["copy"] == "Copy editado despues de publicar"
+
+
+def test_selecting_another_candidate_reenables_publish_button(monkeypatch):
+    """Cambiar de candidato cambia la firma y el botón vuelve a habilitarse."""
+    llamadas = _fake_publish_recorder(monkeypatch)
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+    assert len(llamadas) == 1
+    at.run()
+    assert _publish_button(at).disabled is True
+
+    at.selectbox(key="linkedin_candidate").select_index(1).run()
+    assert not at.exception
+    button = _publish_button(at)
+    assert button.disabled is False
+
+    button.click().run()
+    assert not at.exception
+    assert len(llamadas) == 2
+    assert llamadas[1]["titulo"] == "Titulo de Lucas"

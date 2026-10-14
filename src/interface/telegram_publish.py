@@ -69,6 +69,25 @@ def format_candidate_message(candidato: Mapping[str, Any]) -> str:
     return "\n".join(partes)
 
 
+def publish_signature(candidato: Mapping[str, Any]) -> str:
+    """Firma estable de una publicación: identidad del candidato + copy.
+
+    Une ``titulo``, ``autor`` y ``copy`` editado con ``\\x1f`` (un separador
+    que no aparece en texto normal): dos firmas iguales significan el mismo
+    candidato con el mismo copy, es decir, un segundo envío que debe quedar
+    bloqueado. Si el curador cambia el copy o elige otro candidato, la firma
+    cambia y vuelve a permitirse publicar.
+    """
+    datos: Mapping[str, Any] = candidato or {}
+    return "\x1f".join(
+        (
+            _as_text(datos.get("titulo")),
+            _as_text(datos.get("autor")),
+            _as_text(datos.get("copy")),
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Configuración y envío
 # ---------------------------------------------------------------------------
@@ -113,6 +132,21 @@ def _resolve_config(env: Optional[Mapping[str, Any]]) -> Any:
             "Definí esas variables en el archivo .env (ver .env.example)."
         )
     return token, chat_id
+
+
+def describe_destination(env: Optional[Mapping[str, Any]] = None) -> Optional[str]:
+    """Describe el destino del envío sin lanzar excepciones ni filtrar el token.
+
+    - Configuración completa -> ``"Se va a publicar en el chat <chat_id>"``.
+    - Configuración faltante -> ``None`` (el llamador muestra la advertencia
+      con las variables que faltan, en lugar de fallar tras el click).
+    - El token nunca aparece en el texto devuelto.
+    """
+    try:
+        chat_id = _resolve_config(env)[1]
+    except TelegramConfigError:
+        return None
+    return f"Se va a publicar en el chat {chat_id}"
 
 
 def publish_candidate(
