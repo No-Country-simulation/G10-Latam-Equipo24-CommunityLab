@@ -44,28 +44,15 @@ def _as_text(value: Any) -> str:
     return str(value).strip()
 
 
-def _as_percentage(value: Any) -> Optional[str]:
-    """Renderiza ``relevancia`` como porcentaje entero (0.75 -> ``75%``).
-
-    Devuelve ``None`` cuando no hay un valor numérico utilizable, para que el
-    llamador omita la línea completa.
-    """
-    if value is None or value == "":
-        return None
-    try:
-        return f"{float(value):.0%}"
-    except (TypeError, ValueError):
-        return None
-
-
 def format_candidate_message(candidato: Mapping[str, Any]) -> str:
     """Arma el texto plano exacto que se enviará a Telegram.
 
     Solo texto plano: ``send_message`` no pasa ``parse_mode``, así que
-    cualquier Markdown llegaría literal. La forma es: ``titulo``, una línea en
-    blanco, ``copy`` y luego las líneas de pie que existan (canal sugerido,
-    autor y relevancia como porcentaje). Un campo vacío no emite su etiqueta y
-    nunca se emite una línea en blanco inicial cuando falta el ``titulo``.
+    cualquier Markdown llegaría literal. La forma es ``titulo``, una línea en
+    blanco y ``copy``: SOLO el post, nunca la metadata de curaduría (canal
+    sugerido, autor o relevancia), que es información para el curador y no
+    para el canal publicado. Un campo vacío no emite nada y nunca se emite
+    una línea en blanco inicial cuando falta el ``titulo``.
     """
     datos: Mapping[str, Any] = candidato or {}
     titulo = _as_text(datos.get("titulo"))
@@ -79,19 +66,26 @@ def format_candidate_message(candidato: Mapping[str, Any]) -> str:
             partes.append("")  # línea en blanco entre el título y el copy
         partes.append(copy)
 
-    canal = _as_text(datos.get("canal_recomendado"))
-    if canal:
-        partes.append(f"Canal sugerido: {canal}")
-
-    autor = _as_text(datos.get("autor"))
-    if autor:
-        partes.append(f"Autor: {autor}")
-
-    relevancia = _as_percentage(datos.get("relevancia"))
-    if relevancia is not None:
-        partes.append(f"Relevancia: {relevancia}")
-
     return "\n".join(partes)
+
+
+def publish_signature(candidato: Mapping[str, Any]) -> str:
+    """Firma estable de una publicación: identidad del candidato + copy.
+
+    Une ``titulo``, ``autor`` y ``copy`` editado con ``\\x1f`` (un separador
+    que no aparece en texto normal): dos firmas iguales significan el mismo
+    candidato con el mismo copy, es decir, un segundo envío que debe quedar
+    bloqueado. Si el curador cambia el copy o elige otro candidato, la firma
+    cambia y vuelve a permitirse publicar.
+    """
+    datos: Mapping[str, Any] = candidato or {}
+    return "\x1f".join(
+        (
+            _as_text(datos.get("titulo")),
+            _as_text(datos.get("autor")),
+            _as_text(datos.get("copy")),
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +132,21 @@ def _resolve_config(env: Optional[Mapping[str, Any]]) -> Any:
             "Definí esas variables en el archivo .env (ver .env.example)."
         )
     return token, chat_id
+
+
+def describe_destination(env: Optional[Mapping[str, Any]] = None) -> Optional[str]:
+    """Describe el destino del envío sin lanzar excepciones ni filtrar el token.
+
+    - Configuración completa -> ``"Se va a publicar en el chat <chat_id>"``.
+    - Configuración faltante -> ``None`` (el llamador muestra la advertencia
+      con las variables que faltan, en lugar de fallar tras el click).
+    - El token nunca aparece en el texto devuelto.
+    """
+    try:
+        chat_id = _resolve_config(env)[1]
+    except TelegramConfigError:
+        return None
+    return f"Se va a publicar en el chat {chat_id}"
 
 
 def publish_candidate(
