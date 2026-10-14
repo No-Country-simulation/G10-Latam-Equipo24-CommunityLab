@@ -600,8 +600,9 @@ def main():
                     st.caption(destino)
                 else:
                     st.warning(
-                        "Falta configuración de Telegram: definí TELEGRAM_BOT_TOKEN "
-                        "y TELEGRAM_CHAT_ID en tu archivo .env (ver .env.example)."
+                        "Falta configuración de Telegram: se requieren "
+                        "TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en el archivo .env "
+                        "(ver .env.example)."
                     )
 
                 # Firma = identidad del candidato + copy editado. Una firma ya
@@ -623,8 +624,9 @@ def main():
                             enviado = telegram_publish.publish_candidate(candidato_telegram)
                         except telegram_publish.TelegramConfigError as exc:
                             st.warning(
-                                f"{exc} Configurá TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID "
-                                "en tu archivo .env (ver .env.example)."
+                                f"{exc} Se requieren TELEGRAM_BOT_TOKEN y "
+                                "TELEGRAM_CHAT_ID en el archivo .env "
+                                "(ver .env.example)."
                             )
                         except (ValueError, RuntimeError) as exc:
                             st.error(f"No se pudo publicar en Telegram: {exc}")

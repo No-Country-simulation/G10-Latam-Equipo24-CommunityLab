@@ -231,7 +231,7 @@ def test_publish_candidate_transport_error_does_not_leak_token():
     def sender_fallido(token, chat_id, text):
         raise RuntimeError(
             "Telegram respondió HTTP 401 al enviar sendMessage. "
-            "Revisá el token (401 = inválido)."
+            "Revisar el token (401 = inválido)."
         )
 
     with pytest.raises(RuntimeError) as excinfo:
