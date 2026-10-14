@@ -210,3 +210,64 @@ campo nuevo en el schema del LLM, no un umbral sobre el score.
 - `src/domain/models.py` — `SentimentType` (3 valores)
 - `src/pipeline.py` — `_SENTIMENT_PHRASES` (frase de presentación)
 - `src/decisions/engine.py` — `is_positive` + `RELEVANCE_THRESHOLD`
+
+---
+
+### D-H — El botón "Publicar en Telegram" depende de la aprobación de LinkedIn
+
+**Fecha:** 2026-10-14
+**Estado:** decidida — implementada en PR #118
+**Due:** @Rox-0864
+
+**Qué decide.** Si el botón "📨 Publicar en Telegram" del panel exige que el post de LinkedIn esté
+Aprobado, o si es una acción independiente.
+
+**Decisión.** El botón está condicionado. Se habilita solo cuando se cumplen las dos condiciones:
+
+```
+disabled = (linkedin_estado != Aprobado) or (la firma del candidato ya se publicó en esta sesión)
+```
+
+y el handler revalida ambas por su cuenta, para que un click viejo no publique sin la aprobación ni
+reenvíe lo ya enviado.
+
+**Por qué.**
+
+1. **Coherencia de curaduría.** El requisito del reto es que el panel de curaduría decida qué sale
+   publicado. El mensaje de Telegram sale del mismo contenido que el post de LinkedIn (el copy del
+   editor alimenta ambos canales), así que publicarlo sin la aprobación que el humano ya exige para
+   LinkedIn saltaría el paso de revisión.
+2. **Un solo criterio, no dos.** Sin el gate, el panel tendría dos definiciones de "listo para
+   publicar" según el canal, y la de Telegram sería la más laxa.
+3. **El bloqueo de reenvío es el mismo gate, no un extra.** La firma (`publish_signature`) es la
+   identidad del candidato más el copy editado, y la hora se guarda en
+   `st.session_state["telegram_published_times"]`. Editar el copy cambia la firma y vuelve a habilitar
+   el envío, que es el caso legítimo.
+
+**Alternativas evaluadas.**
+
+| Alternativa | Por qué no |
+|---|---|
+| Botón independiente (publicar en Telegram sin aprobar LinkedIn) | Permite publicar afuera contenido sin revisar; el cambio es una línea en `disabled`, pero requiere su propia decisión y su propia guarda |
+| Pedir confirmación en vez de deshabilitar | Agrega un paso a cada envío y no cubre el click viejo sobre un estado ya publicado; el deshabilitado por firma sí lo cubre |
+
+**Desvío respecto al PDF.** Ninguno. El reto pide un panel de curaduría con aprobación; el gate
+refuerza ese requisito en un canal externo.
+
+**Nota de vocabulario.** La copy del producto va en **español neutro**; el voseo es de la conversación,
+no de la interfaz. Se corrigieron los textos del panel ("Aprobá el post de LinkedIn" → "debe estar
+aprobado", "definí / Configurá TELEGRAM_BOT_TOKEN" → "se requieren ... en el archivo .env") y los
+mensajes de la capa de ingesta que el panel muestra cuando el envío falla ("revisá la conexión y volvé a
+intentar" → "revisar la conexión y volver a intentar"), incluidos los del bot. Los mismos mensajes están
+duplicados en los scripts de CLI y en las respuestas del webhook; no se tocaron para no mezclar alcance
+ni cambiar la respuesta pública de la API.
+
+**Dónde vive.**
+
+- `src/interface/app.py` — bloque de publicación: gate combinado y guarda en el handler
+- `src/interface/telegram_publish.py` — `publish_signature`, `publish_candidate`
+- `tests/test_interface_app.py` — `test_publish_button_is_gated_by_linkedin_state`,
+  `test_publish_button_disables_and_blocks_second_send`,
+  `test_publish_button_requires_approval_and_unsent_signature`
+- `src/ingest/telegram.py`, `src/ingest/bot.py` — mensajes de error que el panel muestra
+- `docs/DECISIONS.md` — esta entrada

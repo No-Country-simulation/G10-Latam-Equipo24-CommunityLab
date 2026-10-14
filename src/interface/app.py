@@ -688,8 +688,8 @@ def main():
 
                     if not linkedin_aprobado:
                         st.caption(
-                            "Aprobá el post de LinkedIn (Estado de curaduría: Aprobado) "
-                            "para poder publicarlo en Telegram."
+                            "El post de LinkedIn debe estar aprobado "
+                            "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
                         )
 
                     # Metadata de curaduría: visible para el humano, FUERA del
@@ -706,8 +706,9 @@ def main():
                         st.caption(destino)
                     else:
                         st.warning(
-                            "Falta configuración de Telegram: definí TELEGRAM_BOT_TOKEN "
-                            "y TELEGRAM_CHAT_ID en tu archivo .env (ver .env.example)."
+                            "Falta configuración de Telegram: se requieren "
+                            "TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en el archivo .env "
+                            "(ver .env.example)."
                         )
 
                     # Firma = identidad del candidato + copy editado.
@@ -735,8 +736,9 @@ def main():
                                 enviado = telegram_publish.publish_candidate(candidato_telegram)
                             except telegram_publish.TelegramConfigError as exc:
                                 st.warning(
-                                    f"{exc} Configurá TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID "
-                                    "en tu archivo .env (ver .env.example)."
+                                    f"{exc} Se requieren TELEGRAM_BOT_TOKEN y "
+                                    "TELEGRAM_CHAT_ID en el archivo .env "
+                                    "(ver .env.example)."
                                 )
                             except (ValueError, RuntimeError) as exc:
                                 st.error(f"No se pudo publicar en Telegram: {exc}")
