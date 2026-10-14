@@ -64,18 +64,22 @@ def test_process_json_input_rejects_unexpected_pipeline_status(monkeypatch):
 def test_reset_batch_state_clears_results_and_previous_edits():
     session_state = {
         "linkedin_edit": "copy anterior",
-        "linkedin_check": True,
+        "linkedin_estado": app.CURATION_STATUS_APPROVED,
         "news_edit": "resumen anterior",
-        "news_check": True,
+        "news_estado": app.CURATION_STATUS_REJECTED,
         "faq_edit": "tema anterior",
-        "faq_check": True,
+        "faq_estado": app.CURATION_STATUS_APPROVED,
         "processing_done": True,
         "llm_results": {"status": "exito"},
     }
 
     app.reset_batch_state(session_state)
 
+    # Las keys de estado se limpian: el widget vuelve a su default (Pendiente),
+    # así un lote nuevo no hereda la decisión del lote anterior.
     assert session_state == {"processing_done": False, "llm_results": None}
+    for key in ("linkedin_estado", "news_estado", "faq_estado"):
+        assert key not in session_state
 
 
 def test_build_sentiment_distribution_df_with_data():
@@ -955,7 +959,7 @@ def _llm_results_with_candidates():
     }
 
 
-def _run_app_with_candidates():
+def _run_app_with_candidates(linkedin_estado=None):
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(
@@ -968,6 +972,13 @@ def _run_app_with_candidates():
     at.session_state["llm_results"] = _llm_results_with_candidates()
     at.run()
     assert not at.exception
+
+    # Pre-set the curation state when a test needs to skip the default
+    # "Pendiente" (widget keys honor a session value over their default).
+    if linkedin_estado is not None:
+        at.session_state["linkedin_estado"] = linkedin_estado
+        at.run()
+        assert not at.exception
     return at
 
 
@@ -993,7 +1004,7 @@ def test_telegram_publish_without_config_warns_and_does_not_crash(monkeypatch):
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
 
-    at = _run_app_with_candidates()
+    at = _run_app_with_candidates(linkedin_estado=app.CURATION_STATUS_APPROVED)
 
     _publish_button(at).click().run()
 
@@ -1014,7 +1025,7 @@ def test_telegram_publish_success_renders_success(monkeypatch):
 
     monkeypatch.setattr(telegram_publish, "publish_candidate", fake_publish)
 
-    at = _run_app_with_candidates()
+    at = _run_app_with_candidates(linkedin_estado=app.CURATION_STATUS_APPROVED)
 
     _publish_button(at).click().run()
 
@@ -1023,3 +1034,164 @@ def test_telegram_publish_success_renders_success(monkeypatch):
     assert llamadas[0]["copy"] == "Copy de Mariana"
     successes = [success.value for success in at.success]
     assert any("Publicado en Telegram" in text for text in successes)
+
+
+# ---------------------------------------------------------------------------
+# Per-asset curation state (approve / pending / reject) and Telegram gate
+# ---------------------------------------------------------------------------
+
+CURATION_LABEL = "Estado de curaduría:"
+APPROVE_BUTTON_LABEL = "Aprobar activos seleccionados"
+SAMPLE_BUTTON_LABEL = "⚡ Cargar muestra de ejemplo"
+
+
+def _curation_radio(at, key):
+    return next(radio for radio in at.radio if radio.key == key)
+
+
+def _run_app_with_curation(
+    linkedin=app.CURATION_STATUS_PENDING,
+    news=app.CURATION_STATUS_PENDING,
+    faq=app.CURATION_STATUS_PENDING,
+):
+    at = _run_app_with_candidates()
+    at.session_state["linkedin_estado"] = linkedin
+    at.session_state["news_estado"] = news
+    at.session_state["faq_estado"] = faq
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _click_approve(at):
+    next(b for b in at.button if b.label == APPROVE_BUTTON_LABEL).click().run()
+    assert not at.exception
+
+
+def test_curation_state_defaults_to_pending_for_every_asset():
+    """Cada activo arranca en Pendiente y ofrece los tres estados."""
+    at = _run_app_with_candidates()
+
+    for key in ("linkedin_estado", "news_estado", "faq_estado"):
+        radio = _curation_radio(at, key)
+        assert radio.label == CURATION_LABEL
+        assert radio.value == app.CURATION_STATUS_PENDING
+        assert list(radio.options) == list(app.CURATION_STATUSES)
+
+
+def test_approved_linkedin_is_included_in_approved_package():
+    """Un activo Aprobado entra en el paquete aprobado/JSON descargable."""
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_APPROVED)
+
+    _click_approve(at)
+
+    infos = [info.value for info in at.info]
+    assert any("1 activos aprobados" in text for text in infos)
+
+
+def test_pending_and_rejected_assets_are_excluded_from_approved_package():
+    """Pendiente y Rechazado NO entran en el paquete aprobado."""
+    # Default: los tres activos en Pendiente.
+    at = _run_app_with_candidates()
+    _click_approve(at)
+    warnings = [warning.value for warning in at.warning]
+    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+
+    # Rechazado: sigue afuera del paquete.
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_REJECTED)
+    _click_approve(at)
+    warnings = [warning.value for warning in at.warning]
+    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+
+
+def test_approved_asset_with_empty_text_is_excluded():
+    """Aprobado pero con el editor vacío tampoco entra al paquete."""
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_APPROVED)
+
+    editor = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    editor.set_value("").run()
+    assert not at.exception
+
+    _click_approve(at)
+
+    warnings = [warning.value for warning in at.warning]
+    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+
+
+def test_approved_count_mentions_rejected_assets():
+    """El resumen cuenta aprobados y menciona rechazados si los hay."""
+    at = _run_app_with_curation(
+        linkedin=app.CURATION_STATUS_APPROVED,
+        news=app.CURATION_STATUS_REJECTED,
+        faq=app.CURATION_STATUS_REJECTED,
+    )
+
+    _click_approve(at)
+
+    infos = [info.value for info in at.info]
+    assert any("1 activos aprobados" in text for text in infos)
+    assert any("2 activos rechazados" in text for text in infos)
+
+
+def test_publish_button_is_gated_by_linkedin_state():
+    """El botón de publicar sólo se habilita con el LinkedIn Aprobado."""
+    at = _run_app_with_candidates()
+
+    assert _publish_button(at).proto.disabled is True
+    captions = " \n".join(caption.value for caption in at.caption)
+    assert "Aprobá el post de LinkedIn" in captions
+
+    at.session_state["linkedin_estado"] = app.CURATION_STATUS_REJECTED
+    at.run()
+    assert _publish_button(at).proto.disabled is True
+
+    at.session_state["linkedin_estado"] = app.CURATION_STATUS_APPROVED
+    at.run()
+    assert _publish_button(at).proto.disabled is False
+
+
+def test_rejected_linkedin_shows_visible_warning_and_keeps_editor():
+    """Un activo Rechazado avisa y deja el editor visible para reconsiderar."""
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_REJECTED)
+
+    warnings = [warning.value for warning in at.warning]
+    assert any("rechazado" in text.lower() for text in warnings)
+    assert any(t.label == "Contenido del Post:" for t in at.text_area)
+
+
+def test_rejected_publish_flow_never_invokes_publish_candidate(monkeypatch):
+    """Con Rechazado, intentar publicar NO llama a publish_candidate."""
+    from streamlit.testing.v1.errors import AppTestError
+
+    from src.interface import telegram_publish
+
+    llamadas = []
+
+    def fake_publish(candidato, **kwargs):
+        llamadas.append(candidato)
+        return "texto publicado"
+
+    monkeypatch.setattr(telegram_publish, "publish_candidate", fake_publish)
+
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_REJECTED)
+
+    # El gate deshabilita el botón: AppTest se niega a interactuar con un
+    # widget deshabilitado, igual que un usuario en el navegador. El flujo de
+    # publicación es inalcanzable y el mock nunca se invoca.
+    with pytest.raises(AppTestError):
+        _publish_button(at).click().run()
+
+    assert llamadas == []
+
+
+def test_new_batch_does_not_inherit_previous_curation_state():
+    """Cargar un lote nuevo devuelve los estados a Pendiente."""
+    at = _run_app_with_candidates()
+    _curation_radio(at, "linkedin_estado").set_value(app.CURATION_STATUS_APPROVED).run()
+    assert not at.exception
+    assert _curation_radio(at, "linkedin_estado").value == app.CURATION_STATUS_APPROVED
+
+    next(button for button in at.button if button.label == SAMPLE_BUTTON_LABEL).click().run()
+    assert not at.exception
+
+    assert _curation_radio(at, "linkedin_estado").value == app.CURATION_STATUS_PENDING
