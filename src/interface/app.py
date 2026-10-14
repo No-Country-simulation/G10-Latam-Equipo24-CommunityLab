@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 from src.domain.models import InputBatch
 from src.ingest.loader import load_batch
+from src.interface import telegram_publish
 from src.pipeline import run_pipeline
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
@@ -546,6 +547,35 @@ def main():
                     width="stretch",
                 )
                 linkedin_approve = st.checkbox("✅ Aprobar Post de LinkedIn", value=True, key="linkedin_check")
+
+                # El mensaje de Telegram sale del post que se está editando: el
+                # copy del editor manda y se conserva el autor/relevancia del
+                # testimonio seleccionado. La preview y el envío usan el MISMO
+                # dict, así nada sale sin verse antes.
+                candidato_telegram = dict(post_view)
+                if seleccionado:
+                    candidato_telegram["autor"] = seleccionado.get("autor", "")
+                    candidato_telegram["relevancia"] = seleccionado.get("relevancia")
+                candidato_telegram["copy"] = linkedin_edited
+
+                with st.expander("👁️ Vista previa del mensaje de Telegram"):
+                    st.text(telegram_publish.format_candidate_message(candidato_telegram))
+
+                if st.button("📨 Publicar en Telegram", key="telegram_publish_button"):
+                    try:
+                        enviado = telegram_publish.publish_candidate(candidato_telegram)
+                    except telegram_publish.TelegramConfigError as exc:
+                        st.warning(
+                            f"{exc} Configurá TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID "
+                            "en tu archivo .env (ver .env.example)."
+                        )
+                    except (ValueError, RuntimeError) as exc:
+                        st.error(f"No se pudo publicar en Telegram: {exc}")
+                    else:
+                        st.success(
+                            "✅ Publicado en Telegram "
+                            f"({len(enviado)} caracteres enviados)."
+                        )
             else:
                 st.info("No se generó un post de LinkedIn para este lote.")
                 linkedin_edited = ""

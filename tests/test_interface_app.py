@@ -885,3 +885,141 @@ def test_render_with_assets_summary_chart():
 
     subheaders = [subheader.value for subheader in at.subheader]
     assert any("Activos generados por tipo" in text for text in subheaders)
+
+
+# ---------------------------------------------------------------------------
+# Telegram publishing button
+# ---------------------------------------------------------------------------
+
+PUBLISH_BUTTON_LABEL = "📨 Publicar en Telegram"
+
+
+def _llm_results_with_candidates():
+    """Minimal successful llm_results with two LinkedIn candidates."""
+    return {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "Titulo publicado",
+                "canal_recomendado": "LinkedIn Oficial",
+                "potencial_engagement": "Medio",
+                "copy": "Copy publicado",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "Logro de la Semana",
+                "titular": "Titular publicado",
+                "resumen": "Resumen publicado",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+            "candidatos_post_linkedin": [
+                {
+                    "autor": "Mariana Souza",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Consegui mi primer empleo como desarrolladora junior",
+                    "relevancia": 0.95,
+                    "copy": "Copy de Mariana",
+                    "titulo": "Titulo de Mariana",
+                    "canal_recomendado": "LinkedIn de Mariana",
+                    "potencial_engagement": "Alto",
+                },
+                {
+                    "autor": "Lucas Albuquerque",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Aprobe la certificacion de Oracle Cloud",
+                    "relevancia": 0.9,
+                    "copy": "Copy de Lucas",
+                    "titulo": "Titulo de Lucas",
+                    "canal_recomendado": "LinkedIn de Lucas",
+                    "potencial_engagement": "Medio",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+
+
+def _run_app_with_candidates():
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _publish_button(at):
+    return next(b for b in at.button if b.label == PUBLISH_BUTTON_LABEL)
+
+
+def test_render_telegram_publish_button_in_linkedin_tab():
+    """El botón de publicar en Telegram existe junto al post seleccionado."""
+    at = _run_app_with_candidates()
+
+    labels = [button.label for button in at.button]
+    assert PUBLISH_BUTTON_LABEL in labels
+
+
+def test_telegram_publish_without_config_warns_and_does_not_crash(monkeypatch):
+    """Sin configuración, el click muestra la advertencia accionable."""
+    from src.interface import telegram_publish
+
+    # The dev machine could have these exported; force the unconfigured path
+    # and prevent loading the real .env.
+    monkeypatch.setattr(telegram_publish, "_ENV_LOADED", True)
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+
+    assert not at.exception
+    warnings = [warning.value for warning in at.warning]
+    assert any("TELEGRAM_BOT_TOKEN" in text for text in warnings)
+
+
+def test_telegram_publish_success_renders_success(monkeypatch):
+    """Con un publish_candidate fake, el click feliz muestra st.success."""
+    from src.interface import telegram_publish
+
+    llamadas = []
+
+    def fake_publish(candidato, **kwargs):
+        llamadas.append(candidato)
+        return "texto publicado"
+
+    monkeypatch.setattr(telegram_publish, "publish_candidate", fake_publish)
+
+    at = _run_app_with_candidates()
+
+    _publish_button(at).click().run()
+
+    assert not at.exception
+    assert len(llamadas) == 1
+    assert llamadas[0]["copy"] == "Copy de Mariana"
+    successes = [success.value for success in at.success]
+    assert any("Publicado en Telegram" in text for text in successes)
