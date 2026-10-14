@@ -25,6 +25,7 @@ from typing import Any, Optional
 
 import json
 import os
+import re
 
 
 class LLMError(Exception):
@@ -48,6 +49,19 @@ class LLMClient(ABC):
 # Deterministic backend (demo / tests / CI, no API key)
 # ---------------------------------------------------------------------------
 
+_MENSAJE_RE = re.compile(r"<mensaje>(.*?)</mensaje>", re.DOTALL | re.IGNORECASE)
+
+
+def _extract_mensaje(prompt: str) -> str:
+    """Return the content of `<mensaje> ... </mensaje>` (or "" if absent).
+
+    The analysis prompt delimits the user message with those tags; only that
+    fragment should be inspected for classification, never the instructions.
+    """
+    match = _MENSAJE_RE.search(prompt)
+    return match.group(1).strip() if match else ""
+
+
 class RuleBasedClient(LLMClient):
     """Deterministic backend that simulates the LLM with simple rules.
 
@@ -70,7 +84,11 @@ class RuleBasedClient(LLMClient):
 
         # Analysis prompt (unified analyzer)
         if "analizá el mensaje de una comunidad técnica" in prompt_lower:
-            text_lower = prompt_lower
+            # Indicators must look ONLY at the user message, not at the whole
+            # prompt: the instructions contain words ("éxito", "error", "?")
+            # that would bias the classification. Extract the content between
+            # <mensaje> ... </mensaje> instead.
+            text_lower = _extract_mensaje(prompt_lower) or prompt_lower
             # Question-like content
             question_indicators = (
                 "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
@@ -87,7 +105,21 @@ class RuleBasedClient(LLMClient):
                 ind in text_lower for ind in testimonial_indicators
             )
 
-            if has_question and not has_testimonial:
+            # Complaint/frustration content (R4, decision D-F #97). Without this
+            # branch the deterministic backend NEVER marks a message "negativo",
+            # so feedback_negativo is always 0 on demos/CI even though the CSV
+            # samples carry real complaints. Sentiment wins over the question
+            # branch so a complaint that happens to contain "ayuda"/"error" is
+            # still derived to the community manager instead of a FAQ.
+            negative_indicators = (
+                "sin respuestas", "no hay plan", "no hubo espacio",
+                "quedó sin", "confuso", "tardan demasiado", "perdí",
+                "no me sirvió", "no se explicaron", "termine apurada",
+                "terminó apurada", "frustrado", "desastre", "mala experiencia"
+            )
+            has_negative = any(ind in text_lower for ind in negative_indicators)
+
+            if has_question and not has_testimonial and not has_negative:
                 payload = {
                     "sentiment": {
                         "type": "neutral",
@@ -116,6 +148,21 @@ class RuleBasedClient(LLMClient):
                         "entities": [],
                     },
                     "relevance": {"score": 0.8},
+                }
+            elif has_negative:
+                payload = {
+                    "sentiment": {
+                        "type": "negativo",
+                        "score": 0.2,
+                        "reasoning": "Deterministic rule: complaint detected",
+                    },
+                    "categorization": {
+                        "category": "feedback",
+                        "confidence": 0.9,
+                        "topics": ["feedback_negativo"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.3},
                 }
             else:
                 payload = {
