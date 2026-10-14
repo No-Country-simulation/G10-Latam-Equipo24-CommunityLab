@@ -54,15 +54,24 @@ def test_format_missing_keys_are_treated_as_empty():
     assert texto == ""
 
 
-def test_format_relevancia_renders_whole_percentage():
+def test_format_joins_titulo_blank_line_and_copy():
+    texto = telegram_publish.format_candidate_message(
+        {"titulo": "Titulo", "copy": "Copy"}
+    )
+
+    assert texto == "Titulo\n\nCopy"
+
+
+def test_format_relevancia_is_never_part_of_the_message():
     texto = telegram_publish.format_candidate_message(
         {"copy": "Copy", "relevancia": 0.75}
     )
 
-    assert "Relevancia: 75%" in texto
+    assert "Relevancia" not in texto
+    assert "75%" not in texto
 
 
-def test_format_footer_fields_only_when_present():
+def test_format_footer_fields_are_never_emitted():
     texto = telegram_publish.format_candidate_message(
         {
             "titulo": "T",
@@ -73,9 +82,28 @@ def test_format_footer_fields_only_when_present():
         }
     )
 
-    assert "Canal sugerido: LinkedIn Oficial" in texto
-    assert "Autor: Mariana" in texto
-    assert "Relevancia: 50%" in texto
+    assert "Canal sugerido: LinkedIn Oficial" not in texto
+    assert "Autor: Mariana" not in texto
+    assert "Relevancia: 50%" not in texto
+
+
+def test_format_full_candidate_publishes_post_body_only():
+    """A candidate WITH canal/autor/relevancia publishes only titulo + copy."""
+    texto = telegram_publish.format_candidate_message(
+        {
+            "titulo": "Titulo de Mariana",
+            "copy": "Copy de Mariana",
+            "canal_recomendado": "LinkedIn de Mariana",
+            "autor": "Mariana Souza",
+            "relevancia": 0.95,
+            "potencial_engagement": "Alto",
+        }
+    )
+
+    assert texto == "Titulo de Mariana\n\nCopy de Mariana"
+    assert "Canal sugerido" not in texto
+    assert "Autor:" not in texto
+    assert "Relevancia" not in texto
 
 
 # ---------------------------------------------------------------------------

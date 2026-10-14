@@ -44,28 +44,15 @@ def _as_text(value: Any) -> str:
     return str(value).strip()
 
 
-def _as_percentage(value: Any) -> Optional[str]:
-    """Renderiza ``relevancia`` como porcentaje entero (0.75 -> ``75%``).
-
-    Devuelve ``None`` cuando no hay un valor numérico utilizable, para que el
-    llamador omita la línea completa.
-    """
-    if value is None or value == "":
-        return None
-    try:
-        return f"{float(value):.0%}"
-    except (TypeError, ValueError):
-        return None
-
-
 def format_candidate_message(candidato: Mapping[str, Any]) -> str:
     """Arma el texto plano exacto que se enviará a Telegram.
 
     Solo texto plano: ``send_message`` no pasa ``parse_mode``, así que
-    cualquier Markdown llegaría literal. La forma es: ``titulo``, una línea en
-    blanco, ``copy`` y luego las líneas de pie que existan (canal sugerido,
-    autor y relevancia como porcentaje). Un campo vacío no emite su etiqueta y
-    nunca se emite una línea en blanco inicial cuando falta el ``titulo``.
+    cualquier Markdown llegaría literal. La forma es ``titulo``, una línea en
+    blanco y ``copy``: SOLO el post, nunca la metadata de curaduría (canal
+    sugerido, autor o relevancia), que es información para el curador y no
+    para el canal publicado. Un campo vacío no emite nada y nunca se emite
+    una línea en blanco inicial cuando falta el ``titulo``.
     """
     datos: Mapping[str, Any] = candidato or {}
     titulo = _as_text(datos.get("titulo"))
@@ -78,18 +65,6 @@ def format_candidate_message(candidato: Mapping[str, Any]) -> str:
         if partes:
             partes.append("")  # línea en blanco entre el título y el copy
         partes.append(copy)
-
-    canal = _as_text(datos.get("canal_recomendado"))
-    if canal:
-        partes.append(f"Canal sugerido: {canal}")
-
-    autor = _as_text(datos.get("autor"))
-    if autor:
-        partes.append(f"Autor: {autor}")
-
-    relevancia = _as_percentage(datos.get("relevancia"))
-    if relevancia is not None:
-        partes.append(f"Relevancia: {relevancia}")
 
     return "\n".join(partes)
 
