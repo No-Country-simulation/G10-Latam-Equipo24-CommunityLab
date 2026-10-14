@@ -36,6 +36,7 @@ from src.domain.models import (
     DistributionAssets,
     InputBatch,
     InputMessage,
+    LinkedInCandidate,
     OCIStorage,
     OutputBatch,
     SentimentType,
@@ -151,17 +152,66 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     newsletter_gen = NewsletterGenerator(client=llm)
     faq_gen = FAQGenerator(client=llm)
 
-    linkedin_target = _first_target(results, _is_linkedin_decision)
+    all_linkedin_targets = [
+        (msg, analysis)
+        for msg, analysis, decision in results
+        if _is_linkedin_decision(decision)
+    ]
+    linkedin_target = all_linkedin_targets[0] if all_linkedin_targets else None
     newsletter_target = linkedin_target or _first_target(
         results,
         lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
     faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
+    # Published post and weekly highlight stay single assets (backward
+    # compatible): the published post is the FIRST target, and the newsletter
+    # comes from that same testimonio (falling back to the first interaction
+    # that is neither discarded nor derived to a human).
+    post_linkedin = _run(linkedin_gen, linkedin_target)
+    destaque_newsletter = _run(newsletter_gen, newsletter_target)
+
+    # Option A: one candidate per publishable testimonio, in batch order, so the
+    # UI can offer a manual selector. "Grande": each candidate carries its FULL
+    # post and its own newsletter highlight, so the selector swaps every field.
+    # The FIRST target reuses the published post/highlight generated above, so
+    # the first candidate can never diverge from the published copy (a
+    # non-deterministic LLM would otherwise answer differently on a second
+    # call).
+    candidatos = []
+    for index, (msg, analysis) in enumerate(all_linkedin_targets):
+        if index == 0:
+            post = post_linkedin
+            newsletter = destaque_newsletter
+        else:
+            post = _run(linkedin_gen, (msg, analysis))
+            newsletter = _run(newsletter_gen, (msg, analysis))
+        if post is None:
+            continue
+        relevancia = (
+            analysis.relevance.score if analysis.relevance is not None else 0.0
+        )
+        candidatos.append(
+            LinkedInCandidate(
+                autor=msg.autor,
+                canal=msg.canal,
+                texto_original=msg.texto,
+                relevancia=relevancia,
+                copy=post.copy,
+                titulo=post.titulo,
+                canal_recomendado=post.canal_recomendado,
+                potencial_engagement=post.potencial_engagement,
+                newsletter_seccion=newsletter.seccion if newsletter else "",
+                newsletter_titular=newsletter.titular if newsletter else "",
+                newsletter_resumen=newsletter.resumen if newsletter else "",
+            )
+        )
+
     return DistributionAssets(
-        post_linkedin=_run(linkedin_gen, linkedin_target),
-        destaque_newsletter_semanal=_run(newsletter_gen, newsletter_target),
+        post_linkedin=post_linkedin,
+        destaque_newsletter_semanal=destaque_newsletter,
         sugerencia_contenido_faq=_run(faq_gen, faq_target),
+        candidatos_post_linkedin=candidatos,
     )
 
 
@@ -266,12 +316,20 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         1 for _, _, decision in results if decision.action == ActionType.DERIVAR
     )
 
+    # Technical questions routed to the FAQ rule (R2, CREAR_FAQ): the contract
+    # only materializes ONE suggestion, but every matching decision is a FAQ
+    # candidate asset. Count them for the assets-by-type summary.
+    dudas_frecuentes = sum(
+        1 for _, _, decision in results if decision.action == ActionType.CREAR_FAQ
+    )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
         temas_principales=topics,
         analisis_degradados=degraded,
         feedback_negativo=feedback_negativo,
+        dudas_frecuentes=dudas_frecuentes,
         distribucion_sentimiento=distribucion_sentimiento,
         temas_principales_conteo=temas_principales_conteo,
     )
