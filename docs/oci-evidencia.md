@@ -45,7 +45,7 @@ Se ejecutó el pipeline completo con `python scripts/run_demo.py` con las creden
 - **Entorno:** Lubuntu, Python 3.12 en entorno virtual (`.venv`)
 - **Backend de análisis:** `rule_based` (corrida sin LLM externo; el backend se elige con `COMMUNITYLAB_LLM_BACKEND`)
 - **Dataset:** `data/sample/demo_fixed.json` (12 interacciones)
-- **Estado del pipeline:** `EXITO`
+- **Estado del pipeline:** `exito`
 - **Estado del almacenamiento:** `guardado_con_exito`
 - **Ruta del objeto:** `activos/2026-semana-04/paquete-distribucion.json`
 
