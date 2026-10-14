@@ -1,0 +1,12 @@
+# Puerto fijo del panel de curaduría de CommunityLab.
+#
+# Sin esta configuración Streamlit arranca en su puerto por defecto (8501) y,
+# si está ocupado, salta al siguiente libre (8502, 8503, ...). Como quedaban
+# instancias viejas escuchando, cada corrida abría una URL distinta y no era
+# obvio cuál de todas era la que se estaba mirando.
+#
+# Con el puerto fijado, `streamlit run src/interface/app.py` siempre abre el
+# mismo panel. Si el puerto está ocupado hay que cerrar la instancia anterior
+# en vez de dejar que Streamlit elija otro.
+[server]
+port = 8502
