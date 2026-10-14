@@ -182,6 +182,83 @@ def test_positive_testimonial_generates_linkedin_and_newsletter():
     assert assets.destaque_newsletter_semanal.titular == "Titular generado"
 
 
+def test_multiple_publishable_testimonios_produce_candidates():
+    output = run_pipeline(str(SAMPLE))
+    assets = output.activos_distribucion_generados
+
+    # post_linkedin stays a single lean post (today's published default).
+    assert assets.post_linkedin is not None
+
+    # Every publishable testimonio becomes a candidate, in batch order.
+    candidatos = assets.candidatos_post_linkedin
+    assert len(candidatos) == 4
+    assert [c.autor for c in candidatos] == [
+        "Mariana Souza",
+        "Lucas Albuquerque",
+        "Carla Mendez",
+        "Diego Rios",
+    ]
+
+    # The first candidate is the published post's author, with the same copy.
+    assert candidatos[0].autor == "Mariana Souza"
+    assert candidatos[0].copy == assets.post_linkedin.copy
+    assert candidatos[0].relevancia == 0.9
+    assert candidatos[0].texto_original.startswith("Consegui mi primer empleo")
+
+
+def test_candidates_carry_the_full_post_and_their_own_newsletter():
+    output = run_pipeline(str(SAMPLE))
+    candidatos = output.activos_distribucion_generados.candidatos_post_linkedin
+
+    # Option A "grande": every candidate carries the FULL post, so the UI can
+    # swap every field (not only the copy) when a testimonio is selected.
+    first = candidatos[0]
+    assert first.titulo == "Titulo generado"
+    assert first.canal_recomendado == "LinkedIn Oficial"
+    assert first.potencial_engagement == "Alto"
+
+    # ...and its own newsletter highlight, derived from the same testimonio.
+    assert first.newsletter_seccion == "Logro de la Semana"
+    assert first.newsletter_titular == "Titular generado"
+    assert first.newsletter_resumen == "Resumen generado"
+
+
+class DivergentLinkedInClient(FakeLLMClient):
+    """Returns a different copy on every LinkedIn call.
+
+    Proves the published post and the first candidate are the SAME generation:
+    without the reuse, a non-deterministic LLM (e.g. Gemma) would make the
+    first candidate's copy diverge from the published post.
+    """
+
+    def __init__(self):
+        self.linkedin_calls = 0
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        if "post de LinkedIn" in prompt:
+            self.linkedin_calls += 1
+            payload = dict(_LINKEDIN_PAYLOAD)
+            payload["copy"] = f"Copy {self.linkedin_calls}"
+            return json.dumps(payload)
+        return super().generate(prompt, **kwargs)
+
+
+def test_first_candidate_reuses_the_published_post(monkeypatch):
+    client = DivergentLinkedInClient()
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+
+    output = run_pipeline(str(SAMPLE))
+    assets = output.activos_distribucion_generados
+
+    # The published post and the first candidate share one generation, so they
+    # can never diverge even with a non-deterministic model.
+    assert assets.post_linkedin.copy == "Copy 1"
+    assert assets.candidatos_post_linkedin[0].copy == assets.post_linkedin.copy
+    # One generation per publishable testimonio, not one extra for the
+    # published post.
+    assert client.linkedin_calls == 4
+
+
 def test_technical_question_generates_faq_from_decision():
     output = run_pipeline(str(SAMPLE))
     faq = output.activos_distribucion_generados.sugerencia_contenido_faq
@@ -265,6 +342,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "post_linkedin",
         "destaque_newsletter_semanal",
         "sugerencia_contenido_faq",
+        "candidatos_post_linkedin",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 
