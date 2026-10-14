@@ -129,7 +129,8 @@ def _resolve_config(env: Optional[Mapping[str, Any]]) -> Any:
     if faltantes:
         raise TelegramConfigError(
             f"Falta configuración de Telegram: {', '.join(faltantes)}. "
-            "Definí esas variables en el archivo .env (ver .env.example)."
+            "Esas variables deben estar definidas en el archivo .env "
+            "(ver .env.example)."
         )
     return token, chat_id
 
