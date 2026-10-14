@@ -617,8 +617,8 @@ def main():
                 linkedin_aprobado = linkedin_estado == CURATION_STATUS_APPROVED
                 if not linkedin_aprobado:
                     st.caption(
-                        "Aprobá el post de LinkedIn (Estado de curaduría: Aprobado) "
-                        "para poder publicarlo en Telegram."
+                        "El post de LinkedIn debe estar aprobado "
+                        "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
                     )
 
                 # Metadata de curaduría: visible para el humano, FUERA del

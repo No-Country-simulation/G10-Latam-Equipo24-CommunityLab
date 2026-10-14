@@ -1141,7 +1141,7 @@ def test_publish_button_is_gated_by_linkedin_state():
 
     assert _publish_button(at).proto.disabled is True
     captions = " \n".join(caption.value for caption in at.caption)
-    assert "Aprobá el post de LinkedIn" in captions
+    assert "El post de LinkedIn debe estar aprobado" in captions
 
     at.session_state["linkedin_estado"] = app.CURATION_STATUS_REJECTED
     at.run()
