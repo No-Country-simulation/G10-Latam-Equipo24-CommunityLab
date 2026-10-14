@@ -77,8 +77,8 @@ def fetch_updates(
     """
     if not token:
         raise ValueError(
-            "Falta el token del bot de Telegram; pasalo con --token "
-            "o definí la variable de entorno TELEGRAM_BOT_TOKEN."
+            "Falta el token del bot de Telegram; usar --token "
+            "o definir la variable de entorno TELEGRAM_BOT_TOKEN."
         )
 
     url = f"{_API_BASE}/bot{token}/getUpdates"
@@ -104,12 +104,12 @@ def fetch_updates(
         # Se descarta la cadena del error (contiene la URL con el token).
         raise RuntimeError(
             f"Telegram respondió HTTP {codigo} al consultar getUpdates. "
-            "Revisá el token (401 = inválido) y que el bot exista."
+            "Revisar el token (401 = inválido) y que el bot exista."
         ) from None
     except requests.RequestException:
         raise RuntimeError(
             "Error de red al consultar getUpdates de Telegram; "
-            "revisá la conexión y volvé a intentar."
+            "revisar la conexión y volver a intentar."
         ) from None
 
     datos = respuesta.json()
