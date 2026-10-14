@@ -10,3 +10,11 @@
 # en vez de dejar que Streamlit elija otro.
 [server]
 port = 8502
+
+[theme]
+base = "light"
+primaryColor = "#5B5BD6"
+backgroundColor = "#F5F6FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#20243A"
+font = "sans serif"
