@@ -23,7 +23,7 @@ class InputNormalizer:
             metadata["url"] = raw["url"]
 
         return InputMessage(
-            autor=raw.get("autor") or raw.get("author") or "",
+            autor=self.normalize_autor(raw.get("autor") or raw.get("author")),
             canal=raw.get("canal") or raw.get("channel") or f"#{source}",
             tipo=tipo or self.normalize_tipo(raw.get("tipo")),
             texto=raw.get("texto") or raw.get("content") or "",
@@ -31,6 +31,23 @@ class InputNormalizer:
             timestamp=raw.get("timestamp") or raw.get("fecha"),
             metadata=metadata,
         )
+
+    @staticmethod
+    def normalize_autor(raw_autor: Optional[str]) -> str:
+        """Cleans a raw author into a display-safe name.
+
+        Mastodon hands the account ``acct`` as ``user@instance``: a platform
+        handle, not a person's name. ``flowfx@chaos.social`` becomes
+        ``flowfx`` so the dashboard never shows a raw handle. Authors without a
+        handle (already display-safe) are returned untouched.
+        """
+        if not raw_autor:
+            return ""
+        autor = str(raw_autor).strip()
+        if "@" not in autor:
+            return autor
+        local = autor.lstrip("@").split("@", 1)[0].strip()
+        return local or autor
 
     @staticmethod
     def normalize_tipo(raw_tipo: Optional[str]) -> str:
