@@ -114,6 +114,24 @@ def test_community_summary_feedback_negativo_accepts_value():
     assert summary.feedback_negativo == 2
 
 
+def test_community_summary_dudas_frecuentes_defaults_to_zero():
+    """`dudas_frecuentes` is additive: existing summaries keep working."""
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+    )
+    assert summary.dudas_frecuentes == 0
+
+
+def test_community_summary_dudas_frecuentes_accepts_value():
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+        dudas_frecuentes=4,
+    )
+    assert summary.dudas_frecuentes == 4
+
+
 # ---------------------------------------------------------------------------
 # Option A additive fields (HU-S4-003): sentiment distribution + counted topics
 # ---------------------------------------------------------------------------

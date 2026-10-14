@@ -167,6 +167,9 @@ class CommunitySummary(BaseModel):
     # How many messages were routed to a human on negative feedback (rule R4,
     # decision D-F, issue #97). Additive: existing keys are unchanged.
     feedback_negativo: int = 0
+    # How many messages triggered the FAQ suggestion rule (CREAR_FAQ). Additive:
+    # the contract already exposes one suggestion; this counts the volume.
+    dudas_frecuentes: int = 0
     # Option A (HU-S4-003): counts per SentimentType value across the analyzed
     # batch. Keys are the sentiment values ("positivo", "negativo", "neutral").
     # Additive via default_factory: an empty batch yields {}.
@@ -182,6 +185,25 @@ class LinkedInPost(BaseModel):
     copy: str
     canal_recomendado: str = ""
     potencial_engagement: str = ""
+
+
+class LinkedInCandidate(BaseModel):
+    """A publishable testimonio with its generated post (option A)."""
+    autor: str = ""
+    canal: str = ""
+    texto_original: str = ""
+    relevancia: float = 0.0
+    copy: str = ""
+    # Option A "grande": the full generated post, so the UI can swap every
+    # field of the editor (not only the copy) when a candidate is selected.
+    titulo: str = ""
+    canal_recomendado: str = ""
+    potencial_engagement: str = ""
+    # Option A "grande": the weekly newsletter highlight derived from this same
+    # testimonio, so the newsletter follows the selected publishable post.
+    newsletter_seccion: str = ""
+    newsletter_titular: str = ""
+    newsletter_resumen: str = ""
 
 
 class NewsletterHighlight(BaseModel):
@@ -203,6 +225,9 @@ class DistributionAssets(BaseModel):
     post_linkedin: Optional[LinkedInPost] = None
     destaque_newsletter_semanal: Optional[NewsletterHighlight] = None
     sugerencia_contenido_faq: Optional[FAQSuggestion] = None
+    # Option A: every publishable testimonio with its LLM copy, so the UI can
+    # offer a manual selector. Additive via default_factory: old outputs lack it.
+    candidatos_post_linkedin: List[LinkedInCandidate] = Field(default_factory=list)
 
 
 class OCIStorage(BaseModel):
