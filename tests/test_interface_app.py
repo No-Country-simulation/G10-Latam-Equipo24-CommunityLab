@@ -1,5 +1,7 @@
+import json
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
@@ -114,3 +116,772 @@ def test_build_top_topics_df_empty():
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["tema", "conteo"]
     assert len(df) == 0
+
+
+def test_load_sample_results_reads_valid_output(tmp_path):
+    sample = tmp_path / "corrida.json"
+    sample.write_text(
+        json.dumps(
+            {
+                "status": "exito",
+                "resumen_comunidad": {
+                    "total_interacciones_procesadas": 4,
+                    "sentimiento_predominante": "positivo",
+                    "temas_principales": ["backend"],
+                    "distribucion_sentimiento": {"positivo": 2},
+                    "temas_principales_conteo": [{"tema": "backend", "conteo": 1}],
+                },
+                "activos_distribucion_generados": {},
+                "almacenamiento_oci": {
+                    "bucket": "communitylab",
+                    "ruta_objeto": "storage/x.json",
+                    "status": "pendiente",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = app.load_sample_results(sample)
+
+    assert result is not None
+    assert result["status"] == "exito"
+    assert result["resumen_comunidad"]["total_interacciones_procesadas"] == 4
+
+
+def test_load_sample_results_returns_none_for_missing_file(tmp_path):
+    result = app.load_sample_results(tmp_path / "no-existe.json")
+
+    assert result is None
+
+
+def test_load_sample_results_returns_none_for_invalid_status(tmp_path):
+    sample = tmp_path / "corrida.json"
+    sample.write_text(
+        json.dumps({"status": "error", "resumen_comunidad": {}, "activos_distribucion_generados": {}}),
+        encoding="utf-8",
+    )
+
+    result = app.load_sample_results(sample)
+
+    assert result is None
+
+
+def test_load_sample_results_returns_none_for_malformed_json(tmp_path):
+    sample = tmp_path / "corrida.json"
+    sample.write_text("{no es json", encoding="utf-8")
+
+    result = app.load_sample_results(sample)
+
+    assert result is None
+
+
+def test_sample_button_renders_dashboard_without_exceptions():
+    """El dashboard con resultados cargados no lanza errores de render.
+
+    Es la regresión del fallo `bar_chart() got an unexpected keyword argument
+    'orientation'`: el render real (AppTest) con resultados de Option A debe
+    quedar sin excepciones.
+    """
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+
+def test_render_with_derivadas_metrics():
+    """El dashboard con métricas de derivación a humano no lanza errores.
+
+    Ejercita la rama de advertencias: feedback_negativo > 0 y
+    analisis_degradados > 0 renderizan ambos mensajes sin excepciones.
+    """
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 6,
+            "sentimiento_predominante": "negativo",
+            "temas_principales": ["soporte"],
+            "feedback_negativo": 2,
+            "analisis_degradados": 1,
+            "distribucion_sentimiento": {"positivo": 1, "negativo": 3, "neutral": 2},
+            "temas_principales_conteo": [{"tema": "soporte", "conteo": 3}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    metric_labels = [metric.label for metric in at.metric]
+    assert "Derivados a humano" in metric_labels
+    assert "Análisis degradados" in metric_labels
+
+    warning_texts = [warning.value for warning in at.warning]
+    assert any("feedback negativo" in text for text in warning_texts)
+    assert any("valor predeterminado" in text for text in warning_texts)
+
+
+def test_build_sentiment_pie_chart_with_data():
+    df = app.build_sentiment_distribution_df({"positivo": 5, "negativo": 2, "neutral": 3})
+    chart = app.build_sentiment_pie_chart(df)
+
+    assert isinstance(chart, alt.Chart)
+
+
+def test_build_sentiment_pie_chart_empty_df_returns_none():
+    df = app.build_sentiment_distribution_df({})
+
+    assert app.build_sentiment_pie_chart(df) is None
+
+
+def test_build_sentiment_pie_chart_all_zero_counts_returns_none():
+    df = app.build_sentiment_distribution_df(
+        {"positivo": 0, "negativo": 0, "neutral": 0}
+    )
+
+    assert app.build_sentiment_pie_chart(df) is None
+
+
+def test_build_linkedin_candidate_options():
+    candidatos = [
+        {
+            "autor": "Mariana Souza",
+            "canal": "#logros-y-empleos",
+            "texto_original": "Consegui mi primer empleo como desarrolladora junior",
+            "relevancia": 0.95,
+            "copy": "Copy de Mariana",
+        },
+        {
+            "autor": "Lucas Albuquerque",
+            "canal": "#logros-y-empleos",
+            "texto_original": "Aprobe la certificacion de Oracle Cloud",
+            "relevancia": 0.9,
+            "copy": "Copy de Lucas",
+        },
+    ]
+
+    labels = app.build_linkedin_candidate_options(candidatos)
+
+    assert len(labels) == 2
+    assert labels[0] == f"1. Mariana Souza - {candidatos[0]['texto_original'][:40]}"
+    assert labels[1] == f"2. Lucas Albuquerque - {candidatos[1]['texto_original'][:40]}"
+
+
+def test_build_linkedin_candidate_options_are_unique_when_labels_collide():
+    """Dos candidatos distintos con el mismo autor y el mismo arranque de texto
+    deben producir labels distintos; si no, el selectbox mapea al primero y
+    devuelve el copy equivocado."""
+    candidatos = [
+        {
+            "autor": "Jorge",
+            "canal": "general",
+            "texto_original": "Consegui mi primer empleo como desarrollador backend",
+            "relevancia": 1.0,
+            "copy": "Copy A",
+        },
+        {
+            "autor": "Jorge",
+            "canal": "general",
+            "texto_original": "Consegui mi primer empleo como desarrollador backend",
+            "relevancia": 1.0,
+            "copy": "Copy B",
+        },
+    ]
+
+    labels = app.build_linkedin_candidate_options(candidatos)
+
+    assert len(labels) == 2
+    assert len(set(labels)) == 2
+    # Cada label debe mapear a su propio candidato (así se usa en la app:
+    # candidatos[labels.index(selected_label)]).
+    assert candidatos[labels.index(labels[0])]["copy"] == "Copy A"
+    assert candidatos[labels.index(labels[1])]["copy"] == "Copy B"
+
+
+def test_merge_post_view_prefers_the_selected_candidate():
+    """El post publicado es la base; el candidato seleccionado lo pisa."""
+    linkedin = {
+        "titulo": "Titulo publicado",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Medio",
+        "copy": "Copy publicado",
+    }
+    seleccionado = {
+        "autor": "Lucas",
+        "copy": "Copy de Lucas",
+        "titulo": "Titulo de Lucas",
+        "canal_recomendado": "LinkedIn de Lucas",
+        "potencial_engagement": "Alto",
+    }
+
+    view = app.merge_post_view(linkedin, seleccionado)
+
+    assert view["titulo"] == "Titulo de Lucas"
+    assert view["canal_recomendado"] == "LinkedIn de Lucas"
+    assert view["potencial_engagement"] == "Alto"
+    assert view["copy"] == "Copy de Lucas"
+
+
+def test_merge_post_view_falls_back_to_published_fields():
+    """Un candidato viejo (sin post completo) no borra el post publicado."""
+    linkedin = {
+        "titulo": "Titulo publicado",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Medio",
+        "copy": "Copy publicado",
+    }
+    seleccionado = {"autor": "Lucas", "copy": "Copy de Lucas"}
+
+    view = app.merge_post_view(linkedin, seleccionado)
+
+    assert view["titulo"] == "Titulo publicado"
+    assert view["canal_recomendado"] == "LinkedIn Oficial"
+    assert view["potencial_engagement"] == "Medio"
+    assert view["copy"] == "Copy de Lucas"
+
+
+def test_merge_post_view_without_selection_returns_published():
+    linkedin = {"titulo": "t", "canal_recomendado": "c", "potencial_engagement": "p", "copy": "x"}
+    assert app.merge_post_view(linkedin, None) == linkedin
+
+
+def test_merged_newsletter_prefers_the_selected_candidate():
+    """La newsletter sigue al testimonio seleccionado."""
+    publicada = {"seccion": "x", "titular": "publicada", "resumen": "z"}
+    seleccionado = {
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "Titular de Lucas",
+        "newsletter_resumen": "Resumen de Lucas",
+    }
+
+    newsletter = app.merged_newsletter(publicada, seleccionado)
+
+    assert newsletter["seccion"] == "Logro de la Semana"
+    assert newsletter["titular"] == "Titular de Lucas"
+    assert newsletter["resumen"] == "Resumen de Lucas"
+
+
+def test_merged_newsletter_falls_back_to_published():
+    """Un candidato viejo (sin newsletter) conserva el destaque publicado."""
+    publicada = {"seccion": "x", "titular": "publicada", "resumen": "z"}
+    seleccionado = {"autor": "Lucas", "copy": "Copy de Lucas"}
+
+    assert app.merged_newsletter(publicada, seleccionado) == publicada
+    assert app.merged_newsletter(publicada, None) == publicada
+
+
+def test_build_assets_summary_df_counts_assets_by_type():
+    resumen = {"dudas_frecuentes": 3, "feedback_negativo": 2}
+    assets = {
+        "candidatos_post_linkedin": [{"autor": "a"}, {"autor": "b"}],
+        "destaque_newsletter_semanal": {"seccion": "x"},
+    }
+
+    df = app.build_assets_summary_df(resumen, assets)
+
+    assert len(df) == 4
+    counts = dict(zip(df["activo"], df["conteo"]))
+    assert counts["Post LinkedIn"] == 2
+    assert counts["Newsletter"] == 1
+    assert counts["Dudas frecuentes (FAQ)"] == 3
+    assert counts["Derivados a humano"] == 2
+
+
+def test_process_combined_sample_combines_sources_and_runs(tmp_path, monkeypatch):
+    json_source = tmp_path / "demo_fixed.json"
+    json_source.write_text(
+        json.dumps(
+            {
+                "origen_comunidad": "Discord_Grupo_ONE_G10",
+                "periodo_referencia": "Semana_04",
+                "interacciones": [
+                    {
+                        "autor": "Mariana Souza",
+                        "canal": "#logros-y-empleos",
+                        "tipo": "testimonio",
+                        "texto": "Logré el empleo",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    csv_source = tmp_path / "sintetico.csv"
+    csv_source.write_text(
+        "autor,canal,tipo,texto\n"
+        "Jorge,general,logro,Migré mi app a OCI\n"
+        "Ana,general,feedback,El servicio falló\n",
+        encoding="utf-8",
+    )
+
+    captured = {}
+
+    def fake_process_json_input(content):
+        captured["content"] = content
+        return {"status": "exito"}
+
+    monkeypatch.setattr(app, "process_json_input", fake_process_json_input)
+
+    result = app.process_combined_sample([json_source, csv_source])
+
+    assert result == {"status": "exito"}
+    merged = json.loads(captured["content"])
+    autores = [msg["autor"] for msg in merged["interacciones"]]
+    tipos = [msg["tipo"] for msg in merged["interacciones"]]
+    assert len(merged["interacciones"]) == 3
+    assert "Mariana Souza" in autores
+    assert "Jorge" in autores
+    assert "testimonio" in tipos
+    assert "logro" in tipos
+
+
+def test_process_combined_sample_limits_trim_each_source(tmp_path, monkeypatch):
+    def write_json(path, origen, mensajes):
+        path.write_text(
+            json.dumps(
+                {
+                    "origen_comunidad": origen,
+                    "periodo_referencia": "Semana_01",
+                    "interacciones": mensajes,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def msg(autor, tipo):
+        return {"autor": autor, "canal": "general", "tipo": tipo, "texto": "texto"}
+
+    json_a = tmp_path / "a.json"
+    write_json(json_a, "Comunidad_A", [msg("A1", "testimonio"), msg("A2", "feedback")])
+    csv_b = tmp_path / "b.csv"
+    csv_b.write_text(
+        "autor,canal,tipo,texto\n"
+        "B1,general,logro,x\n"
+        "B2,general,logro,y\n"
+        "B3,general,logro,z\n",
+        encoding="utf-8",
+    )
+    json_c = tmp_path / "c.json"
+    write_json(
+        json_c,
+        "Comunidad_C",
+        [msg("C1", "pregunta_tecnica"), msg("C2", "discusion")],
+    )
+
+    captured = {}
+
+    def fake_process_json_input(content):
+        captured["content"] = content
+        return {"status": "exito"}
+
+    monkeypatch.setattr(app, "process_json_input", fake_process_json_input)
+
+    result = app.process_combined_sample([json_a, csv_b, json_c], limits=[None, 1, None])
+
+    assert result == {"status": "exito"}
+    merged = json.loads(captured["content"])
+    autores = [msg["autor"] for msg in merged["interacciones"]]
+    tipos = {msg["tipo"] for msg in merged["interacciones"]}
+    assert autores == ["A1", "A2", "B1", "C1", "C2"]
+    assert len(merged["interacciones"]) == 5
+    assert {"testimonio", "feedback", "logro", "pregunta_tecnica", "discusion"} <= tipos
+
+
+def test_render_shows_combined_demo_button():
+    """El botón y el selector de tamaño de demo combinada se renderizan."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    button_labels = [button.label for button in at.button]
+    assert any("Procesar demo combinada" in label for label in button_labels)
+
+    size_selectboxes = [
+        selectbox
+        for selectbox in at.selectbox
+        if selectbox.label == "Tamaño del lote combinado"
+    ]
+    assert len(size_selectboxes) == 1
+    assert size_selectboxes[0].value == "Reducido (mitad por fuente)"
+
+
+def test_render_with_linkedin_candidates():
+    """El selector de testimonio a publicar se renderiza con candidatos."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+            "candidatos_post_linkedin": [
+                {
+                    "autor": "Mariana Souza",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Consegui mi primer empleo como desarrolladora junior",
+                    "relevancia": 0.95,
+                    "copy": "Copy de Mariana",
+                },
+                {
+                    "autor": "Lucas Albuquerque",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Aprobe la certificacion de Oracle Cloud",
+                    "relevancia": 0.9,
+                    "copy": "Copy de Lucas",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    selector_labels = [
+        selectbox.label
+        for selectbox in at.selectbox
+        if selectbox.label == "Testimonio a publicar"
+    ]
+    assert len(selector_labels) == 1
+
+
+def test_render_selector_swaps_post_and_newsletter():
+    """Elegir un testimonio cambia el post completo Y la newsletter.
+
+    Option A "grande": el selector ya no solo cambia el copy; el título, el
+    canal, el engagement y el destaque de newsletter siguen al testimonio.
+    """
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "Titulo publicado",
+                "canal_recomendado": "LinkedIn Oficial",
+                "potencial_engagement": "Medio",
+                "copy": "Copy publicado",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "Logro de la Semana",
+                "titular": "Titular publicado",
+                "resumen": "Resumen publicado",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+            "candidatos_post_linkedin": [
+                {
+                    "autor": "Mariana Souza",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Consegui mi primer empleo como desarrolladora junior",
+                    "relevancia": 0.95,
+                    "copy": "Copy publicado",
+                    "titulo": "Titulo publicado",
+                    "canal_recomendado": "LinkedIn Oficial",
+                    "potencial_engagement": "Medio",
+                    "newsletter_seccion": "Logro de la Semana",
+                    "newsletter_titular": "Titular publicado",
+                    "newsletter_resumen": "Resumen publicado",
+                },
+                {
+                    "autor": "Lucas Albuquerque",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Aprobe la certificacion de Oracle Cloud",
+                    "relevancia": 0.9,
+                    "copy": "Copy de Lucas",
+                    "titulo": "Titulo de Lucas",
+                    "canal_recomendado": "LinkedIn de Lucas",
+                    "potencial_engagement": "Alto",
+                    "newsletter_seccion": "Logro de la Semana",
+                    "newsletter_titular": "Titular de Lucas",
+                    "newsletter_resumen": "Resumen de Lucas",
+                },
+                {
+                    "autor": "Sofia Ramos",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Termine mi primera app en produccion",
+                    "relevancia": 0.85,
+                    "copy": "Copy de Sofia",
+                    "titulo": "Titulo de Sofia",
+                    "canal_recomendado": "LinkedIn de Sofia",
+                    "potencial_engagement": "Medio",
+                    "newsletter_seccion": "Logro de la Semana",
+                    "newsletter_titular": "Titular de Sofia",
+                    "newsletter_resumen": "Resumen de Sofia",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    # Default selection: the published post and its newsletter.
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Titulo publicado" in markdown
+    assert "Titular publicado" in markdown
+
+    # Re-leer el selectbox en CADA paso: una referencia capturada antes de un
+    # run() queda stale, y AppTest recolecta los widget states de esos elementos
+    # viejos. Con keys por candidato eso pide una key que ya no existe
+    # (KeyError: linkedin_edit_0) aunque la app este perfecta.
+    selector = next(s for s in at.selectbox if s.label == "Testimonio a publicar")
+    selector.select(selector.options[1]).run()
+    assert not at.exception
+
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Titulo de Lucas" in markdown
+    assert "Titular de Lucas" in markdown
+    assert "Titulo publicado" not in markdown
+    assert "Titular publicado" not in markdown
+
+    post_area = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    assert post_area.value == "Copy de Lucas"
+    news_area = next(t for t in at.text_area if t.label == "Contenido Newsletter:")
+    assert news_area.value == "Resumen de Lucas"
+
+    # Segundo cambio consecutivo: el editor tiene que volver a sincronizarse.
+    # Un st.text_area con key conserva el valor de session_state e ignora value=
+    # en los re-runs, asi que sin re-sincronizar el primer cambio funcionaba y
+    # los siguientes quedaban pegados al testimonio anterior.
+    selector = next(s for s in at.selectbox if s.label == "Testimonio a publicar")
+    selector.select(selector.options[2]).run()
+    assert not at.exception
+
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Titulo de Sofia" in markdown
+    assert "Titular de Sofia" in markdown
+    assert "Titulo de Lucas" not in markdown
+    assert "Titular de Lucas" not in markdown
+
+    post_area = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    assert post_area.value == "Copy de Sofia"
+    news_area = next(t for t in at.text_area if t.label == "Contenido Newsletter:")
+    assert news_area.value == "Resumen de Sofia"
+
+    # Cada testimonio tiene su PROPIO editor: la key incluye el indice del
+    # candidato. Con una key compartida ("linkedin_edit") el navegador seguia
+    # mostrando el valor viejo de session_state porque la sesion le gana a
+    # value= en los re-runs; AppTest no reproduce esa precedencia, asi que la
+    # garantia que se fija aca es estructural: cada candidato guarda su edicion
+    # bajo su propia key y ningun valor viejo puede filtrarse al siguiente.
+    assert "linkedin_edit_2" in at.session_state
+    assert at.session_state["linkedin_edit_2"] == "Copy de Sofia"
+    assert "news_edit_2" in at.session_state
+    assert at.session_state["news_edit_2"] == "Resumen de Sofia"
+    assert "linkedin_edit" not in at.session_state
+    assert "news_edit" not in at.session_state
+
+    # Y volver al testimonio publicado tambien debe reflejarse.
+    selector = next(s for s in at.selectbox if s.label == "Testimonio a publicar")
+    selector.select(selector.options[0]).run()
+    assert not at.exception
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Titulo publicado" in markdown
+    assert "Titulo de Sofia" not in markdown
+    post_area = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    assert post_area.value == "Copy publicado"
+
+    # Y una edicion manual de un testimonio no debe filtrarse al siguiente: es
+    # el sintoma que reporto el usuario (cambiaba el titulo pero el texto grande
+    # seguia pegado al testimonio anterior).
+    edited_area = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    edited_area.set_value("EDICION MANUAL DEL USUARIO").run()
+    assert at.session_state["linkedin_edit_0"] == "EDICION MANUAL DEL USUARIO"
+
+    selector = next(s for s in at.selectbox if s.label == "Testimonio a publicar")
+    selector.select(selector.options[1]).run()
+    assert not at.exception
+    post_area = next(t for t in at.text_area if t.label == "Contenido del Post:")
+    assert post_area.value == "Copy de Lucas"
+    assert at.session_state["linkedin_edit_1"] == "Copy de Lucas"
+
+
+def test_render_with_assets_summary_chart():
+    """La sección de activos por tipo se renderiza sin errores."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 2,
+            "analisis_degradados": 0,
+            "dudas_frecuentes": 3,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+            "candidatos_post_linkedin": [
+                {
+                    "autor": "Mariana Souza",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Consegui mi primer empleo como desarrolladora junior",
+                    "relevancia": 0.95,
+                    "copy": "Copy de Mariana",
+                },
+                {
+                    "autor": "Lucas Albuquerque",
+                    "canal": "#logros-y-empleos",
+                    "texto_original": "Aprobe la certificacion de Oracle Cloud",
+                    "relevancia": 0.9,
+                    "copy": "Copy de Lucas",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    subheaders = [subheader.value for subheader in at.subheader]
+    assert any("Activos generados por tipo" in text for text in subheaders)
