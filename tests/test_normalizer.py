@@ -76,3 +76,31 @@ def test_normalize_tipo_whitespace_only():
     raw = {"autor": "i", "texto": "t", "tipo": "   "}
     msg = InputNormalizer().normalize("mastodon", raw)
     assert msg.tipo == "otro"
+
+
+def test_normalize_strips_mastodon_instance_from_autor():
+    """Mastodon hands the account `acct` as `user@instance`: a platform handle,
+    not a name. The domain keeps only the local user."""
+    raw = {"autor": "flowfx@chaos.social", "texto": "t", "tipo": "testimonio"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.autor == "flowfx"
+
+
+def test_normalize_strips_leading_at_from_autor():
+    """A pasted handle (@user@instance) also resolves to the local user."""
+    raw = {"autor": "@and_rf@pixelfed.social", "texto": "t"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.autor == "and_rf"
+
+
+def test_normalize_keeps_plain_autor_unchanged():
+    """An author without a handle is already display-safe."""
+    raw = {"autor": "codedrome", "texto": "t", "tipo": "otro"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.autor == "codedrome"
+
+
+def test_normalize_autor_empty_stays_empty():
+    raw = {"autor": "", "texto": "t"}
+    msg = InputNormalizer().normalize("mastodon", raw)
+    assert msg.autor == ""
