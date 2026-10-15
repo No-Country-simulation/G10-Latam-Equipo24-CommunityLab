@@ -36,13 +36,20 @@
 | Color | Hex | Significado | Uso |
 |-------|-----|-------------|-----|
 | **Azul profundo** | `#0B2D4A` | Confianza, estabilidad, profesionalismo | Títulos, navegación y superficies oscuras |
-| **Turquesa** | `#00C2CB` | Colaboración, conexión, crecimiento | Acciones, acentos y elementos destacados |
+| **Turquesa** | `#00C2AB` | Colaboración, conexión, crecimiento | Acciones, acentos y elementos destacados |
 | **Violeta** | `#7C3AED` | Innovación, tecnología, creatividad | Gradientes, estados y gráficos |
 | **Gris claro** | `#F4F7FB` | Fondo de la aplicación | Fondo general y espacios de trabajo |
 | **Gris oscuro** | `#1E2A3A` | Lectura y jerarquía | Texto principal y descripciones |
 | **Danger** | Rojo `#DC2626` | Alertas, riesgo, error | Alertas de riesgo, errores, reject |
 | **Warning** | Amarillo `#D97706` | Preocupación moderada | Advertencias, pendientes |
 | **Success** | Verde `#16A34A` | Éxito, aprobado | Aprobación, aprobado, positivo |
+
+### Logos oficiales
+
+Las variantes aprobadas se guardan en `src/interface/assets/branding/`. El logo
+principal aparece en el encabezado sobre una superficie clara para conservar el
+contraste; el isotipo se usa como icono de la pestaña y la versión monocromática
+queda disponible para contextos donde corresponda.
 
 ### Sentimiento (para gráficos y badges)
 

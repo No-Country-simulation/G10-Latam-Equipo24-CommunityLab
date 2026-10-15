@@ -21,7 +21,7 @@ secondaryBackgroundColor = "#FFFFFF"
 textColor = "#1E2A3A"
 
 [theme.dark]
-primaryColor = "#00C2CB"
+primaryColor = "#00C2AB"
 backgroundColor = "#0B1728"
 secondaryBackgroundColor = "#13283E"
 textColor = "#F4F7FB"

@@ -1,3 +1,4 @@
+import base64
 import json
 import tempfile
 from datetime import date, datetime
@@ -23,6 +24,13 @@ EDIT_WIDGET_KEY_PREFIXES = ("linkedin_edit", "news_edit", "linkedin_estado", "ne
 EDIT_WIDGET_KEYS = (
     "faq_edit",
     "faq_estado",
+)
+
+BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
+    "assets", "branding", "communitylab-logo-principal.png"
+)
+BRAND_ICON_PATH = Path(__file__).resolve().parent.joinpath(
+    "assets", "branding", "communitylab-isotipo-fondo-azul.png"
 )
 
 # Estado de curaduría por activo. Los nombres de constante van en inglés y los
@@ -363,7 +371,7 @@ def apply_dashboard_styles():
         <style>
         [data-testid="stAppViewContainer"] {
             background:
-                radial-gradient(ellipse at 5% 0%, rgba(0, 194, 203, 0.08), transparent 34%),
+                radial-gradient(ellipse at 5% 0%, rgba(0, 194, 171, 0.08), transparent 34%),
                 var(--background-color);
         }
         .block-container {
@@ -382,7 +390,7 @@ def apply_dashboard_styles():
             padding: clamp(1.5rem, 4vw, 3rem);
             color: #F4F7FB;
             background:
-                radial-gradient(circle at 0% 0%, rgba(0, 194, 203, 0.45), transparent 22%),
+                radial-gradient(circle at 0% 0%, rgba(0, 194, 171, 0.45), transparent 22%),
                 radial-gradient(circle at 100% 100%, rgba(124, 58, 237, 0.45), transparent 24%),
                 linear-gradient(115deg, #0B2D4A, #10243D 68%, #0B2D4A);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -395,37 +403,21 @@ def apply_dashboard_styles():
             gap: 1rem;
             min-width: 0;
         }
-        .communitylab-mark {
-            display: grid;
-            width: 4rem;
-            height: 4rem;
-            flex: 0 0 auto;
-            place-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            background: linear-gradient(145deg, rgba(0, 194, 203, 0.25), rgba(124, 58, 237, 0.4));
+        .communitylab-logo-panel {
+            display: flex;
+            align-items: center;
+            width: min(100%, 31rem);
+            min-height: 6.5rem;
+            padding: 0.65rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 14px;
+            background: #F4F7FB;
         }
-        .communitylab-mark svg {
-            width: 2.2rem;
-            height: 2.2rem;
-        }
-        .communitylab-wordmark {
-            margin: 0;
-            color: #F4F7FB;
-            font-size: clamp(1.8rem, 4vw, 2.7rem);
-            font-weight: 750;
-            letter-spacing: -0.055em;
-            line-height: 1.05;
-        }
-        .communitylab-wordmark span {
-            color: #00C2CB;
-        }
-        .communitylab-tagline {
-            margin-top: 0.65rem;
-            color: rgba(244, 247, 251, 0.78);
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.22em;
+        .communitylab-logo-panel img {
+            display: block;
+            width: 100%;
+            max-height: 6rem;
+            object-fit: contain;
         }
         .communitylab-hero-copy {
             max-width: 23rem;
@@ -459,10 +451,14 @@ def apply_dashboard_styles():
             opacity: 0.7;
         }
         [data-testid="stBaseButton-primary"] {
-            color: #FFFFFF;
+            color: #0B2D4A;
             border: 0;
-            background: linear-gradient(105deg, #007C88, #7C3AED);
+            background: #00C2AB;
             box-shadow: 0 5px 14px rgba(11, 45, 74, 0.2);
+        }
+        [data-testid="stBaseButton-primary"]:hover {
+            color: #0B2D4A;
+            background: #00AE9A;
         }
         [data-testid="stBaseButton"],
         [data-testid="stDownloadButton"] button {
@@ -501,21 +497,16 @@ def apply_dashboard_styles():
 
 
 def render_brand_header():
+    logo_data = base64.b64encode(BRAND_LOGO_PATH.read_bytes()).decode("ascii")
     st.markdown(
-        """
+        f"""
         <header class="communitylab-hero" aria-label="CommunityLab">
             <div class="communitylab-brand">
-                <div class="communitylab-mark" aria-hidden="true">
-                    <svg viewBox="0 0 48 48" fill="none">
-                        <path d="M24 5C13.5 5 5 12.8 5 22.4c0 5.1 2.5 9.7 6.5 12.8L10 43l9-4.3c1.6.4 3.3.6 5 .6 10.5 0 19-7.8 19-17.4S34.5 5 24 5Z" fill="#00C2CB"/>
-                        <circle cx="17" cy="23" r="2.5" fill="#0B2D4A"/>
-                        <circle cx="24" cy="23" r="2.5" fill="#0B2D4A"/>
-                        <circle cx="31" cy="23" r="2.5" fill="#0B2D4A"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="communitylab-wordmark">Community<span>Lab</span></p>
-                    <div class="communitylab-tagline">ESCUCHA · ANALIZA · IMPACTA</div>
+                <div class="communitylab-logo-panel">
+                    <img
+                        src="data:image/png;base64,{logo_data}"
+                        alt="CommunityLab — Escucha, analiza, impacta"
+                    />
                 </div>
             </div>
             <div class="communitylab-hero-copy">
@@ -531,7 +522,7 @@ def render_brand_header():
 def main():
     st.set_page_config(
         page_title="CommunityLab - Panel de Curaduría",
-        page_icon="🚀",
+        page_icon=BRAND_ICON_PATH.read_bytes(),
         layout="wide",
         initial_sidebar_state="collapsed",
     )
