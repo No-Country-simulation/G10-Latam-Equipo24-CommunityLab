@@ -48,6 +48,18 @@ CANAL_TELEGRAM = "#telegram"
 _AUTOR_DESCONOCIDO = "usuario_desconocido"
 
 
+class TelegramAuthError(RuntimeError):
+    """Credenciales inválidas: el bot debe detenerse."""
+
+
+class TelegramPermanentError(RuntimeError):
+    """Error permanente de Telegram que no se resuelve reintentando."""
+
+
+class TelegramTransientError(RuntimeError):
+    """Fallo temporal de red o de la API; se puede reintentar."""
+
+
 # Funciones
 
 
@@ -100,22 +112,72 @@ def fetch_updates(
         respuesta = requests.get(url, params=params, timeout=http_timeout)
         respuesta.raise_for_status()
     except requests.HTTPError as err:
-        codigo = err.response.status_code if err.response is not None else "?"
-        # Se descarta la cadena del error (contiene la URL con el token).
-        raise RuntimeError(
-            f"Telegram respondió HTTP {codigo} al consultar getUpdates. "
-            "Revisá el token (401 = inválido) y que el bot exista."
+        codigo = err.response.status_code if err.response is not None else None
+
+        # No usamos la cadena original del error porque puede contener el token.
+        mensaje = (
+            f"Telegram respondió HTTP {codigo} al consultar getUpdates."
+            if codigo is not None
+            else "Error HTTP al consultar getUpdates de Telegram."
+        )
+
+        if codigo == 401:
+            raise TelegramAuthError(
+                f"{mensaje} El token es inválido o no está autorizado."
+            ) from None
+
+        if codigo in (400, 403):
+            raise TelegramPermanentError(
+                f"{mensaje} Revisá la solicitud y los permisos del bot."
+            ) from None
+
+        raise TelegramTransientError(
+            f"{mensaje} Revisá la conexión y volvé a intentar."
         ) from None
+
     except requests.RequestException:
-        raise RuntimeError(
+        raise TelegramTransientError(
             "Error de red al consultar getUpdates de Telegram; "
             "revisá la conexión y volvé a intentar."
         ) from None
 
-    datos = respuesta.json()
+
+    try:
+        datos = respuesta.json()
+    except requests.exceptions.JSONDecodeError:
+        raise TelegramTransientError(
+            "Telegram devolvió una respuesta JSON inválida al consultar getUpdates."
+        ) from None
+
+    if not isinstance(datos, dict):
+        raise TelegramTransientError(
+            "Telegram devolvió una respuesta inesperada al consultar getUpdates."
+        )
+
     if not datos.get("ok"):
         descripcion = datos.get("description") or "respuesta sin 'ok': true"
-        raise RuntimeError(f"Telegram devolvió ok=false: {descripcion}")
+        codigo = datos.get("error_code")
+
+        mensaje = f"Telegram devolvió ok=false: {descripcion}"
+
+
+        if codigo == 401:
+            raise TelegramAuthError(mensaje)
+
+        if codigo in (400, 403):
+            raise TelegramPermanentError(mensaje)
+
+        if codigo == 409:
+            raise TelegramPermanentError(
+                f"{mensaje}. Puede haber otro consumidor de getUpdates activo."
+            )
+
+        if isinstance(codigo, int) and codigo >= 500:
+            raise TelegramTransientError(mensaje)
+
+        # Las respuestas sin código también se tratan como temporales por
+        # precaución: no debemos descartar actualizaciones por una causa incierta.
+        raise TelegramTransientError(mensaje)
 
     result = datos.get("result") or []
     if chat is None:

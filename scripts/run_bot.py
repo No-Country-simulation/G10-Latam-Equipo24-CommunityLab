@@ -80,6 +80,10 @@ def main() -> int:
 
     sys.path.insert(0, str(REPO_ROOT))
     from src.ingest.bot import run_bot  # noqa: E402
+    from src.ingest.telegram import (  # noqa: E402
+        TelegramAuthError,
+        TelegramPermanentError,
+    )
     from src.ingest.webhook import apply_backend  # noqa: E402
 
     backend = apply_backend(args.backend)
@@ -96,6 +100,12 @@ def main() -> int:
 
     try:
         run_bot(token, backend=args.backend, poll_timeout=args.poll_timeout)
+    except TelegramAuthError as exc:
+        print(f"Error de autenticación de Telegram: {exc}", file=sys.stderr)
+        return 1
+    except TelegramPermanentError as exc:
+        print(f"Error permanente de Telegram: {exc}", file=sys.stderr)
+        return 1
     except KeyboardInterrupt:
         print("\nApagando el bot...")
     return 0
