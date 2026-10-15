@@ -37,6 +37,24 @@ CURATION_STATUSES = (
 )
 
 
+# Decisión del handler de publicación, como función pura para poder cubrir sus
+# tres resultados sin depender del runtime de Streamlit: un botón deshabilitado
+# descarta el click del lado del servidor, así que las ramas defensivas del
+# handler no se alcanzan desde la UI.
+PUBLISH_DECISION_NOT_APPROVED = "not_approved"
+PUBLISH_DECISION_ALREADY_PUBLISHED = "already_published"
+PUBLISH_DECISION_APPROVED = "publish"
+
+
+def publish_decision(linkedin_aprobado, ya_publicado):
+    """Devuelve qué hacer con el click del botón de publicar en Telegram."""
+    if not linkedin_aprobado:
+        return PUBLISH_DECISION_NOT_APPROVED
+    if ya_publicado:
+        return PUBLISH_DECISION_ALREADY_PUBLISHED
+    return PUBLISH_DECISION_APPROVED
+
+
 def process_json_input(content):
     """Procesa un lote JSON y devuelve la salida del contrato."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -650,20 +668,22 @@ def main():
                 hora_envio = publicadas.get(firma)
                 ya_publicado = hora_envio is not None
 
+                decision = publish_decision(linkedin_aprobado, ya_publicado)
+
                 if st.button(
                     "📨 Publicar en Telegram",
                     key="telegram_publish_button",
-                    disabled=not linkedin_aprobado or ya_publicado,
+                    disabled=decision != PUBLISH_DECISION_APPROVED,
                 ):
-                    # Guarda defensiva: el handler revalida AMBAS condiciones,
-                    # así un click viejo no publica sin Aprobado ni reenvía una
-                    # firma ya publicada.
-                    if not linkedin_aprobado:
+                    # Guarda defensiva: el handler revalida la decisión, así un
+                    # click viejo no publica sin Aprobado ni reenvía una firma
+                    # ya publicada.
+                    if decision == PUBLISH_DECISION_NOT_APPROVED:
                         st.warning(
                             "El post de LinkedIn no está aprobado; no se publica "
                             "en Telegram."
                         )
-                    elif ya_publicado:
+                    elif decision == PUBLISH_DECISION_ALREADY_PUBLISHED:
                         st.caption(f"✅ Publicado a las {hora_envio}")
                     else:
                         try:

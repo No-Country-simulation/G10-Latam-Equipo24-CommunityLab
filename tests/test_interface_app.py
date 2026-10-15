@@ -1135,6 +1135,23 @@ def test_approved_count_mentions_rejected_assets():
     assert any("2 activos rechazados" in text for text in infos)
 
 
+def test_publish_decision_blocks_when_not_approved():
+    assert app.publish_decision(False, False) == app.PUBLISH_DECISION_NOT_APPROVED
+
+
+def test_publish_decision_blocks_when_already_published():
+    assert app.publish_decision(True, True) == app.PUBLISH_DECISION_ALREADY_PUBLISHED
+
+
+def test_publish_decision_allows_approved_and_unsent():
+    assert app.publish_decision(True, False) == app.PUBLISH_DECISION_APPROVED
+
+
+def test_publish_decision_not_approved_takes_precedence():
+    """Sin aprobación no se publica, aunque la firma ya se haya enviado."""
+    assert app.publish_decision(False, True) == app.PUBLISH_DECISION_NOT_APPROVED
+
+
 def test_publish_button_is_gated_by_linkedin_state():
     """El botón de publicar sólo se habilita con el LinkedIn Aprobado."""
     at = _run_app_with_candidates()
