@@ -216,7 +216,7 @@ campo nuevo en el schema del LLM, no un umbral sobre el score.
 ### D-H — El botón "Publicar en Telegram" depende de la aprobación de LinkedIn
 
 **Fecha:** 2026-10-14
-**Estado:** decidida — implementada en PR #118
+**Estado:** decidida — implementada en PR #119
 **Due:** @Rox-0864
 
 **Qué decide.** Si el botón "📨 Publicar en Telegram" del panel exige que el post de LinkedIn esté

@@ -64,9 +64,9 @@ def test_process_json_input_rejects_unexpected_pipeline_status(monkeypatch):
 def test_reset_batch_state_clears_results_and_previous_edits():
     session_state = {
         "linkedin_edit": "copy anterior",
-        "linkedin_estado": app.CURATION_STATUS_APPROVED,
+        "linkedin_estado_0": app.CURATION_STATUS_APPROVED,
         "news_edit": "resumen anterior",
-        "news_estado": app.CURATION_STATUS_REJECTED,
+        "news_estado_0": app.CURATION_STATUS_REJECTED,
         "faq_edit": "tema anterior",
         "faq_estado": app.CURATION_STATUS_APPROVED,
         "telegram_published_times": {"firma-anterior": "10:00"},
@@ -80,7 +80,7 @@ def test_reset_batch_state_clears_results_and_previous_edits():
     # así un lote nuevo no hereda la decisión del lote anterior. Las firmas ya
     # publicadas también se olvidan para no bloquear al candidato del lote nuevo.
     assert session_state == {"processing_done": False, "llm_results": None}
-    for key in ("linkedin_estado", "news_estado", "faq_estado", "telegram_published_times"):
+    for key in ("linkedin_estado_0", "news_estado_0", "faq_estado", "telegram_published_times"):
         assert key not in session_state
 
 
@@ -978,7 +978,7 @@ def _run_app_with_candidates(linkedin_estado=None):
     # Pre-set the curation state when a test needs to skip the default
     # "Pendiente" (widget keys honor a session value over their default).
     if linkedin_estado is not None:
-        at.session_state["linkedin_estado"] = linkedin_estado
+        at.session_state["linkedin_estado_0"] = linkedin_estado
         at.run()
         assert not at.exception
     return at
@@ -1057,8 +1057,8 @@ def _run_app_with_curation(
     faq=app.CURATION_STATUS_PENDING,
 ):
     at = _run_app_with_candidates()
-    at.session_state["linkedin_estado"] = linkedin
-    at.session_state["news_estado"] = news
+    at.session_state["linkedin_estado_0"] = linkedin
+    at.session_state["news_estado_0"] = news
     at.session_state["faq_estado"] = faq
     at.run()
     assert not at.exception
@@ -1074,7 +1074,7 @@ def test_curation_state_defaults_to_pending_for_every_asset():
     """Cada activo arranca en Pendiente y ofrece los tres estados."""
     at = _run_app_with_candidates()
 
-    for key in ("linkedin_estado", "news_estado", "faq_estado"):
+    for key in ("linkedin_estado_0", "news_estado_0", "faq_estado"):
         radio = _curation_radio(at, key)
         assert radio.label == CURATION_LABEL
         assert radio.value == app.CURATION_STATUS_PENDING
@@ -1088,7 +1088,7 @@ def test_approved_linkedin_is_included_in_approved_package():
     _click_approve(at)
 
     infos = [info.value for info in at.info]
-    assert any("1 activos aprobados" in text for text in infos)
+    assert any("1 activo aprobado" in text for text in infos)
 
 
 def test_pending_and_rejected_assets_are_excluded_from_approved_package():
@@ -1097,13 +1097,13 @@ def test_pending_and_rejected_assets_are_excluded_from_approved_package():
     at = _run_app_with_candidates()
     _click_approve(at)
     warnings = [warning.value for warning in at.warning]
-    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+    assert any("Se debe aprobar al menos un activo" in text for text in warnings)
 
     # Rechazado: sigue afuera del paquete.
     at = _run_app_with_curation(linkedin=app.CURATION_STATUS_REJECTED)
     _click_approve(at)
     warnings = [warning.value for warning in at.warning]
-    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+    assert any("Se debe aprobar al menos un activo" in text for text in warnings)
 
 
 def test_approved_asset_with_empty_text_is_excluded():
@@ -1117,7 +1117,7 @@ def test_approved_asset_with_empty_text_is_excluded():
     _click_approve(at)
 
     warnings = [warning.value for warning in at.warning]
-    assert any("Debes aprobar al menos un activo" in text for text in warnings)
+    assert any("Se debe aprobar al menos un activo" in text for text in warnings)
 
 
 def test_approved_count_mentions_rejected_assets():
@@ -1131,7 +1131,7 @@ def test_approved_count_mentions_rejected_assets():
     _click_approve(at)
 
     infos = [info.value for info in at.info]
-    assert any("1 activos aprobados" in text for text in infos)
+    assert any("1 activo aprobado" in text for text in infos)
     assert any("2 activos rechazados" in text for text in infos)
 
 
@@ -1143,13 +1143,29 @@ def test_publish_button_is_gated_by_linkedin_state():
     captions = " \n".join(caption.value for caption in at.caption)
     assert "El post de LinkedIn debe estar aprobado" in captions
 
-    at.session_state["linkedin_estado"] = app.CURATION_STATUS_REJECTED
+    at.session_state["linkedin_estado_0"] = app.CURATION_STATUS_REJECTED
     at.run()
     assert _publish_button(at).proto.disabled is True
 
-    at.session_state["linkedin_estado"] = app.CURATION_STATUS_APPROVED
+    at.session_state["linkedin_estado_0"] = app.CURATION_STATUS_APPROVED
     at.run()
     assert _publish_button(at).proto.disabled is False
+
+
+def test_approval_is_bound_to_the_selected_candidate(monkeypatch):
+    """Aprobar un candidato no habilita publicar a OTRO: el estado va por candidato."""
+    llamadas = _fake_publish_recorder(monkeypatch)
+    at = _run_app_with_candidates(linkedin_estado=app.CURATION_STATUS_APPROVED)
+
+    _publish_button(at).click().run()
+    assert not at.exception
+    assert len(llamadas) == 1
+
+    # Cambiar de candidato no hereda la aprobación: el candidato 1 nunca fue
+    # aprobado, así que el botón debe quedar deshabilitado.
+    at.selectbox(key="linkedin_candidate").select_index(1).run()
+    assert not at.exception
+    assert _publish_button(at).disabled is True
 
 
 def test_rejected_linkedin_shows_visible_warning_and_keeps_editor():
@@ -1262,14 +1278,14 @@ def test_rejected_publish_flow_never_invokes_publish_candidate(monkeypatch):
 def test_new_batch_does_not_inherit_previous_curation_state():
     """Cargar un lote nuevo devuelve los estados a Pendiente."""
     at = _run_app_with_candidates()
-    _curation_radio(at, "linkedin_estado").set_value(app.CURATION_STATUS_APPROVED).run()
+    _curation_radio(at, "linkedin_estado_0").set_value(app.CURATION_STATUS_APPROVED).run()
     assert not at.exception
-    assert _curation_radio(at, "linkedin_estado").value == app.CURATION_STATUS_APPROVED
+    assert _curation_radio(at, "linkedin_estado_0").value == app.CURATION_STATUS_APPROVED
 
     next(button for button in at.button if button.label == SAMPLE_BUTTON_LABEL).click().run()
     assert not at.exception
 
-    assert _curation_radio(at, "linkedin_estado").value == app.CURATION_STATUS_PENDING
+    assert _curation_radio(at, "linkedin_estado_0").value == app.CURATION_STATUS_PENDING
 
 
 def test_publish_button_disables_and_blocks_second_send(monkeypatch):
@@ -1320,6 +1336,24 @@ def test_stale_click_does_not_resend_the_same_signature(monkeypatch):
     assert len(llamadas) == 1
 
 
+def test_stale_click_without_approval_never_publishes(monkeypatch):
+    """Guardia defensiva: un click viejo sin Aprobado no publica."""
+    from streamlit.testing.v1.element_tree import Widget
+
+    llamadas = _fake_publish_recorder(monkeypatch)
+    # NO aprobado: el gate deshabilita el botón.
+    at = _run_app_with_curation(linkedin=app.CURATION_STATUS_PENDING)
+    assert _publish_button(at).disabled is True
+
+    # Simular un click encolado que llega al widget deshabilitado: el handler
+    # debe revalidar por su cuenta y no publicar.
+    monkeypatch.setattr(Widget, "_assert_can_interact", lambda self: None)
+    _publish_button(at).click().run()
+
+    assert not at.exception
+    assert llamadas == []
+
+
 def test_editing_copy_reenables_publish_button(monkeypatch):
     """Editar el copy cambia la firma y el botón vuelve a habilitarse."""
     llamadas = _fake_publish_recorder(monkeypatch)
@@ -1342,18 +1376,23 @@ def test_editing_copy_reenables_publish_button(monkeypatch):
     assert llamadas[1]["copy"] == "Copy editado despues de publicar"
 
 
-def test_selecting_another_candidate_reenables_publish_button(monkeypatch):
-    """Cambiar de candidato cambia la firma y el botón vuelve a habilitarse."""
+def test_switching_to_non_approved_candidate_keeps_publish_button_disabled(monkeypatch):
+    """Aprobar un candidato no aprueba a otro: el estado va por candidato."""
     llamadas = _fake_publish_recorder(monkeypatch)
-    # El gate combinado exige Aprobado para llegar a enviar.
     at = _run_app_with_candidates(linkedin_estado=app.CURATION_STATUS_APPROVED)
 
     _publish_button(at).click().run()
+    assert not at.exception
     assert len(llamadas) == 1
-    at.run()
+
+    # Cambiar de candidato NO hereda la aprobación: el nuevo candidato sigue
+    # en Pendiente y el botón queda deshabilitado.
+    at.selectbox(key="linkedin_candidate").select_index(1).run()
+    assert not at.exception
     assert _publish_button(at).disabled is True
 
-    at.selectbox(key="linkedin_candidate").select_index(1).run()
+    # Recién al aprobar ESE candidato el botón se vuelve a habilitar.
+    _curation_radio(at, "linkedin_estado_1").set_value(app.CURATION_STATUS_APPROVED).run()
     assert not at.exception
     button = _publish_button(at)
     assert button.disabled is False
