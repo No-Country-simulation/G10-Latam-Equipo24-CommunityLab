@@ -130,6 +130,17 @@ def test_ollama_local_mode_failure_raises_llm_error(monkeypatch):
         client.generate("prompt local")
 
 
+def test_rule_based_queja_con_exclamacion_es_negativa():
+    client = RuleBasedClient()
+    queja = InputMessage(
+        autor="Ana", canal="#feedback", tipo="otro",
+        texto="¡Qué desastre! Gracias por nada, perdí dos semanas.",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(queja)))
+    assert data["sentiment"]["type"] == "negativo"
+    assert data["categorization"]["category"] == "feedback"
+
+
 def test_rule_based_analysis_ignores_prompt_instructions():
     """Regression: los indicadores miran el mensaje, no el prompt completo.
 
@@ -180,13 +191,13 @@ def test_rule_based_analysis_detects_negative_feedback():
     assert data["sentiment"]["type"] == "negativo"
     assert data["categorization"]["category"] == "feedback"
 
-    queja_con_ayuda = InputMessage(
+    queja_por_retraso = InputMessage(
         autor="Diego",
         canal="#feedback",
         tipo="otro",
         texto="Las correcciones de los proyectos tardan demasiado: perdí dos semanas.",
     )
-    data = json.loads(client.generate(build_analysis_prompt(queja_con_ayuda)))
+    data = json.loads(client.generate(build_analysis_prompt(queja_por_retraso)))
     assert data["sentiment"]["type"] == "negativo"
     assert data["categorization"]["category"] == "feedback"
 
@@ -199,3 +210,12 @@ def test_rule_based_analysis_detects_negative_feedback():
     data = json.loads(client.generate(build_analysis_prompt(duda)))
     assert data["sentiment"]["type"] == "neutral"
     assert data["categorization"]["category"] == "pregunta_tecnica"
+
+
+def test_rule_based_empty_message_defaults_to_discusion():
+    """Un <mensaje> vacío no debe clasificarse a partir de las instrucciones."""
+    client = RuleBasedClient()
+    vacio = InputMessage(autor="Ana", canal="#feedback", tipo="otro", texto="   ")
+    data = json.loads(client.generate(build_analysis_prompt(vacio)))
+    assert data["categorization"]["category"] == "discusion"
+    assert data["sentiment"]["type"] == "neutral"
