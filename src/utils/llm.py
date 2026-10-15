@@ -88,7 +88,12 @@ class RuleBasedClient(LLMClient):
             # prompt: the instructions contain words ("éxito", "error", "?")
             # that would bias the classification. Extract the content between
             # <mensaje> ... </mensaje> instead.
-            text_lower = _extract_mensaje(prompt_lower) or prompt_lower
+            text_lower = _extract_mensaje(prompt_lower)
+            # Never fall back to the full prompt: if <mensaje> is missing or empty,
+            # there is nothing to classify. The instructions themselves contain
+            # "éxito" and "?" which would bias classification (e.g. false
+            # testimonial). If no rules match, fall through to the final else
+            # (fail closed) returning "discusion"/"neutral".
             # Question-like content
             question_indicators = (
                 "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
@@ -111,6 +116,9 @@ class RuleBasedClient(LLMClient):
             # samples carry real complaints. Sentiment wins over the question
             # branch so a complaint that happens to contain "ayuda"/"error" is
             # still derived to the community manager instead of a FAQ.
+            # Now it also wins over the testimonial branch: a complaint that
+            # contains "!" or "gracias" (e.g. "¡Qué desastre! Gracias por nada...")
+            # must still be classified as negativo.
             negative_indicators = (
                 "sin respuestas", "no hay plan", "no hubo espacio",
                 "quedó sin", "confuso", "tardan demasiado", "perdí",
@@ -134,21 +142,6 @@ class RuleBasedClient(LLMClient):
                     },
                     "relevance": {"score": 0.4},
                 }
-            elif has_testimonial:
-                payload = {
-                    "sentiment": {
-                        "type": "positivo",
-                        "score": 0.9,
-                        "reasoning": "Deterministic rule: achievement detected",
-                    },
-                    "categorization": {
-                        "category": "testimonio",
-                        "confidence": 0.9,
-                        "topics": ["logro"],
-                        "entities": [],
-                    },
-                    "relevance": {"score": 0.8},
-                }
             elif has_negative:
                 payload = {
                     "sentiment": {
@@ -163,6 +156,21 @@ class RuleBasedClient(LLMClient):
                         "entities": [],
                     },
                     "relevance": {"score": 0.3},
+                }
+            elif has_testimonial:
+                payload = {
+                    "sentiment": {
+                        "type": "positivo",
+                        "score": 0.9,
+                        "reasoning": "Deterministic rule: achievement detected",
+                    },
+                    "categorization": {
+                        "category": "testimonio",
+                        "confidence": 0.9,
+                        "topics": ["logro"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.8},
                 }
             else:
                 payload = {
