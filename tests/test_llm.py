@@ -1,11 +1,14 @@
 """Tests for the LLM client layer (src/utils/llm.py)."""
+import json
 import sys
 import types
 from types import SimpleNamespace
 
 import pytest
 
-from src.utils.llm import LLMError, OllamaClient
+from src.domain.models import InputMessage
+from src.prompts.templates import build_analysis_prompt
+from src.utils.llm import LLMError, OllamaClient, RuleBasedClient
 
 
 def _install_fake_module(monkeypatch, name: str, module: types.ModuleType):
@@ -125,3 +128,94 @@ def test_ollama_local_mode_failure_raises_llm_error(monkeypatch):
     client = OllamaClient()
     with pytest.raises(LLMError):
         client.generate("prompt local")
+
+
+def test_rule_based_queja_con_exclamacion_es_negativa():
+    client = RuleBasedClient()
+    queja = InputMessage(
+        autor="Ana", canal="#feedback", tipo="otro",
+        texto="¡Qué desastre! Gracias por nada, perdí dos semanas.",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(queja)))
+    assert data["sentiment"]["type"] == "negativo"
+    assert data["categorization"]["category"] == "feedback"
+
+
+def test_rule_based_analysis_ignores_prompt_instructions():
+    """Regression: los indicadores miran el mensaje, no el prompt completo.
+
+    El prompt de análisis contiene "éxito" y "?" en las instrucciones; si el
+    cliente los mirara, TODA pregunta caería en el branch de testimonio y un
+    mensaje neutro jamás sería DESCARTAR (el bot del escalón 4 depende de
+    esta clasificación cuando el mensaje no trae `tipo`).
+    """
+    client = RuleBasedClient()
+
+    pregunta = InputMessage(
+        autor="Dev",
+        canal="#dudas",
+        tipo="otro",
+        texto="¿Cómo hago para configurar el backend?",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(pregunta)))
+    assert data["categorization"]["category"] == "pregunta_tecnica"
+    assert data["sentiment"]["type"] == "neutral"
+
+    testimonio = InputMessage(
+        autor="Ana",
+        canal="#logros",
+        tipo="otro",
+        texto="Logré mi primer empleo, gracias a la comunidad!",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(testimonio)))
+    assert data["categorization"]["category"] == "testimonio"
+    assert data["sentiment"]["type"] == "positivo"
+
+
+def test_rule_based_analysis_detects_negative_feedback():
+    """Regression: a complaint must surface "negativo" so R4 deriva to human.
+
+    Before the negative branch, the deterministic backend only produced
+    "neutral"/"positivo", so feedback_negativo was always 0 on demos/CI even
+    though the CSV samples carry real complaints (D-F #97).
+    """
+    client = RuleBasedClient()
+
+    queja = InputMessage(
+        autor="Federico",
+        canal="#feedback",
+        tipo="otro",
+        texto="El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(queja)))
+    assert data["sentiment"]["type"] == "negativo"
+    assert data["categorization"]["category"] == "feedback"
+
+    queja_por_retraso = InputMessage(
+        autor="Diego",
+        canal="#feedback",
+        tipo="otro",
+        texto="Las correcciones de los proyectos tardan demasiado: perdí dos semanas.",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(queja_por_retraso)))
+    assert data["sentiment"]["type"] == "negativo"
+    assert data["categorization"]["category"] == "feedback"
+
+    duda = InputMessage(
+        autor="Dev",
+        canal="#dudas",
+        tipo="otro",
+        texto="¿Cómo hago para configurar el backend?",
+    )
+    data = json.loads(client.generate(build_analysis_prompt(duda)))
+    assert data["sentiment"]["type"] == "neutral"
+    assert data["categorization"]["category"] == "pregunta_tecnica"
+
+
+def test_rule_based_empty_message_defaults_to_discusion():
+    """Un <mensaje> vacío no debe clasificarse a partir de las instrucciones."""
+    client = RuleBasedClient()
+    vacio = InputMessage(autor="Ana", canal="#feedback", tipo="otro", texto="   ")
+    data = json.loads(client.generate(build_analysis_prompt(vacio)))
+    assert data["categorization"]["category"] == "discusion"
+    assert data["sentiment"]["type"] == "neutral"
