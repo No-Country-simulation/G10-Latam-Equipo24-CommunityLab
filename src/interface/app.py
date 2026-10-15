@@ -363,17 +363,86 @@ def apply_dashboard_styles():
         <style>
         [data-testid="stAppViewContainer"] {
             background:
-                radial-gradient(ellipse at 5% 0%, rgba(91, 91, 214, 0.08), transparent 34%),
+                radial-gradient(ellipse at 5% 0%, rgba(0, 194, 203, 0.08), transparent 34%),
                 var(--background-color);
         }
         .block-container {
             max-width: 1440px;
-            padding-top: 2.25rem;
+            padding-top: 1.5rem;
             padding-bottom: 3.5rem;
         }
-        h1 {
-            letter-spacing: -0.045em;
-            font-weight: 750 !important;
+        .communitylab-hero {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            overflow: hidden;
+            margin: 0 0 1.5rem;
+            padding: clamp(1.5rem, 4vw, 3rem);
+            color: #F4F7FB;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(0, 194, 203, 0.45), transparent 22%),
+                radial-gradient(circle at 100% 100%, rgba(124, 58, 237, 0.45), transparent 24%),
+                linear-gradient(115deg, #0B2D4A, #10243D 68%, #0B2D4A);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 16px 36px rgba(11, 45, 74, 0.16);
+        }
+        .communitylab-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 0;
+        }
+        .communitylab-mark {
+            display: grid;
+            width: 4rem;
+            height: 4rem;
+            flex: 0 0 auto;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(0, 194, 203, 0.25), rgba(124, 58, 237, 0.4));
+        }
+        .communitylab-mark svg {
+            width: 2.2rem;
+            height: 2.2rem;
+        }
+        .communitylab-wordmark {
+            margin: 0;
+            color: #F4F7FB;
+            font-size: clamp(1.8rem, 4vw, 2.7rem);
+            font-weight: 750;
+            letter-spacing: -0.055em;
+            line-height: 1.05;
+        }
+        .communitylab-wordmark span {
+            color: #00C2CB;
+        }
+        .communitylab-tagline {
+            margin-top: 0.65rem;
+            color: rgba(244, 247, 251, 0.78);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+        }
+        .communitylab-hero-copy {
+            max-width: 23rem;
+            padding-left: clamp(1rem, 3vw, 2.5rem);
+            border-left: 1px solid rgba(244, 247, 251, 0.35);
+        }
+        .communitylab-hero-copy strong {
+            display: block;
+            margin-bottom: 0.55rem;
+            color: #F4F7FB;
+            font-size: 1.05rem;
+            line-height: 1.35;
+        }
+        .communitylab-hero-copy span {
+            color: rgba(244, 247, 251, 0.78);
+            font-size: 0.84rem;
+            line-height: 1.55;
         }
         h2, h3 {
             letter-spacing: -0.025em;
@@ -381,7 +450,7 @@ def apply_dashboard_styles():
         [data-testid="stMetric"] {
             background: var(--secondary-background-color);
             border: 1px solid rgba(128, 128, 128, 0.25);
-            border-radius: 16px;
+            border-radius: 14px;
             padding: 1rem 1.1rem;
             box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
         }
@@ -390,7 +459,10 @@ def apply_dashboard_styles():
             opacity: 0.7;
         }
         [data-testid="stBaseButton-primary"] {
-            box-shadow: 0 5px 14px rgba(91, 91, 214, 0.18);
+            color: #FFFFFF;
+            border: 0;
+            background: linear-gradient(105deg, #007C88, #7C3AED);
+            box-shadow: 0 5px 14px rgba(11, 45, 74, 0.2);
         }
         [data-testid="stBaseButton"],
         [data-testid="stDownloadButton"] button {
@@ -408,7 +480,49 @@ def apply_dashboard_styles():
         [data-testid="stTabs"] button[role="tab"] {
             padding: 0.65rem 1rem;
         }
+        @media (max-width: 720px) {
+            .communitylab-hero {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+            .communitylab-hero-copy {
+                max-width: none;
+                padding-left: 0;
+                border-left: 0;
+                border-top: 1px solid rgba(244, 247, 251, 0.35);
+                padding-top: 1rem;
+            }
+        }
         </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_brand_header():
+    st.markdown(
+        """
+        <header class="communitylab-hero" aria-label="CommunityLab">
+            <div class="communitylab-brand">
+                <div class="communitylab-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none">
+                        <path d="M24 5C13.5 5 5 12.8 5 22.4c0 5.1 2.5 9.7 6.5 12.8L10 43l9-4.3c1.6.4 3.3.6 5 .6 10.5 0 19-7.8 19-17.4S34.5 5 24 5Z" fill="#00C2CB"/>
+                        <circle cx="17" cy="23" r="2.5" fill="#0B2D4A"/>
+                        <circle cx="24" cy="23" r="2.5" fill="#0B2D4A"/>
+                        <circle cx="31" cy="23" r="2.5" fill="#0B2D4A"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="communitylab-wordmark">Community<span>Lab</span></p>
+                    <div class="communitylab-tagline">ESCUCHA · ANALIZA · IMPACTA</div>
+                </div>
+            </div>
+            <div class="communitylab-hero-copy">
+                <strong>Transformamos las voces de la comunidad en mejores decisiones.</strong>
+                <span>Analiza conversaciones, revisa los activos y decide qué compartir.</span>
+            </div>
+        </header>
         """,
         unsafe_allow_html=True,
     )
@@ -424,7 +538,8 @@ def main():
     init_session_state()
     apply_dashboard_styles()
 
-    st.title("🚀 CommunityLab - Panel de Curaduría")
+    render_brand_header()
+    st.subheader("Panel de curaduría")
     st.caption("Analiza conversaciones de comunidad, revisa los activos y decide qué publicar.")
 
     st.header("1. Cargar Lote de Interacciones")

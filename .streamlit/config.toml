@@ -11,16 +11,17 @@
 [server]
 port = 8502
 
+[theme]
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+
 [theme.light]
-primaryColor = "#5B5BD6"
-backgroundColor = "#F5F6FA"
+primaryColor = "#0B2D4A"
+backgroundColor = "#F4F7FB"
 secondaryBackgroundColor = "#FFFFFF"
-textColor = "#20243A"
-font = "sans serif"
+textColor = "#1E2A3A"
 
 [theme.dark]
-primaryColor = "#5B5BD6"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#262730"
-textColor = "#FAFAFA"
-font = "sans serif"
+primaryColor = "#00C2CB"
+backgroundColor = "#0B1728"
+secondaryBackgroundColor = "#13283E"
+textColor = "#F4F7FB"
