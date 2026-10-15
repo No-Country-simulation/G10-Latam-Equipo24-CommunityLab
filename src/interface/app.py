@@ -12,15 +12,15 @@ from src.interface import telegram_publish
 from src.pipeline import run_pipeline
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
-# (``linkedin_edit_<index>``). A widget with a key keeps its session value and
-# ignores ``value=`` on later runs, so a single shared key leaked the previous
-# testimonio's text into the editor after switching the selector. A key per
-# candidate makes that stale state impossible by construction.
-EDIT_WIDGET_KEY_PREFIXES = ("linkedin_edit", "news_edit")
+# (``linkedin_edit_<index>``) and so are their curation-state radios
+# (``linkedin_estado_<index>``, ``news_estado_<index>``). A widget with a key
+# keeps its session value and ignores ``value=`` on later runs, so a single
+# shared key leaked the previous testimonio's text into the editor — and its
+# approval state — after switching the selector. A key per candidate makes that
+# stale state impossible by construction.
+EDIT_WIDGET_KEY_PREFIXES = ("linkedin_edit", "news_edit", "linkedin_estado", "news_estado")
 
 EDIT_WIDGET_KEYS = (
-    "linkedin_estado",
-    "news_estado",
     "faq_edit",
     "faq_estado",
 )
@@ -35,6 +35,24 @@ CURATION_STATUSES = (
     CURATION_STATUS_APPROVED,
     CURATION_STATUS_REJECTED,
 )
+
+
+# Decisión del handler de publicación, como función pura para poder cubrir sus
+# tres resultados sin depender del runtime de Streamlit: un botón deshabilitado
+# descarta el click del lado del servidor, así que las ramas defensivas del
+# handler no se alcanzan desde la UI.
+PUBLISH_DECISION_NOT_APPROVED = "not_approved"
+PUBLISH_DECISION_ALREADY_PUBLISHED = "already_published"
+PUBLISH_DECISION_APPROVED = "publish"
+
+
+def publish_decision(linkedin_aprobado, ya_publicado):
+    """Devuelve qué hacer con el click del botón de publicar en Telegram."""
+    if not linkedin_aprobado:
+        return PUBLISH_DECISION_NOT_APPROVED
+    if ya_publicado:
+        return PUBLISH_DECISION_ALREADY_PUBLISHED
+    return PUBLISH_DECISION_APPROVED
 
 
 def process_json_input(content):
@@ -316,8 +334,9 @@ def build_assets_summary_df(resumen, assets):
 
 def reset_batch_state(session_state):
     """Limpia resultados y ediciones anteriores antes de procesar un lote."""
-    # The editors are keyed per candidate, so they are cleared by prefix: a new
-    # batch must not inherit edits made for the previous one.
+    # The editors and their state radios are keyed per candidate, so they are
+    # cleared by prefix: a new batch must not inherit edits or decisions made
+    # for the previous one.
     for key in list(session_state.keys()):
         if key.startswith(EDIT_WIDGET_KEY_PREFIXES):
             session_state.pop(key, None)
@@ -658,7 +677,7 @@ def main():
                         options=CURATION_STATUSES,
                         index=0,
                         horizontal=True,
-                        key="linkedin_estado",
+                        key=f"linkedin_estado_{selected_index}",
                     )
                     if linkedin_estado == CURATION_STATUS_REJECTED:
                         st.warning(
@@ -683,14 +702,8 @@ def main():
                 # esta sesión. La preview de arriba queda siempre visible.
                 linkedin_aprobado = linkedin_estado == CURATION_STATUS_APPROVED
                 with publish_col:
-                    with st.expander("👁️ Vista previa del mensaje de Telegram"):
-                        st.text(telegram_publish.format_candidate_message(candidato_telegram))
-
-                    if not linkedin_aprobado:
-                        st.caption(
-                            "El post de LinkedIn debe estar aprobado "
-                            "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
-                        )
+                    st.subheader("👁️ Vista previa del mensaje de Telegram")
+                    st.text(telegram_publish.format_candidate_message(candidato_telegram))
 
                     # Metadata de curaduría: visible para el humano, FUERA del
                     # mensaje publicado.
@@ -711,25 +724,35 @@ def main():
                             "(ver .env.example)."
                         )
 
-                    # Firma = identidad del candidato + copy editado.
+                    # Firma = identidad del candidato + copy editado. Una firma ya
+                    # publicada queda marcada en st.session_state: el botón se
+                    # deshabilita y un click viejo no puede reenviar.
                     firma = telegram_publish.publish_signature(candidato_telegram)
                     publicadas = st.session_state.setdefault("telegram_published_times", {})
                     hora_envio = publicadas.get(firma)
                     ya_publicado = hora_envio is not None
 
+                    decision = publish_decision(linkedin_aprobado, ya_publicado)
+
+                    if not linkedin_aprobado:
+                        st.caption(
+                            "El post de LinkedIn debe estar aprobado "
+                            "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
+                        )
+
                     if st.button(
                         "📨 Publicar en Telegram",
                         key="telegram_publish_button",
-                        disabled=not linkedin_aprobado or ya_publicado,
+                        disabled=decision != PUBLISH_DECISION_APPROVED,
                     ):
                         # Revalidar ambas condiciones evita enviar con un estado
                         # de curaduría obsoleto o repetir un envío anterior.
-                        if not linkedin_aprobado:
+                        if decision == PUBLISH_DECISION_NOT_APPROVED:
                             st.warning(
                                 "El post de LinkedIn no está aprobado; no se publica "
                                 "en Telegram."
                             )
-                        elif ya_publicado:
+                        elif decision == PUBLISH_DECISION_ALREADY_PUBLISHED:
                             st.caption(f"✅ Publicado a las {hora_envio}")
                         else:
                             try:
@@ -769,12 +792,13 @@ def main():
                     options=CURATION_STATUSES,
                     index=0,
                     horizontal=True,
-                    key="news_estado",
+                    key=f"news_estado_{selected_index}",
                 )
                 if newsletter_estado == CURATION_STATUS_REJECTED:
                     st.warning(
                         "⚠️ Newsletter rechazada: no se incluirá en el paquete "
-                        "aprobado. Cambiá el estado para reconsiderar la decisión."
+                        "aprobado. Se debe cambiar el estado para reconsiderar la "
+                        "decisión."
                     )
             else:
                 st.info("No se generó un destaque para la newsletter semanal.")
@@ -798,7 +822,8 @@ def main():
                 if faq_estado == CURATION_STATUS_REJECTED:
                     st.warning(
                         "⚠️ Sugerencia FAQ rechazada: no se incluirá en el paquete "
-                        "aprobado. Cambiá el estado para reconsiderar la decisión."
+                        "aprobado. Se debe cambiar el estado para reconsiderar la "
+                        "decisión."
                     )
             else:
                 st.info("No se detectó una pregunta frecuente para este lote.")
@@ -843,16 +868,23 @@ def main():
 
         if st.button("Aprobar activos seleccionados", type="primary", width="stretch"):
             if not any(value and value.strip() for value in payload_to_save.values()):
-                st.warning("⚠️ Debes aprobar al menos un activo para poder guardarlo.")
+                st.warning("⚠️ Se debe aprobar al menos un activo para poder guardarlo.")
             else:
                 approved_count = sum(bool(value and value.strip()) for value in payload_to_save.values())
-                resumen_rechazados = (
-                    f"{rejected_count} activos rechazados quedan fuera del paquete. "
-                    if rejected_count
-                    else ""
-                )
+                approved_label = "activo aprobado" if approved_count == 1 else "activos aprobados"
+                if rejected_count:
+                    rejected_label = (
+                        "activo rechazado" if rejected_count == 1 else "activos rechazados"
+                    )
+                    rejected_verb = "queda" if rejected_count == 1 else "quedan"
+                    resumen_rechazados = (
+                        f"{rejected_count} {rejected_label} {rejected_verb} "
+                        "fuera del paquete. "
+                    )
+                else:
+                    resumen_rechazados = ""
                 st.info(
-                    f"{approved_count} activos aprobados en esta sesión. "
+                    f"{approved_count} {approved_label} en esta sesión. "
                     f"{resumen_rechazados}"
                     f"El paquete generado tiene estado de almacenamiento {storage['status']}; "
                     "descarga el JSON para conservar estas ediciones."
