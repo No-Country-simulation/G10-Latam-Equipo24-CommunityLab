@@ -126,9 +126,18 @@ def fetch_updates(
                 f"{mensaje} El token es inválido o no está autorizado."
             ) from None
 
-        if codigo in (400, 403):
+        if codigo in (400, 403, 404, 409):
+            detalle = {
+                400: "Revisá los parámetros de la solicitud.",
+                403: "Revisá los permisos del bot.",
+                404: "Revisá la URL y el token del bot.",
+                409: (
+                    "Puede haber otro consumidor de getUpdates "
+                    "activo o un webhook configurado."
+                ),
+            }
             raise TelegramPermanentError(
-                f"{mensaje} Revisá la solicitud y los permisos del bot."
+                f"{mensaje} {detalle[codigo]}"
             ) from None
 
         raise TelegramTransientError(

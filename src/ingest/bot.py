@@ -321,7 +321,6 @@ def run_bot(
             _sleep(delay)
             continue
 
-        attempt = 0
         fallo_temporal = False
 
 
@@ -418,6 +417,8 @@ def run_bot(
 
         if fallo_temporal:
             continue
+
+        attempt = 0
 
     return 0
 
