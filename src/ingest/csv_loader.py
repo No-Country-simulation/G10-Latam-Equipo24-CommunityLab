@@ -28,6 +28,7 @@ _ENCODINGS = ("utf-8-sig", "cp1252")
 # [Mejora 1] Delimitadores aceptados (EXEL en español usa ";").
 _DELIMITERS = ",;\t"
 
+
 class CSVInputLoader:
     """Carga un lote de interacciones desde un CSV (solo stdlib, sin pandas).
 
@@ -75,8 +76,7 @@ class CSVInputLoader:
             interacciones=self._normalize_rows(path, rows),
         )
 
-
-        # [Mejora 4] Errores con número de fila
+    # [Mejora 4] Errores con número de fila
     def _normalize_rows(
         self, path: Path, rows: List[Dict[str, Any]]
     ) -> List[InputMessage]:
@@ -89,8 +89,7 @@ class CSVInputLoader:
                 raise ValueError(f"{path.name}, fila {number}: {exc}") from exc
         return messages
 
-
-    #[Mejora 5] Lectura con reintento de codificación
+    # [Mejora 5] Lectura con reintento de codificación
     def _read_rows(self, path: Path) -> List[Dict[str, Any]]:
         """Lee el CSV probando varias codificaciones"""
         last_error: Optional[UnicodeDecodeError] = None
@@ -101,13 +100,15 @@ class CSVInputLoader:
                 last_error = exc
         raise ValueError(
             f"No se pudo decodificar {path.name} (probando: "
-            f"{', ' . join(_ENCODINGS)}). Guardalo como CSV UTTF-8."
+            f"{', '.join(_ENCODINGS)}). Guardalo como CSV UTF-8."
         ) from last_error
 
-    def _read_rows_with(self, path: Path, encoding: str) -> List[Dict[str, Any]]:
+    def _read_rows_with(
+        self, path: Path, encoding: str
+    ) -> List[Dict[str, Any]]:
         """Lee y valida el csv con una codificación dada."""
         with path.open(encoding=encoding, newline="") as handle:
-            #[Mejora 1] Detectar el delimitador con una muestra.
+            # [Mejora 1] Detectar el delimitador con una muestra.
             sample = handle.read(4096)
             handle.seek(0)
             try:
@@ -119,28 +120,29 @@ class CSVInputLoader:
             if reader.fieldnames is None:
                 raise ValueError(f"CSV vacío sin encabezados: {path.name}")
 
-            # [Mejora 2] Normalizar encabezados antes de validar
+            # [Mejora 2] Normalizar encabezados antes de validar.
             reader.fieldnames = [
                 (name or "").strip().lower() for name in reader.fieldnames
             ]
 
             # [Mejora 6] Avisar de encabezados repetidos (DictReader se
             # quedaría con el último sin decir nada).
-            duplicated = sorted(
-                {n for n in reader.fieldnames if n and reader.fieldnames.count(n) > 1}
-            )
+            names = reader.fieldnames
+            duplicated = sorted({n for n in names if n and names.count(n) > 1})
             if duplicated:
                 raise ValueError(
-                    f"Encabezados duplicados en el CSV: {', '.join(duplicated)}"
+                    "Encabezados duplicados en el CSV: "
+                    f"{', '.join(duplicated)}"
                 )
             missing = [
                 name
                 for name, variantes in _REQUIRED_HEADERS.items()
-                if not any(v in reader.fieldnames for v in variantes)
+                if not any(v in names for v in variantes)
             ]
             if missing:
                 raise ValueError(
-                    f"Faltan encabezados requeridos en el CSV: {', '.join(missing)}"
+                    "Faltan encabezados requeridos en el CSV: "
+                    f"{', '.join(missing)}"
                 )
 
             rows = [self._strip_row(row) for row in reader]
@@ -148,9 +150,9 @@ class CSVInputLoader:
         if not rows:
             raise ValueError(f"CSV vacío sin filas de datos: {path.name}")
         return rows
-
-
-    # [MEJORA 3] Descartar la clave None (celdas sobrantes) y tolerar filas cortas.
+    
+    # [Mejora 3] Descartar la clave None (celdas sobrantes) y tolerar filas
+    # cortas.
     @staticmethod
     def _strip_row(row: Dict[Any, Any]) -> Dict[str, Any]:
         """Recorta cada celda; vacíos/faltantes quedan en "" y se ignoran
