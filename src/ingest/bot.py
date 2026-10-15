@@ -64,12 +64,12 @@ WELCOME_TEXT = (
 )
 
 EMPTY_REPLY = (
-    "No recibí ningún texto para analizar. Escribime un mensaje de la "
+    "No recibí ningún texto para analizar. Escríbeme un mensaje de la "
     "comunidad y te cuento el análisis del pipeline."
 )
 
 GENERIC_ERROR_REPLY = (
-    "Uy, en este momento no pude analizar tu mensaje. Probá de nuevo en un "
+    "Uy, en este momento no pude analizar tu mensaje. Prueba de nuevo en un "
     "rato; el resto del pipeline sigue funcionando con normalidad."
 )
 
@@ -209,17 +209,17 @@ def send_message(token: str, chat_id: Any, text: str) -> None:
 
         if codigo in (400, 403):
             raise TelegramPermanentError(
-                f"{mensaje} Revisá la solicitud y los permisos del bot."
+                f"{mensaje} Revisar la solicitud y los permisos del bot."
             ) from None
 
         raise TelegramTransientError(
-            f"{mensaje} Revisá la conexión y volvé a intentar."
+            f"{mensaje} Revisar la conexión y volver a intentar."
         ) from None
 
     except requests.RequestException:
         raise TelegramTransientError(
             "Error de red al enviar sendMessage a Telegram; "
-            "revisá la conexión y volvé a intentar."
+            "revisar la conexión y volver a intentar."
         ) from None
 
     try:

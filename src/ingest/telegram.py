@@ -89,8 +89,8 @@ def fetch_updates(
     """
     if not token:
         raise ValueError(
-            "Falta el token del bot de Telegram; pasalo con --token "
-            "o definí la variable de entorno TELEGRAM_BOT_TOKEN."
+            "Falta el token del bot de Telegram; usar --token "
+            "o definir la variable de entorno TELEGRAM_BOT_TOKEN."
         )
 
     url = f"{_API_BASE}/bot{token}/getUpdates"
@@ -128,9 +128,9 @@ def fetch_updates(
 
         if codigo in (400, 403, 404, 409):
             detalle = {
-                400: "Revisá los parámetros de la solicitud.",
-                403: "Revisá los permisos del bot.",
-                404: "Revisá la URL y el token del bot.",
+                400: "Revisar los parámetros de la solicitud.",
+                403: "Revisar los permisos del bot.",
+                404: "Revisar la URL y el token del bot.",
                 409: (
                     "Puede haber otro consumidor de getUpdates "
                     "activo o un webhook configurado."
@@ -141,13 +141,13 @@ def fetch_updates(
             ) from None
 
         raise TelegramTransientError(
-            f"{mensaje} Revisá la conexión y volvé a intentar."
+            f"{mensaje} Revisar la conexión y volver a intentar."
         ) from None
 
     except requests.RequestException:
         raise TelegramTransientError(
             "Error de red al consultar getUpdates de Telegram; "
-            "revisá la conexión y volvé a intentar."
+            "revisar la conexión y volver a intentar."
         ) from None
 
 
