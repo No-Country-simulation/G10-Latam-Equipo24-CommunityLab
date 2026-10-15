@@ -11,10 +11,16 @@
 [server]
 port = 8502
 
-[theme]
-base = "light"
+[theme.light]
 primaryColor = "#5B5BD6"
 backgroundColor = "#F5F6FA"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#20243A"
+font = "sans serif"
+
+[theme.dark]
+primaryColor = "#5B5BD6"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#FAFAFA"
 font = "sans serif"

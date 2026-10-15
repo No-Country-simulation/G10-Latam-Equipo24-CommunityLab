@@ -364,7 +364,7 @@ def apply_dashboard_styles():
         [data-testid="stAppViewContainer"] {
             background:
                 radial-gradient(ellipse at 5% 0%, rgba(91, 91, 214, 0.08), transparent 34%),
-                #F5F6FA;
+                var(--background-color);
         }
         .block-container {
             max-width: 1440px;
@@ -379,14 +379,15 @@ def apply_dashboard_styles():
             letter-spacing: -0.025em;
         }
         [data-testid="stMetric"] {
-            background: #FFFFFF;
-            border: 1px solid #E5E7F0;
+            background: var(--secondary-background-color);
+            border: 1px solid rgba(128, 128, 128, 0.25);
             border-radius: 16px;
             padding: 1rem 1.1rem;
-            box-shadow: 0 5px 18px rgba(32, 36, 58, 0.045);
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
         }
         [data-testid="stMetricLabel"] {
-            color: #626981;
+            color: var(--text-color);
+            opacity: 0.7;
         }
         [data-testid="stBaseButton-primary"] {
             box-shadow: 0 5px 14px rgba(91, 91, 214, 0.18);
@@ -402,7 +403,7 @@ def apply_dashboard_styles():
         }
         [data-testid="stTabs"] [role="tablist"] {
             gap: 0.45rem;
-            border-bottom: 1px solid #E5E7F0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.25);
         }
         [data-testid="stTabs"] button[role="tab"] {
             padding: 0.65rem 1rem;
