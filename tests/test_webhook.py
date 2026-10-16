@@ -1,7 +1,7 @@
 """Tests de integración del webhook HTTP de ingesta (Escalón 3).
 
 Levanta el server real (ThreadingHTTPServer con puerto efímero) en un hilo y
-consume `POST /ingest` y `GET /health` con `requests`. Se fuerza el backend
+consume `POST /ingest`, `GET /health` y `POST /telegram` con `requests`. Se fuerza el backend
 rule_based para que el resultado sea determinista y sin red; el cwd se aísla
 en tmp_path para que el snapshot local de almacenamiento no caiga en el repo
 (mismo patrón que tests/test_pipeline.py).
@@ -12,6 +12,7 @@ from http.server import ThreadingHTTPServer
 import pytest
 import requests
 
+from src.ingest import webhook as webhook_module
 from src.ingest.webhook import IngestHandler
 
 _OCI_REQUIRED_ENV = (
@@ -21,6 +22,10 @@ _OCI_REQUIRED_ENV = (
     "OCI_TENANCY_ID",
     "OCI_REGION",
 )
+
+# Header con el que Telegram firma cada entrega del webhook.
+_TELEGRAM_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
+_TELEGRAM_SECRET = "secreto-de-prueba"
 
 # InputBatch completo del contrato; el testimonio positivo con rule_based
 # genera el post de LinkedIn (decisión PUBLISH + LINKEDIN).
@@ -44,11 +49,41 @@ BATCH_VALIDO = {
 }
 
 
+def update_telegram(update_id=100001, texto="Logré mi primer empleo como desarrolladora!"):
+    """Arma un Update realista de la Bot API (update_id + message)."""
+    return {
+        "update_id": update_id,
+        "message": {
+            "message_id": 42,
+            "date": 1730000000,
+            "text": texto,
+            "from": {"id": 111, "first_name": "Ana", "language_code": "es"},
+            "chat": {
+                "id": -1001234567890,
+                "type": "supergroup",
+                "title": "Comunidad de prueba",
+            },
+        },
+    }
+
+
+def headers_telegram(secret=_TELEGRAM_SECRET):
+    """Headers con el secret del webhook configurado."""
+    return {_TELEGRAM_SECRET_HEADER: secret}
+
+
 @pytest.fixture(autouse=True)
 def webhook_env(monkeypatch, tmp_path):
     """Backend rule_based, sin credenciales OCI y cwd aislado en tmp_path."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
+    # El secret del webhook arranca sin configurar y el dedupe se limpia entre
+    # tests para que cada caso parta de un estado conocido.
+    monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("TELEGRAM_WEBHOOK_ORIGEN", raising=False)
+    seen = getattr(webhook_module, "_seen_update_ids", None)
+    if seen is not None:
+        seen.clear()
     for var in _OCI_REQUIRED_ENV:
         monkeypatch.delenv(var, raising=False)
 
@@ -156,3 +191,151 @@ def test_ruta_desconocida_devuelve_404(server):
 
     respuesta_post = requests.post(f"{server}/no-existe", json={}, timeout=10)
     assert respuesta_post.status_code == 404
+
+
+# --- POST /telegram (Fase 1 del webhook de Telegram) -----------------------
+
+
+def test_telegram_sin_secret_configurado_devuelve_503(server):
+    # Fail closed: sin TELEGRAM_WEBHOOK_SECRET el endpoint se niega.
+    respuesta = requests.post(
+        f"{server}/telegram",
+        json=update_telegram(),
+        headers=headers_telegram(),
+        timeout=10,
+    )
+    assert respuesta.status_code == 503
+    assert respuesta.json()["error"]
+
+
+def test_telegram_con_secret_sin_header_devuelve_401(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    respuesta = requests.post(
+        f"{server}/telegram", json=update_telegram(), timeout=10
+    )
+    assert respuesta.status_code == 401
+    assert respuesta.json()["error"]
+
+
+def test_telegram_con_header_incorrecto_devuelve_401(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    respuesta = requests.post(
+        f"{server}/telegram",
+        json=update_telegram(),
+        headers=headers_telegram(secret="otro-secreto"),
+        timeout=10,
+    )
+    assert respuesta.status_code == 401
+    assert respuesta.json()["error"]
+
+
+def test_telegram_con_secret_valido_procesa_una_interaccion(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    update = update_telegram(update_id=200001)
+
+    respuesta = requests.post(
+        f"{server}/telegram",
+        json=update,
+        headers=headers_telegram(),
+        timeout=30,
+    )
+    assert respuesta.status_code == 200
+
+    body = respuesta.json()
+    assert body["status"] == "exito"
+    assert body["ruta"] == "/telegram"
+    assert body["update_id"] == 200001
+    assert body["resumen"]["total_interacciones_procesadas"] == 1
+    # Misma forma que /ingest: resumen, activos y almacenamiento.
+    assert "resumen" in body
+    assert "activos" in body
+    assert "almacenamiento" in body
+
+
+def test_telegram_update_duplicado_no_reprocesa(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+
+    # Espía del pipeline: cuenta cuántas veces realmente se ejecuta.
+    llamadas = []
+    original = webhook_module._run_with_batch
+
+    def espia(batch):
+        llamadas.append(batch)
+        return original(batch)
+
+    monkeypatch.setattr(webhook_module, "_run_with_batch", espia)
+
+    update = update_telegram(update_id=300001)
+    primera = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert primera.status_code == 200
+    assert primera.json()["resumen"]["total_interacciones_procesadas"] == 1
+
+    segunda = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert segunda.status_code == 200
+    body = segunda.json()
+    assert body["status"] == "duplicado"
+    assert body["update_id"] == 300001
+    # El pipeline corrió una sola vez: el duplicado no se reprocesó.
+    assert len(llamadas) == 1
+
+
+def test_telegram_update_sin_message_se_ignora(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+
+    llamadas = []
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda batch: llamadas.append(batch)
+    )
+
+    update = {
+        "update_id": 400001,
+        "my_chat_member": {"chat": {"id": -1001234567890}, "from": {"id": 111}},
+    }
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["status"] == "ignorado"
+    assert llamadas == []
+
+
+def test_telegram_comando_se_ignora(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+
+    llamadas = []
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda batch: llamadas.append(batch)
+    )
+
+    update = update_telegram(update_id=500001, texto="/start")
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["status"] == "ignorado"
+    assert llamadas == []
+
+
+def test_telegram_con_metodo_equivocado_devuelve_405(server):
+    respuesta = requests.get(f"{server}/telegram", timeout=10)
+    assert respuesta.status_code == 405
+    assert respuesta.headers["Allow"] == "POST"
+    assert respuesta.json()["error"]
+
+
+def test_telegram_body_invalido_devuelve_400(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    headers = headers_telegram()
+    headers["Content-Type"] = "application/json"
+    respuesta = requests.post(
+        f"{server}/telegram",
+        data="esto no es json",
+        headers=headers,
+        timeout=10,
+    )
+    assert respuesta.status_code == 400
+    assert "error" in respuesta.json()

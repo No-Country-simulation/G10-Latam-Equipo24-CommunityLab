@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CommunityLab — Ingesta multicanal, bot y dashboard</title>
+<style>
+  :root {
+    --primary: #166534;
+    --accent: #22C55E;
+    --ink: #1c1917;
+    --muted: #57534e;
+    --bg: #ffffff;
+    --surface: #f5f5f4;
+    --line: #e7e5e4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .slide {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    padding: 7vh 8vw;
+  }
+  .slide.active { display: flex; }
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    font-size: clamp(.7rem, 1.1vw, .95rem);
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 .8rem;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+    line-height: 1.1;
+    margin: 0 0 1rem;
+    max-width: 22ch;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.3vw, 2.4rem);
+    margin: 0 0 1.4rem;
+    color: var(--primary);
+  }
+  p { font-size: clamp(1rem, 1.7vw, 1.4rem); line-height: 1.5; color: var(--ink); margin: 0 0 .8rem; max-width: 34ch; }
+  p.wide, ul.wide { max-width: none; }
+  .sub { color: var(--muted); }
+  ul { margin: 0; padding-left: 1.3rem; }
+  li { font-size: clamp(1rem, 1.7vw, 1.4rem); line-height: 1.5; margin: .55rem 0; max-width: 40ch; }
+  li strong { color: var(--primary); }
+  code {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .08em .38em;
+    font-size: .88em;
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--accent);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-size: clamp(.85rem, 1.35vw, 1.15rem);
+    line-height: 1.55;
+    overflow: auto;
+    max-width: 46ch;
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  .badges { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.6rem; }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .4rem .95rem;
+    font-size: clamp(.8rem, 1.25vw, 1.05rem);
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .badge.ok { background: #dcfce7; border-color: #86efac; }
+  table { border-collapse: collapse; font-size: clamp(.9rem, 1.5vw, 1.25rem); }
+  th, td { text-align: left; padding: .55rem 1.4rem .55rem 0; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 700; }
+  td:first-child { color: var(--muted); }
+  td strong, td .yes { color: var(--primary); font-weight: 700; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3vw; align-items: center; }
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: clamp(.8rem, 1.3vw, 1.1rem);
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+  .shot-frame { margin: 1.4rem 0 0; }
+  .shot {
+    width: 100%;
+    max-height: 62vh;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 30px rgba(0,0,0,.14);
+    background: var(--surface);
+  }
+  .shot-hint { display: none; }
+  .shot-frame.empty {
+    border: 2px dashed var(--line);
+    border-radius: 12px;
+    padding: 2.4rem 1.4rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: clamp(.85rem, 1.3vw, 1.05rem);
+    line-height: 1.6;
+  }
+  .shot-frame.empty .shot { display: none; }
+  .shot-frame.empty .shot-hint { display: block; }
+  .shot-cap {
+    display: block;
+    margin-top: .75rem;
+    font-size: clamp(.8rem, 1.25vw, 1.05rem);
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+  }
+  .shot-frame.empty .shot-cap { display: none; }
+  .shot.landscape { max-height: 44vh; }
+  .footer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 2.2rem;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  .nav button {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    width: 2.2rem; height: 2.2rem;
+    font-size: 1.1rem;
+    color: var(--primary);
+    cursor: pointer;
+  }
+  .nav button:hover { background: #e7e5e4; }
+  .counter { font-variant-numeric: tabular-nums; }
+  .bar { position: fixed; left: 0; top: 0; height: 4px; background: var(--accent); width: 0; transition: width .2s ease; }
+  @media print {
+    body { overflow: visible; }
+    .slide { display: flex !important; page-break-after: always; height: 100vh; }
+    .footer, .bar { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+
+<section class="slide active">
+  <p class="kicker">CommunityLab · Equipo 24 · G10</p>
+  <h1>Ingesta multicanal, bot de Telegram y dashboard</h1>
+  <p class="sub">Lo que construimos fuera del repo, y el cambio de contrato que necesitamos.</p>
+  <p class="sub"><code>feat/ingesta-mejoras</code> · 2026-10-11</p>
+</section>
+
+<section class="slide">
+  <h2>Punto de partida</h2>
+  <ul>
+    <li><strong>Nada de esto está en <code>main</code>.</strong></li>
+    <li>Vive en una rama local (<code>feat/ingesta-mejoras</code>) y en archivos sin trackear.</li>
+    <li>Sin PR abierto.</li>
+    <li>Hoy pedimos <strong>dirección</strong>, no merge.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Qué hicimos (fuera del repo)</h2>
+  <ul class="wide">
+    <li><strong>Ingesta multicanal:</strong> CSV + Telegram + webhook + merge de fuentes.</li>
+    <li><strong>Bot de Telegram:</strong> análisis en tiempo real, probado en vivo.</li>
+    <li><strong>Línea de tiempo semanal:</strong> 4 semanas + runner de evolución.</li>
+    <li><strong>Refactor:</strong> pipeline en memoria (<code>_run_with_batch</code>), reusado por webhook y bot.</li>
+  </ul>
+  <div class="badges">
+    <span class="badge">7 commits</span>
+    <span class="badge">21 archivos</span>
+    <span class="badge">+2.799 líneas</span>
+    <span class="badge">230 tests OK</span>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Ingesta multicanal</h2>
+  <ul class="wide">
+    <li>JSON del desafío · CSV · Mastodon · Telegram · webhook HTTP.</li>
+    <li><code>load_batch(sources)</code> mergea varias fuentes en una sola corrida.</li>
+  </ul>
+  <pre><code>python scripts/run_demo.py demo_fixed.json sintetico_120.csv --offline</code></pre>
+</section>
+
+<section class="slide">
+  <h2>Bot de Telegram</h2>
+  <ul class="wide">
+    <li>Por cada mensaje responde: <strong>sentimiento + temas + decisión</strong> (PUBLICAR / CREAR_FAQ / DESCARTAR).</li>
+    <li>Arma un batch de 1 mensaje en memoria y reusa el mismo pipeline.</li>
+    <li>Probado en vivo. Diferencial de la demo, <strong>no</strong> el camino obligatorio.</li>
+  </ul>
+  <figure class="shot-frame">
+    <img src="img/bot-telegram.png" alt="Captura del bot de Telegram respondiendo" class="shot landscape"
+         onerror="this.closest('.shot-frame').classList.add('empty')">
+    <figcaption class="shot-cap">El bot respondiendo una duda técnica en vivo</figcaption>
+    <div class="shot-hint">Guardá la captura en <code>docs/img/bot-telegram.png</code> y recargá la página</div>
+  </figure>
+</section>
+
+<section class="slide">
+  <h2>La historia evoluciona</h2>
+  <ul class="wide">
+    <li>Preguntas técnicas: <strong>65 % → 21 %</strong></li>
+    <li>Testimonios + logros: <strong>10 % → 57 %</strong></li>
+    <li>Publicación en LinkedIn: <strong>aparece en la semana 2</strong> · Asset FAQ: siempre presente</li>
+  </ul>
+  <figure class="shot-frame">
+    <img src="img/historia.png" alt="Evolución semanal del pipeline" class="shot landscape"
+         onerror="this.closest('.shot-frame').classList.add('empty')">
+    <figcaption class="shot-cap">Semana a semana: las dudas bajan, los logros suben</figcaption>
+    <div class="shot-hint">Guardá la captura en <code>docs/img/historia.png</code> y recargá la página</div>
+  </figure>
+</section>
+
+<section class="slide">
+  <h2>El pedido: contrato para los gráficos</h2>
+  <ul class="wide">
+    <li>El dashboard (HU-S4-003) pide <strong>torta de sentimiento</strong> y <strong>top 10 temas</strong>.</li>
+    <li>Hoy el pipeline <strong>calcula</strong> esas distribuciones y las <strong>descarta</strong>.</li>
+    <li>Propuesta <strong>aditiva</strong> (nada de lo actual cambia):</li>
+  </ul>
+  <pre><code>{
+  "distribucion_sentimiento": { "Positivo": 42, "Negativo": 18, "Neutral": 31 },
+  "temas_principales_conteo": [ { "tema": "empleo", "frecuencia": 12 } ]
+}</code></pre>
+</section>
+
+<section class="slide">
+  <h2>Bot y dashboard: dos procesos</h2>
+  <ul class="wide">
+    <li>El bot <strong>no vive dentro</strong> de Streamlit (long polling vs re-ejecución del script).</li>
+    <li>Comparten <strong>código de ingesta y sink</strong>, nunca el proceso.</li>
+    <li>Demo: botón "traer mensajes nuevos" + correr el pipeline.</li>
+  </ul>
+  <div class="flow">Telegram ──► fetch_updates ──► Streamlit (dashboard) ──► gráficos</div>
+</section>
+
+<section class="slide">
+  <h2>Lo que necesitamos decidir</h2>
+  <ul class="wide">
+    <li>¿Aprobamos el <strong>contrato aditivo</strong>?</li>
+    <li>¿El bot es <strong>scope del S5</strong> o queda como demo?</li>
+    <li>La rama pasa las 400 líneas → proponemos <strong>PRs encadenados</strong>.</li>
+    <li>Cerrar <strong>#94</strong> primero; después subir ingesta.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h1>Gracias</h2>
+  <p class="sub">Detalle completo en <code>docs/propuesta-al-equipo.md</code></p>
+</section>
+
+<div class="footer">
+  <div class="nav"><button id="prev" aria-label="Anterior">‹</button> <button id="next" aria-label="Siguiente">›</button></div>
+  <div class="counter"><span id="cur">1</span> / <span id="total">10</span></div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const bar = document.getElementById('bar');
+  const counter = document.querySelector('.counter');
+  let i = 0;
+
+  function render() {
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    document.querySelector('.counter').textContent = (i + 1) + ' / ' + slides.length;
+    location.hash = 's' + (i + 1);
+  }
+  function next() { i = Math.min(i + 1, slides.length - 1); render(); }
+  function prev() { i = Math.max(i - 1, 0); render(); }
+
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { i = 0; render(); }
+    else if (e.key === 'End') { i = slides.length - 1; render(); }
+  });
+  document.querySelectorAll('.nav button')[0].addEventListener('click', prev);
+  document.querySelectorAll('.nav button')[1].addEventListener('click', next);
+
+  const fromHash = parseInt((location.hash || '').replace('#s', ''), 10);
+  if (fromHash >= 1 && fromHash <= slides.length) i = fromHash - 1;
+  render();
+</script>
+</body>
+</html>
