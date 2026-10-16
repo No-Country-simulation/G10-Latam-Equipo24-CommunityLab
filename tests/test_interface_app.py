@@ -84,6 +84,18 @@ def test_reset_batch_state_clears_results_and_previous_edits():
         assert key not in session_state
 
 
+def test_branding_assets_are_available():
+    branding_dir = Path(app.__file__).resolve().parent / "assets" / "branding"
+    assets = (
+        app.BRAND_LOGO_PATH,
+        app.BRAND_ICON_PATH,
+        branding_dir / "communitylab-logo-monocromatico.png",
+    )
+
+    assert all(asset.is_file() for asset in assets)
+    assert all(asset.read_bytes().startswith(b"\x89PNG\r\n\x1a\n") for asset in assets)
+
+
 def test_build_sentiment_distribution_df_with_data():
     distribucion = {"positivo": 5, "negativo": 2, "neutral": 3}
     df = app.build_sentiment_distribution_df(distribucion)
@@ -1440,4 +1452,3 @@ def test_publish_button_requires_approval_and_unsent_signature(monkeypatch):
     at.run()
     assert not at.exception
     assert _publish_button(at).disabled is True
-

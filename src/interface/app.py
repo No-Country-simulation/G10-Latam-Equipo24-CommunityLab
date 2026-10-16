@@ -1,3 +1,4 @@
+import base64
 import json
 import tempfile
 from datetime import date, datetime
@@ -23,6 +24,13 @@ EDIT_WIDGET_KEY_PREFIXES = ("linkedin_edit", "news_edit", "linkedin_estado", "ne
 EDIT_WIDGET_KEYS = (
     "faq_edit",
     "faq_estado",
+)
+
+BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
+    "assets", "branding", "communitylab-logo-principal.png"
+)
+BRAND_ICON_PATH = Path(__file__).resolve().parent.joinpath(
+    "assets", "branding", "communitylab-isotipo-fondo-azul.png"
 )
 
 # Estado de curaduría por activo. Los nombres de constante van en inglés y los
@@ -357,34 +365,189 @@ def init_session_state():
         st.session_state.llm_results = None
 
 
+def apply_dashboard_styles():
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] {
+            background:
+                radial-gradient(ellipse at 5% 0%, rgba(0, 194, 171, 0.08), transparent 34%),
+                var(--background-color);
+        }
+        .block-container {
+            max-width: 1440px;
+            padding-top: 1.5rem;
+            padding-bottom: 3.5rem;
+        }
+        .communitylab-hero {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            overflow: hidden;
+            margin: 0 0 1.5rem;
+            padding: clamp(1.5rem, 4vw, 3rem);
+            color: #F4F7FB;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(0, 194, 171, 0.45), transparent 22%),
+                radial-gradient(circle at 100% 100%, rgba(124, 58, 237, 0.45), transparent 24%),
+                linear-gradient(115deg, #0B2D4A, #10243D 68%, #0B2D4A);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 16px 36px rgba(11, 45, 74, 0.16);
+        }
+        .communitylab-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 0;
+        }
+        .communitylab-logo-panel {
+            display: flex;
+            align-items: center;
+            width: min(100%, 31rem);
+            min-height: 6.5rem;
+            padding: 0.65rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            border-radius: 14px;
+            background: #F4F7FB;
+        }
+        .communitylab-logo-panel img {
+            display: block;
+            width: 100%;
+            max-height: 6rem;
+            object-fit: contain;
+        }
+        .communitylab-hero-copy {
+            max-width: 23rem;
+            padding-left: clamp(1rem, 3vw, 2.5rem);
+            border-left: 1px solid rgba(244, 247, 251, 0.35);
+        }
+        .communitylab-hero-copy strong {
+            display: block;
+            margin-bottom: 0.55rem;
+            color: #F4F7FB;
+            font-size: 1.05rem;
+            line-height: 1.35;
+        }
+        .communitylab-hero-copy span {
+            color: rgba(244, 247, 251, 0.78);
+            font-size: 0.84rem;
+            line-height: 1.55;
+        }
+        h2, h3 {
+            letter-spacing: -0.025em;
+        }
+        [data-testid="stMetric"] {
+            background: var(--secondary-background-color);
+            border: 1px solid rgba(128, 128, 128, 0.25);
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+        }
+        [data-testid="stMetricLabel"] {
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        [data-testid="stBaseButton-primary"] {
+            color: #0B2D4A;
+            border: 0;
+            background: #00C2AB;
+            box-shadow: 0 5px 14px rgba(11, 45, 74, 0.2);
+        }
+        [data-testid="stBaseButton-primary"]:hover {
+            color: #0B2D4A;
+            background: #00AE9A;
+        }
+        [data-testid="stBaseButton"],
+        [data-testid="stDownloadButton"] button {
+            border-radius: 10px;
+            min-height: 2.7rem;
+        }
+        [data-testid="stExpander"],
+        [data-testid="stAlert"] {
+            border-radius: 12px;
+        }
+        [data-testid="stTabs"] [role="tablist"] {
+            gap: 0.45rem;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+        }
+        [data-testid="stTabs"] button[role="tab"] {
+            padding: 0.65rem 1rem;
+        }
+        @media (max-width: 720px) {
+            .communitylab-hero {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+            .communitylab-hero-copy {
+                max-width: none;
+                padding-left: 0;
+                border-left: 0;
+                border-top: 1px solid rgba(244, 247, 251, 0.35);
+                padding-top: 1rem;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_brand_header():
+    logo_data = base64.b64encode(BRAND_LOGO_PATH.read_bytes()).decode("ascii")
+    st.markdown(
+        f"""
+        <header class="communitylab-hero" aria-label="CommunityLab">
+            <div class="communitylab-brand">
+                <div class="communitylab-logo-panel">
+                    <img
+                        src="data:image/png;base64,{logo_data}"
+                        alt="CommunityLab — Escucha, analiza, impacta"
+                    />
+                </div>
+            </div>
+            <div class="communitylab-hero-copy">
+                <strong>Transformamos las voces de la comunidad en mejores decisiones.</strong>
+                <span>Analiza conversaciones, revisa los activos y decide qué compartir.</span>
+            </div>
+        </header>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main():
     st.set_page_config(
         page_title="CommunityLab - Panel de Curaduría",
-        page_icon="🚀",
+        page_icon=BRAND_ICON_PATH.read_bytes(),
         layout="wide",
         initial_sidebar_state="collapsed",
     )
     init_session_state()
+    apply_dashboard_styles()
 
-    st.title("🚀 CommunityLab - Panel de Curaduría")
-    st.markdown("---")
+    render_brand_header()
+    st.subheader("Panel de curaduría")
+    st.caption("Analiza conversaciones de comunidad, revisa los activos y decide qué publicar.")
 
     st.header("1. Cargar Lote de Interacciones")
     st.write("Sube el archivo con los datos exportados de la comunidad (ej. Slack, Discord, Foro).")
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1.2, 1], gap="large")
 
     with col1:
         uploaded_file = st.file_uploader("Selecciona un archivo JSON", type=["json"])
 
     with col2:
-        st.write("O ingresa JSON crudo:")
+        st.write("**O ingresa JSON crudo**")
         raw_json_input = st.text_area("Pega el payload aquí...", height=100)
 
     sample_path = Path(__file__).resolve().parents[2] / "data" / "sample" / "corrida-completa-gemma.json"
     sample_results = load_sample_results(sample_path)
 
-    st.write("")
     if st.button("⚡ Cargar muestra de ejemplo", type="secondary", disabled=sample_results is None):
         reset_batch_state(st.session_state)
         st.session_state.llm_results = sample_results
@@ -401,48 +564,48 @@ def main():
         Path(__file__).resolve().parents[2] / "data" / "sample" / "mastodon_interacciones.json",
     ]
     combined_available = all(path.exists() for path in combined_demo_sources)
-
-    combined_size = st.selectbox(
-        "Tamaño del lote combinado",
-        options=["Reducido (mitad por fuente)", "Completo (todas las interacciones)"],
-        key="combined_size",
-    )
-    if combined_size == "Completo (todas las interacciones)":
-        combined_limits = [None, None, None]
-    else:
-        combined_limits = [None, 60, 50]
-
-    if st.button(
-        "🧪 Procesar demo combinada (sintético + demo + mastodon)",
-        type="secondary",
-        key="combined_demo_button",
-        disabled=not combined_available,
-    ):
-        reset_batch_state(st.session_state)
-        try:
-            with st.spinner("Procesando muestra demo combinada..."):
-                st.session_state.llm_results = process_combined_sample(
-                    combined_demo_sources, combined_limits
-                )
-                st.session_state.processing_done = True
-        except Exception as exc:
-            st.error(f"No se pudo procesar la demo combinada: {exc}")
-        else:
-            st.rerun()
-
-    if combined_available:
+    with st.expander("Opciones de demo combinada", expanded=False):
+        combined_size = st.selectbox(
+            "Tamaño del lote combinado",
+            options=["Reducido (mitad por fuente)", "Completo (todas las interacciones)"],
+            key="combined_size",
+        )
         if combined_size == "Completo (todas las interacciones)":
-            st.caption(
-                "Procesa todas las interacciones de muestra: 12 demo, 120 sintéticas "
-                "y 100 de Mastodon, 232 en total. La corrida completa es más lenta."
-            )
+            combined_limits = [None, None, None]
         else:
-            st.caption(
-                "Procesa la muestra demo (Mariana Souza, Lucas) más la mitad de cada "
-                "fuente sintética: 60 CSV y 50 de Mastodon, 122 interacciones en total."
-            )
-    else:
-        st.caption("La demo combinada no está disponible. Faltan archivos de muestra.")
+            combined_limits = [None, 60, 50]
+
+        if st.button(
+            "🧪 Procesar demo combinada (sintético + demo + mastodon)",
+            type="secondary",
+            key="combined_demo_button",
+            disabled=not combined_available,
+        ):
+            reset_batch_state(st.session_state)
+            try:
+                with st.spinner("Procesando muestra demo combinada..."):
+                    st.session_state.llm_results = process_combined_sample(
+                        combined_demo_sources, combined_limits
+                    )
+                    st.session_state.processing_done = True
+            except Exception as exc:
+                st.error(f"No se pudo procesar la demo combinada: {exc}")
+            else:
+                st.rerun()
+
+        if combined_available:
+            if combined_size == "Completo (todas las interacciones)":
+                st.caption(
+                    "Procesa todas las interacciones de muestra: 12 demo, 120 sintéticas "
+                    "y 100 de Mastodon, 232 en total. La corrida completa es más lenta."
+                )
+            else:
+                st.caption(
+                    "Procesa la muestra demo (Mariana Souza, Lucas) más la mitad de cada "
+                    "fuente sintética: 60 CSV y 50 de Mastodon, 122 interacciones en total."
+                )
+        else:
+            st.caption("La demo combinada no está disponible. Faltan archivos de muestra.")
 
     data_ready = uploaded_file is not None or bool(raw_json_input.strip())
 
@@ -463,7 +626,6 @@ def main():
             st.rerun()
 
     if st.session_state.processing_done and st.session_state.llm_results:
-        st.markdown("---")
         st.header("2. Activos Generados y Análisis")
 
         results = st.session_state.llm_results
@@ -473,25 +635,29 @@ def main():
 
         st.success(f"Estado del lote: {results['status']}")
 
-        st.subheader("📊 Análisis Rápido")
+        st.subheader("📊 Resumen de la comunidad")
         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
         with kpi_col1:
-            st.metric(label="Total Interacciones", value=summary["total_interacciones_procesadas"])
+            with st.container(border=True):
+                st.metric(label="Total Interacciones", value=summary["total_interacciones_procesadas"])
         with kpi_col2:
-            st.metric(label="Sentimiento", value=summary["sentimiento_predominante"])
+            with st.container(border=True):
+                st.metric(label="Sentimiento", value=summary["sentimiento_predominante"])
         with kpi_col3:
-            st.markdown("**Temas Principales:**")
-            st.info(", ".join(summary["temas_principales"]))
+            with st.container(border=True):
+                st.markdown("**Temas Principales**")
+                st.write(", ".join(summary["temas_principales"]))
 
-        st.write("")
         st.subheader("🚨 Derivación a humano")
         deriv_col1, deriv_col2 = st.columns(2)
         feedback_negativo = summary.get("feedback_negativo", 0)
         analisis_degradados = summary.get("analisis_degradados", 0)
         with deriv_col1:
-            st.metric(label="Derivados a humano", value=feedback_negativo)
+            with st.container(border=True):
+                st.metric(label="Derivados a humano", value=feedback_negativo)
         with deriv_col2:
-            st.metric(label="Análisis degradados", value=analisis_degradados)
+            with st.container(border=True):
+                st.metric(label="Análisis degradados", value=analisis_degradados)
 
         if feedback_negativo > 0:
             st.warning(
@@ -524,46 +690,47 @@ def main():
                 resumen.get("temas_principales_conteo") or []
             )
 
-            chart_col1, chart_col2 = st.columns(2)
+            chart_col1, chart_col2 = st.columns(2, gap="large")
             with chart_col1:
-                st.subheader("Distribución de Sentimiento")
-                chart = build_sentiment_pie_chart(distribucion_df)
-                if chart is None:
-                    st.info("No hay datos suficientes para mostrar la distribución de sentimiento.")
-                else:
-                    st.altair_chart(chart, use_container_width=True)
+                with st.container(border=True):
+                    st.subheader("Distribución de Sentimiento")
+                    chart = build_sentiment_pie_chart(distribucion_df)
+                    if chart is None:
+                        st.info("No hay datos suficientes para mostrar la distribución de sentimiento.")
+                    else:
+                        st.altair_chart(chart, width="stretch")
 
             with chart_col2:
-                st.subheader("Temas Principales (Top)")
-                if temas_df.empty:
-                    st.info("No hay datos suficientes para mostrar temas principales.")
+                with st.container(border=True):
+                    st.subheader("Temas Principales (Top)")
+                    if temas_df.empty:
+                        st.info("No hay datos suficientes para mostrar temas principales.")
+                    else:
+                        st.bar_chart(
+                            temas_df,
+                            x="tema",
+                            y="conteo",
+                            horizontal=True,
+                        )
+
+            with st.container(border=True):
+                st.subheader("📦 Activos generados por tipo")
+                assets_df = build_assets_summary_df(
+                    resumen, results["activos_distribucion_generados"]
+                )
+                if assets_df.empty:
+                    st.info("No hay activos generados para mostrar.")
                 else:
                     st.bar_chart(
-                        temas_df,
-                        x="tema",
+                        assets_df,
+                        x="activo",
                         y="conteo",
                         horizontal=True,
                     )
-
-            st.subheader("📦 Activos generados por tipo")
-            assets_df = build_assets_summary_df(
-                resumen, results["activos_distribucion_generados"]
-            )
-            if assets_df.empty:
-                st.info("No hay activos generados para mostrar.")
-            else:
-                st.bar_chart(
-                    assets_df,
-                    x="activo",
-                    y="conteo",
-                    horizontal=True,
+                st.caption(
+                    "Los candidatos de LinkedIn son los publicables; los derivados "
+                    "a humano salen del feedback negativo."
                 )
-            st.caption(
-                "Los candidatos de LinkedIn son los publicables; los derivados "
-                "a humano salen del feedback negativo."
-            )
-
-        st.write("")
 
         st.subheader("📝 Edición de Activos de Marketing")
         # The selected candidate drives BOTH tabs: its full post (tab 1) and
@@ -591,30 +758,40 @@ def main():
                     )
 
                 post_view = merge_post_view(linkedin, seleccionado)
-                st.write(f"**Título:** {post_view['titulo']}")
-                st.write(f"**Canal recomendado:** {post_view['canal_recomendado']}")
-                st.write(f"**Potencial de engagement:** {post_view['potencial_engagement']}")
-                st.info("Revisa y ajusta el copy antes de aprobar.")
-                linkedin_edited = st.text_area(
-                    "Contenido del Post:",
-                    value=post_view["copy"],
-                    height=250,
-                    key=f"linkedin_edit_{selected_index}",
-                    width="stretch",
-                )
-                linkedin_estado = st.radio(
-                    "Estado de curaduría:",
-                    options=CURATION_STATUSES,
-                    index=0,
-                    horizontal=True,
-                    key=f"linkedin_estado_{selected_index}",
-                )
-                if linkedin_estado == CURATION_STATUS_REJECTED:
-                    st.warning(
-                        "⚠️ Post de LinkedIn rechazado: no se incluirá en el paquete "
-                        "aprobado ni se podrá publicar en Telegram. Se debe cambiar "
-                        "el estado para reconsiderar la decisión."
+                meta_title, meta_channel, meta_engagement = st.columns([1.4, 1, 1])
+                with meta_title:
+                    st.caption("Título")
+                    st.write(post_view["titulo"])
+                with meta_channel:
+                    st.caption("Canal recomendado")
+                    st.write(post_view["canal_recomendado"])
+                with meta_engagement:
+                    st.caption("Potencial de engagement")
+                    st.write(post_view["potencial_engagement"])
+
+                edit_col, publish_col = st.columns([1.35, 1], gap="large")
+                with edit_col:
+                    st.info("Revisa y ajusta el copy antes de aprobar.")
+                    linkedin_edited = st.text_area(
+                        "Contenido del Post:",
+                        value=post_view["copy"],
+                        height=250,
+                        key=f"linkedin_edit_{selected_index}",
+                        width="stretch",
                     )
+                    linkedin_estado = st.radio(
+                        "Estado de curaduría:",
+                        options=CURATION_STATUSES,
+                        index=0,
+                        horizontal=True,
+                        key=f"linkedin_estado_{selected_index}",
+                    )
+                    if linkedin_estado == CURATION_STATUS_REJECTED:
+                        st.warning(
+                            "⚠️ Post de LinkedIn rechazado: no se incluirá en el paquete "
+                            "aprobado ni se podrá publicar en Telegram. Se debe cambiar "
+                            "el estado para reconsiderar la decisión."
+                        )
 
                 # El mensaje de Telegram sale del post que se está editando: el
                 # copy del editor manda y se conserva el autor/relevancia del
@@ -627,84 +804,83 @@ def main():
                     candidato_telegram["relevancia"] = seleccionado.get("relevancia")
                 candidato_telegram["copy"] = linkedin_edited
 
-                with st.expander("👁️ Vista previa del mensaje de Telegram"):
-                    st.text(telegram_publish.format_candidate_message(candidato_telegram))
-
                 # Gate de publicación: el botón sólo se habilita con el post
                 # Aprobado Y con una firma que todavía no se haya publicado en
                 # esta sesión. La preview de arriba queda siempre visible.
                 linkedin_aprobado = linkedin_estado == CURATION_STATUS_APPROVED
-                if not linkedin_aprobado:
-                    st.caption(
-                        "El post de LinkedIn debe estar aprobado "
-                        "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
-                    )
+                with publish_col:
+                    st.subheader("👁️ Vista previa del mensaje de Telegram")
+                    st.text(telegram_publish.format_candidate_message(candidato_telegram))
 
-                # Metadata de curaduría: visible para el humano, FUERA del
-                # mensaje publicado.
-                metadata_line = _curation_metadata_line(candidato_telegram)
-                if metadata_line:
-                    st.caption(metadata_line)
+                    # Metadata de curaduría: visible para el humano, FUERA del
+                    # mensaje publicado.
+                    metadata_line = _curation_metadata_line(candidato_telegram)
+                    if metadata_line:
+                        st.caption(metadata_line)
 
-                # El destino se muestra ANTES del click: si falta la
-                # configuración se ve una advertencia accionable en lugar de
-                # una excepción recién tras el click. El token jamás llega
-                # aquí: describe_destination solo devuelve el chat.
-                destino = telegram_publish.describe_destination()
-                if destino:
-                    st.caption(destino)
-                else:
-                    st.warning(
-                        "Falta configuración de Telegram: se requieren "
-                        "TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en el archivo .env "
-                        "(ver .env.example)."
-                    )
-
-                # Firma = identidad del candidato + copy editado. Una firma ya
-                # publicada queda marcada en st.session_state: el botón se
-                # deshabilita y un click viejo no puede reenviar.
-                firma = telegram_publish.publish_signature(candidato_telegram)
-                publicadas = st.session_state.setdefault("telegram_published_times", {})
-                hora_envio = publicadas.get(firma)
-                ya_publicado = hora_envio is not None
-
-                decision = publish_decision(linkedin_aprobado, ya_publicado)
-
-                if st.button(
-                    "📨 Publicar en Telegram",
-                    key="telegram_publish_button",
-                    disabled=decision != PUBLISH_DECISION_APPROVED,
-                ):
-                    # Guarda defensiva: el handler revalida la decisión, así un
-                    # click viejo no publica sin Aprobado ni reenvía una firma
-                    # ya publicada.
-                    if decision == PUBLISH_DECISION_NOT_APPROVED:
-                        st.warning(
-                            "El post de LinkedIn no está aprobado; no se publica "
-                            "en Telegram."
-                        )
-                    elif decision == PUBLISH_DECISION_ALREADY_PUBLISHED:
-                        st.caption(f"✅ Publicado a las {hora_envio}")
+                    # El destino se muestra ANTES del click: si falta la
+                    # configuración se ve una advertencia accionable en lugar
+                    # de una excepción tras el click. El token nunca se muestra.
+                    destino = telegram_publish.describe_destination()
+                    if destino:
+                        st.caption(destino)
                     else:
-                        try:
-                            enviado = telegram_publish.publish_candidate(candidato_telegram)
-                        except telegram_publish.TelegramConfigError as exc:
-                            st.warning(
-                                f"{exc} Se requieren TELEGRAM_BOT_TOKEN y "
-                                "TELEGRAM_CHAT_ID en el archivo .env "
-                                "(ver .env.example)."
-                            )
-                        except (ValueError, RuntimeError) as exc:
-                            st.error(f"No se pudo publicar en Telegram: {exc}")
-                        else:
-                            publicadas[firma] = datetime.now().strftime("%H:%M")
-                            st.success(
-                                "✅ Publicado en Telegram "
-                                f"({len(enviado)} caracteres enviados)."
-                            )
+                        st.warning(
+                            "Falta configuración de Telegram: se requieren "
+                            "TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en el archivo .env "
+                            "(ver .env.example)."
+                        )
 
-                if publicadas.get(firma):
-                    st.caption(f"✅ Publicado a las {publicadas[firma]}")
+                    # Firma = identidad del candidato + copy editado. Una firma ya
+                    # publicada queda marcada en st.session_state: el botón se
+                    # deshabilita y un click viejo no puede reenviar.
+                    firma = telegram_publish.publish_signature(candidato_telegram)
+                    publicadas = st.session_state.setdefault("telegram_published_times", {})
+                    hora_envio = publicadas.get(firma)
+                    ya_publicado = hora_envio is not None
+
+                    decision = publish_decision(linkedin_aprobado, ya_publicado)
+
+                    if not linkedin_aprobado:
+                        st.caption(
+                            "El post de LinkedIn debe estar aprobado "
+                            "(Estado de curaduría: Aprobado) para publicarlo en Telegram."
+                        )
+
+                    if st.button(
+                        "📨 Publicar en Telegram",
+                        key="telegram_publish_button",
+                        disabled=decision != PUBLISH_DECISION_APPROVED,
+                    ):
+                        # Revalidar ambas condiciones evita enviar con un estado
+                        # de curaduría obsoleto o repetir un envío anterior.
+                        if decision == PUBLISH_DECISION_NOT_APPROVED:
+                            st.warning(
+                                "El post de LinkedIn no está aprobado; no se publica "
+                                "en Telegram."
+                            )
+                        elif decision == PUBLISH_DECISION_ALREADY_PUBLISHED:
+                            st.caption(f"✅ Publicado a las {hora_envio}")
+                        else:
+                            try:
+                                enviado = telegram_publish.publish_candidate(candidato_telegram)
+                            except telegram_publish.TelegramConfigError as exc:
+                                st.warning(
+                                    f"{exc} Se requieren TELEGRAM_BOT_TOKEN y "
+                                    "TELEGRAM_CHAT_ID en el archivo .env "
+                                    "(ver .env.example)."
+                                )
+                            except (ValueError, RuntimeError) as exc:
+                                st.error(f"No se pudo publicar en Telegram: {exc}")
+                            else:
+                                publicadas[firma] = datetime.now().strftime("%H:%M")
+                                st.success(
+                                    "✅ Publicado en Telegram "
+                                    f"({len(enviado)} caracteres enviados)."
+                                )
+
+                    if publicadas.get(firma):
+                        st.caption(f"✅ Publicado a las {publicadas[firma]}")
             else:
                 st.info("No se generó un post de LinkedIn para este lote.")
                 linkedin_edited = ""
