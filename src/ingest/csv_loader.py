@@ -22,10 +22,10 @@ _REQUIRED_HEADERS = {
 }
 
 # [Mejora 5] codificaciones a probar, en orden. utf-8-sig tolera el BOM de
-# Exel; cp1252 cubre los csv exportados desde Exel en Windows.
+# Excel; cp1252 cubre los csv exportados desde Excel en Windows.
 _ENCODINGS = ("utf-8-sig", "cp1252")
 
-# [Mejora 1] Delimitadores aceptados (Exel en español usa ";").
+# [Mejora 1] Delimitadores aceptados (Excel en español usa ";").
 _DELIMITERS = ",;\t"
 
 
