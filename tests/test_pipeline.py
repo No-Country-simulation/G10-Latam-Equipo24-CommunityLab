@@ -270,6 +270,52 @@ def test_technical_question_generates_faq_from_decision():
     assert faq.status == "derivado_a_mentoria"
 
 
+class CountingFAQClient(FakeLLMClient):
+    """Counts FAQ generator calls to prove candidates add no LLM request."""
+
+    def __init__(self):
+        self.faq_calls = 0
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        if "TEMA de una FAQ" in prompt:
+            self.faq_calls += 1
+        return super().generate(prompt, **kwargs)
+
+
+def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, tmp_path):
+    # N technical questions -> len(candidatos_faq) == N, and the FAQ generator
+    # runs EXACTLY ONCE (the single `sugerencia_contenido_faq`): listing the
+    # candidates must not add an LLM call.
+    client = CountingFAQClient()
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": f"Dev {numero}",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": f"¿Cómo configuro el paso {numero}?",
+            }
+            for numero in range(1, 4)
+        ],
+    )
+    output = run_pipeline(source)
+    assets = output.activos_distribucion_generados
+
+    candidatos = assets.candidatos_faq
+    assert len(candidatos) == 3
+    assert [c.autor for c in candidatos] == ["Dev 1", "Dev 2", "Dev 3"]
+    assert all(c.relevancia == 0.9 for c in candidatos)
+
+    # The single materialized suggestion still works, generated only once.
+    assert assets.sugerencia_contenido_faq is not None
+    assert client.faq_calls == 1
+    # `dudas_frecuentes` stays the count of CREAR_FAQ decisions.
+    assert output.resumen_comunidad.dudas_frecuentes == 3
+
+
 def test_negative_testimonial_is_not_published(tmp_path):
     # The DECISION drives generation, not `tipo`: a testimonio whose analysis
     # says negativo must not produce a LinkedIn post nor a newsletter.
@@ -343,6 +389,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "destaque_newsletter_semanal",
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
+        "candidatos_faq",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 
