@@ -6,6 +6,7 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
     OutputBatch,
+    TopicFrequency,
 )
 
 
@@ -111,3 +112,84 @@ def test_community_summary_feedback_negativo_accepts_value():
         feedback_negativo=2,
     )
     assert summary.feedback_negativo == 2
+
+
+def test_community_summary_dudas_frecuentes_defaults_to_zero():
+    """`dudas_frecuentes` is additive: existing summaries keep working."""
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+    )
+    assert summary.dudas_frecuentes == 0
+
+
+def test_community_summary_dudas_frecuentes_accepts_value():
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+        dudas_frecuentes=4,
+    )
+    assert summary.dudas_frecuentes == 4
+
+
+# ---------------------------------------------------------------------------
+# Option A additive fields (HU-S4-003): sentiment distribution + counted topics
+# ---------------------------------------------------------------------------
+
+
+def test_community_summary_option_a_fields_default_empty():
+    """The Option A fields are additive: both default to empty."""
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Neutro",
+    )
+    assert summary.distribucion_sentimiento == {}
+    assert summary.temas_principales_conteo == []
+
+
+def test_community_summary_option_a_fields_accept_values():
+    summary = CommunitySummary(
+        total_interacciones_procesadas=3,
+        sentimiento_predominante="Positivo",
+        distribucion_sentimiento={"positivo": 2, "neutral": 1},
+        temas_principales_conteo=[
+            TopicFrequency(tema="python", conteo=2),
+            TopicFrequency(tema="ia", conteo=1),
+        ],
+    )
+    assert summary.distribucion_sentimiento == {"positivo": 2, "neutral": 1}
+    assert [tf.tema for tf in summary.temas_principales_conteo] == ["python", "ia"]
+    assert summary.temas_principales_conteo[0].conteo == 2
+
+
+def test_community_summary_option_a_fields_serialize_roundtrip():
+    summary = CommunitySummary(
+        total_interacciones_procesadas=2,
+        sentimiento_predominante="Positivo",
+        distribucion_sentimiento={"positivo": 2},
+        temas_principales_conteo=[TopicFrequency(tema="logro", conteo=2)],
+    )
+    payload = summary.model_dump()
+    assert payload["distribucion_sentimiento"] == {"positivo": 2}
+    assert payload["temas_principales_conteo"] == [{"tema": "logro", "conteo": 2}]
+
+    restored = CommunitySummary.model_validate_json(summary.model_dump_json())
+    assert restored.distribucion_sentimiento == {"positivo": 2}
+    assert restored.temas_principales_conteo[0].tema == "logro"
+    assert restored.temas_principales_conteo[0].conteo == 2
+
+
+def test_community_summary_without_option_a_keys_still_deserializes():
+    """Additive guarantee: a summary serialized before Option A (no new keys)
+    still deserializes and exposes the empty defaults."""
+    legacy = {
+        "total_interacciones_procesadas": 3,
+        "sentimiento_predominante": "Neutro",
+        "temas_principales": ["python"],
+        "analisis_degradados": 1,
+        "feedback_negativo": 0,
+    }
+    summary = CommunitySummary.model_validate(legacy)
+
+    assert summary.distribucion_sentimiento == {}
+    assert summary.temas_principales_conteo == []
