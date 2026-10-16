@@ -172,7 +172,7 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-06 | pregunta_tecnica · pregunta_tecnica · neutral · 0.70 · sí | R2 | `crear_faq` / `faq` | — | `test_dec_06_…` · ⏳ |
 | DEC-07 | otro · otro · neutral · 0.50 · sí | La recurrencia por sí sola no genera FAQ si no es pregunta técnica | `descartar` | 🟡 Depende de D-A y D-D | `test_dec_07_…` · 🟡 |
 | DEC-08 | otro · otro · neutral · 0.50 · no | R3 | `descartar` | — | `test_dec_08_…` · ⏳ |
-| DEC-09 | feedback · feedback · negativo · 0.80 · no | Ninguna regla aplica | `descartar` con `reason` "sin regla aplicable" | 🟡 Hueco: negativo y relevante. Candidato a alerta (O-03) | `test_dec_09_…` · 🟡 |
+| DEC-09 | feedback · feedback · negativo · 0.80 · no | R4 | `derivar` con `reason` "Feedback negativo: requiere atención personalizada por el community manager" | Hasta el PR #98 caía en R3 (hueco O-03); hoy R4 deriva el caso a un humano (equivalente: `test_negative_feedback_is_derived_to_human`) | `test_dec_09_…` · ⏳ |
 | DEC-10 | feedback · feedback · positivo · 0.75 · no | Ninguna regla aplica (R1 es solo para testimonios) | `descartar` con `reason` "sin regla aplicable" | 🟡 El generador de newsletter salió del MVP (S3-002), así que descartar es coherente; ver O-14 | `test_dec_10_…` · 🟡 |
 | DEC-11 | discusion · discusion · neutral · 0.20 · no | R3 | `descartar` | — | `test_dec_11_…` · ⏳ |
 | DEC-12 | testimonio · pregunta_tecnica · positivo · 0.90 · no | Prevalece el `tipo` explícito y reconocido (D-B) | `crear_faq` / `faq` | La acción está decidida; mencionar la discrepancia en `reason` es una propuesta | `test_dec_12_…` · ⏳ |
@@ -185,6 +185,7 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-19 | testimonio · (vacío) · positivo · 0.85 · no | `tipo` vacío: manda `category` | `publicar` / `linkedin` | Decidido por Rox (D-B) | `test_dec_19_…` · ⏳ |
 | DEC-20 | testimonio · comentario_general · positivo · 0.85 · no | `comentario_general` se trata como "sin tipo": manda `category` | `publicar` / `linkedin` | Es el `tipo` que la ingesta de Mastodon emitía para casi todos los mensajes | `test_dec_20_…` · ⏳ |
 | DEC-21 | otro · testimonio · positivo · 0.90 · no | El `tipo` explícito y reconocido prevalece sobre el análisis | `publicar` / `linkedin` | Consecuencia de la regla: si la ingesta etiqueta mal un `tipo`, el error llega al motor (O-16) | `test_dec_21_…` · ⏳ |
+| DEC-22 | pregunta_tecnica · pregunta_tecnica · negativo · 0.80 · no | R4 se evalúa antes que R2 | `derivar` | Por eso R4 ahora precede a R2: la regla de FAQ ya no traga una queja negativa (D-I) | `test_dec_22_…` · ✅ |
 
 ## C. Dudas recurrentes — Yis-ai-eng (HU-S2-007, PR #64 mergeado; follow-up #75)
 
