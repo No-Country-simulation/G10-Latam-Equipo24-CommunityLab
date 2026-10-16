@@ -23,6 +23,8 @@ caller's responsibility: that keeps the client domain-agnostic.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import re
+
 import json
 import os
 
@@ -47,6 +49,19 @@ class LLMClient(ABC):
 # ---------------------------------------------------------------------------
 # Deterministic backend (demo / tests / CI, no API key)
 # ---------------------------------------------------------------------------
+
+_MENSAJE_RE = re.compile(r"<mensaje>(.*?)</mensaje>", re.DOTALL | re.IGNORECASE)
+
+
+def _extract_mensaje(prompt: str) -> str:
+    """Return the content of `<mensaje> ... </mensaje>` (or "" if absent).
+
+    The analysis prompt delimits the user message with those tags; only that
+    fragment should be inspected for classification, never the instructions.
+    """
+    match = _MENSAJE_RE.search(prompt)
+    return match.group(1).strip() if match else ""
+
 
 class RuleBasedClient(LLMClient):
     """Deterministic backend that simulates the LLM with simple rules.
