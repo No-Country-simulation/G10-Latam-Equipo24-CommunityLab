@@ -44,7 +44,7 @@ from src.generators.base import BaseGenerator
 from src.generators.faq import FAQGenerator
 from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
-from src.ingest.input_loader import JSONInputLoader
+from src.ingest.loader import load_batch
 from src.oci.client import OCIClient
 from src.utils.llm import LLMClient, get_llm_client
 
@@ -89,8 +89,20 @@ def run_pipeline(source: str) -> OutputBatch:
     load_dotenv()
 
     # 1. Ingest
-    batch: InputBatch = JSONInputLoader().load_batch(source)
+    batch: InputBatch = load_batch(source)
 
+    # 2-6. Analisis, decisiones, generadores y almacenamiento.
+    return _run_with_batch(batch)
+
+
+def _run_with_batch(batch: InputBatch) -> OutputBatch:
+    """Corre el pipeline completo sobre un InputBatch ya cargado en memoria.
+
+    Es el cuerpo post-ingesta de `run_pipeline`: el webhook de ingesta
+    (src/ingest/webhook.py) arma el batch en memoria desde el request y lo
+    pasa acá, sin escribir archivos temporales. El backend lo sigue decidiendo
+    get_llm_client() a partir de COMMUNITYLAB_LLM_BACKEND.
+    """
     # 2. LLM client (gemini / ollama / rule_based via COMMUNITYLAB_LLM_BACKEND)
     llm = get_llm_client()
     analyzer = GeminiUnifiedAnalyzer(client=llm)

@@ -1,0 +1,4 @@
+origen_comunidad,periodo_referencia,autor,canal,tipo,texto,url,timestamp
+Comunidad_Tech,Periodo_2026-01,Mariana Souza,#general,testimonio,Conseguí mi primer empleo como desarrolladora.,https://example.com/empleo,2026-01-10T10:00:00Z
+Comunidad_Tech,Periodo_2026-01,Carlos Mendes,#ayuda,pregunta_tecnica,¿Cómo valido un token JWT en FastAPI?,,2026-01-11T14:30:00Z
+Comunidad_Tech,Periodo_2026-01,Luciana Ríos,#feedback,feedback,El taller de portafolios estuvo muy bueno.,https://example.com/taller,
