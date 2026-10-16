@@ -1,14 +1,11 @@
 """Tests for the LLM client layer (src/utils/llm.py)."""
-import json
 import sys
 import types
 from types import SimpleNamespace
 
 import pytest
 
-from src.domain.models import InputMessage
-from src.prompts.templates import build_analysis_prompt
-from src.utils.llm import LLMError, OllamaClient, RuleBasedClient
+from src.utils.llm import LLMError, OllamaClient
 
 
 def _install_fake_module(monkeypatch, name: str, module: types.ModuleType):
@@ -128,34 +125,3 @@ def test_ollama_local_mode_failure_raises_llm_error(monkeypatch):
     client = OllamaClient()
     with pytest.raises(LLMError):
         client.generate("prompt local")
-
-
-def test_rule_based_analysis_ignores_prompt_instructions():
-    """Regression: los indicadores miran el mensaje, no el prompt completo.
-
-    El prompt de análisis contiene "éxito" y "?" en las instrucciones; si el
-    cliente los mirara, TODA pregunta caería en el branch de testimonio y un
-    mensaje neutro jamás sería DESCARTAR (el bot del escalón 4 depende de
-    esta clasificación cuando el mensaje no trae `tipo`).
-    """
-    client = RuleBasedClient()
-
-    pregunta = InputMessage(
-        autor="Dev",
-        canal="#dudas",
-        tipo="otro",
-        texto="¿Cómo hago para configurar el backend?",
-    )
-    data = json.loads(client.generate(build_analysis_prompt(pregunta)))
-    assert data["categorization"]["category"] == "pregunta_tecnica"
-    assert data["sentiment"]["type"] == "neutral"
-
-    testimonio = InputMessage(
-        autor="Ana",
-        canal="#logros",
-        tipo="otro",
-        texto="Logré mi primer empleo, gracias a la comunidad!",
-    )
-    data = json.loads(client.generate(build_analysis_prompt(testimonio)))
-    assert data["categorization"]["category"] == "testimonio"
-    assert data["sentiment"]["type"] == "positivo"

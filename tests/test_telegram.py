@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+import requests
 
 from src.domain.models import InputBatch
 from src.ingest.loader import load_batch
@@ -52,6 +53,60 @@ def _mock_get(monkeypatch, payload: dict):
         lambda *args, **kwargs: _FakeRespuesta(payload),
     )
 
+
+class _FakeRespuestaHTTPError:
+    """Simula una respuesta HTTP que provoca requests.HTTPError."""
+
+    def __init__(self, codigo: int) -> None:
+        self.status_code = codigo
+
+    def raise_for_status(self) -> None:
+        error = requests.HTTPError(f"HTTP {self.status_code}")
+        error.response = self
+        raise error
+
+    def json(self) -> dict:
+        return {
+            "ok": False,
+            "error_code": self.status_code,
+            "description": f"Error HTTP {self.status_code}",
+        }
+
+
+@pytest.mark.parametrize(
+    ("codigo", "tipo_error"),
+    [
+        (404, "permanent"),
+        (409, "permanent"),
+        (429, "transient"),
+    ],
+)
+
+def test_fetch_updates_clasifica_errores_http(
+    monkeypatch, codigo, tipo_error
+):
+    from src.ingest.telegram import (
+    TelegramPermanentError,
+    TelegramTransientError,
+    fetch_updates,
+    )
+
+    respuesta = _FakeRespuestaHTTPError(codigo)
+    monkeypatch.setattr(
+        "src.ingest.telegram.requests.get",
+        lambda *args, **kwargs: respuesta,
+    )
+
+    clase_esperada = (
+        TelegramPermanentError
+        if tipo_error == "permanent"
+        else TelegramTransientError
+    )
+
+    with pytest.raises(clase_esperada) as exc:
+        fetch_updates("token-de-prueba", CHAT)
+
+    assert f"HTTP {codigo}" in str(exc.value)
 
 # fetch_updates
 

@@ -26,7 +26,13 @@ import requests
 
 from src.domain.models import InputBatch, OutputBatch
 from src.ingest.normalizer import InputNormalizer
-from src.ingest.telegram import fetch_updates
+from src.ingest.telegram import (
+    TelegramAuthError,
+    TelegramPermanentError,
+    TelegramTransientError,
+    fetch_updates,
+)
+
 from src.ingest.webhook import apply_backend
 from src.pipeline import _run_with_batch
 
@@ -176,7 +182,7 @@ def _formatear_respuesta(result: OutputBatch) -> str:
 
 
 def send_message(token: str, chat_id: Any, text: str) -> None:
-    """Envía una respuesta con sendMessage; errores sanitizados (sin token)."""
+    """Envía una respuesta; clasifica errores sin exponer el token."""
     if not token:
         raise ValueError("Falta el token del bot de Telegram.")
 
@@ -189,24 +195,65 @@ def send_message(token: str, chat_id: Any, text: str) -> None:
         )
         respuesta.raise_for_status()
     except requests.HTTPError as err:
-        codigo = err.response.status_code if err.response is not None else "?"
-        # Se descarta la cadena del error (contiene la URL con el token).
-        raise RuntimeError(
-            f"Telegram respondió HTTP {codigo} al enviar sendMessage. "
-            "Revisar el token (401 = inválido)."
+        codigo = err.response.status_code if err.response is not None else None
+        mensaje = (
+            f"Telegram respondió HTTP {codigo} al enviar sendMessage."
+            if codigo is not None
+            else "Error HTTP al enviar sendMessage a Telegram."
+        )
+
+        if codigo == 401:
+            raise TelegramAuthError(
+                f"{mensaje} El token es inválido o no está autorizado."
+            ) from None
+
+        if codigo in (400, 403):
+            raise TelegramPermanentError(
+                f"{mensaje} Revisar la solicitud y los permisos del bot."
+            ) from None
+
+        raise TelegramTransientError(
+            f"{mensaje} Revisar la conexión y volver a intentar."
         ) from None
+
     except requests.RequestException:
-        raise RuntimeError(
+        raise TelegramTransientError(
             "Error de red al enviar sendMessage a Telegram; "
             "revisar la conexión y volver a intentar."
         ) from None
 
-    datos = respuesta.json()
-    if not datos.get("ok"):
-        descripcion = datos.get("description") or "respuesta sin 'ok': true"
-        raise RuntimeError(
-            f"Telegram devolvió ok=false al enviar la respuesta: {descripcion}"
+    try:
+        datos = respuesta.json()
+    except requests.exceptions.JSONDecodeError:
+        raise TelegramTransientError(
+            "Telegram devolvió una respuesta JSON inválida al enviar sendMessage."
         ) from None
+
+    if not isinstance(datos, dict):
+        raise TelegramTransientError(
+            "Telegram devolvió una respuesta inesperada al enviar sendMessage."
+        )
+
+    if not datos.get("ok"):
+
+        descripcion = datos.get("description") or "respuesta sin 'ok': true"
+        codigo = datos.get("error_code")
+        mensaje = (
+            f"Telegram devolvió ok=false al enviar la respuesta: {descripcion}"
+        )
+
+        if codigo == 401:
+            raise TelegramAuthError(mensaje) from None
+
+        if codigo in (400, 403):
+            raise TelegramPermanentError(mensaje) from None
+
+        if codigo == 409:
+            raise TelegramPermanentError(
+                f"{mensaje} Telegram rechazó el envío por un conflicto."
+            ) from None
+
+        raise TelegramTransientError(mensaje) from None
 
 
 def next_offset(
@@ -244,17 +291,7 @@ def run_bot(
     poll_timeout: int = 30,
     max_cycles: Optional[int] = None,
 ) -> int:
-    """Bucle de long polling: getUpdates -> responder -> avanzar offset.
-
-    - `backend`: se aplica a COMMUNITYLAB_LLM_BACKEND (la fuente de verdad de
-      get_llm_client), igual que en el webhook.
-    - `poll_timeout`: long polling de la Bot API en segundos (default 30).
-    - `max_cycles`: límite de iteraciones del bucle, solo para tests.
-    - Error de red/HTTP: backoff exponencial (1s, 2s, 4s, tope 30s) y
-      reintento; el bucle no muere (solo se loguea el tipo de error, nunca el
-      token).
-    - KeyboardInterrupt: se propaga para que el CLI cierre con exit 0.
-    """
+    """Procesa actualizaciones individualmente para evitar duplicar respuestas."""
     apply_backend(backend)
     offset: Optional[int] = None
     attempt = 0
@@ -262,24 +299,127 @@ def run_bot(
 
     while max_cycles is None or cycles < max_cycles:
         cycles += 1
+
         try:
-            updates = fetch_updates(token, offset=offset, poll_timeout=poll_timeout)
-            _responder_updates(token, updates)
+            updates = fetch_updates(
+                token, offset=offset, poll_timeout=poll_timeout
+            )
         except KeyboardInterrupt:
+            raise
+        except TelegramAuthError:
+            raise
+        except TelegramPermanentError:
             raise
         except Exception as exc:
             delay = _backoff_delay(attempt)
             attempt += 1
             logger.warning(
-                "Error de red o de la Bot API (%s); reintento en %ss",
+                "Error al consultar Telegram (%s); reintento en %ss",
                 type(exc).__name__,
                 delay,
             )
             _sleep(delay)
             continue
 
+        fallo_temporal = False
+
+
+        for update in updates:
+            if not isinstance(update, dict):
+                logger.error(
+                    "Actualización inválida de Telegram; "
+                    "se interrumpe el procesamiento del lote."
+                )
+                fallo_temporal = True
+                delay = _backoff_delay(attempt)
+                attempt += 1
+                _sleep(delay)
+                break
+
+
+            update_id = update.get("update_id")
+            if update_id is None:
+                logger.error(
+                    "Actualización de Telegram sin update_id; "
+                    "se interrumpe el procesamiento del lote."
+                )
+                fallo_temporal = True
+                delay = _backoff_delay(attempt)
+                attempt += 1
+                _sleep(delay)
+                break
+
+
+            try:
+                _responder_updates(token, [update])
+
+            except KeyboardInterrupt:
+                raise
+
+            except TelegramAuthError:
+                raise
+
+            except TelegramPermanentError as exc:
+                error_permanente = exc
+
+                # Ya hubo un intento inicial: quedan dos reintentos.
+                for retry in range(2):
+                    _sleep(_backoff_delay(retry))
+                    try:
+                        _responder_updates(token, [update])
+                    except TelegramAuthError:
+                        raise
+                    except TelegramPermanentError as retry_exc:
+                        error_permanente = retry_exc
+                    except Exception as retry_exc:
+                        logger.warning(
+                            "Fallo temporal al responder update_id=%s (%s)",
+                            update_id,
+                            type(retry_exc).__name__,
+                        )
+                        fallo_temporal = True
+                        break
+                    else:
+                        error_permanente = None
+                        break
+
+                if fallo_temporal:
+                    delay = _backoff_delay(attempt)
+                    attempt += 1
+                    _sleep(delay)
+                    break
+
+                if error_permanente is not None:
+                    logger.error(
+                        "Se omite update_id=%s tras errores permanentes (%s).",
+                        update_id,
+                        type(error_permanente).__name__,
+                    )
+
+            except Exception as exc:
+                delay = _backoff_delay(attempt)
+                attempt += 1
+                logger.warning(
+                    "Fallo temporal al responder update_id=%s (%s); "
+                    "reintento en %ss",
+                    update_id,
+                    type(exc).__name__,
+                    delay,
+                )
+                _sleep(delay)
+                fallo_temporal = True
+                break
+
+            # Solo confirmamos después de éxito, omisión explícita
+            # o agotamiento de los reintentos de un error permanente.
+            siguiente = update_id + 1
+            offset = siguiente if offset is None else max(offset, siguiente)
+
+        if fallo_temporal:
+            continue
+
         attempt = 0
-        offset = next_offset(updates, offset)
+
     return 0
 
 
@@ -301,8 +441,14 @@ def _responder_updates(token: str, updates: List[Dict[str, Any]]) -> int:
         if not texto:
             continue
 
-        chat_id = (mensaje.get("chat") or {}).get("id")
+
+        chat = mensaje.get("chat") or {}
+        chat_id = chat.get("id")
         if chat_id is None:
+            continue
+
+        chat_type = chat.get("type")
+        if chat_type and chat_type != "private":
             continue
 
         reply = build_reply(texto)

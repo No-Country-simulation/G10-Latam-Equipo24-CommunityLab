@@ -789,8 +789,8 @@ def main():
                     if linkedin_estado == CURATION_STATUS_REJECTED:
                         st.warning(
                             "⚠️ Post de LinkedIn rechazado: no se incluirá en el paquete "
-                            "aprobado ni se podrá publicar en Telegram. Cambiá el estado "
-                            "para reconsiderar la decisión."
+                            "aprobado ni se podrá publicar en Telegram. Se debe cambiar "
+                            "el estado para reconsiderar la decisión."
                         )
 
                 # El mensaje de Telegram sale del post que se está editando: el

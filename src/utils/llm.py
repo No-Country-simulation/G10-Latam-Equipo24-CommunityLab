@@ -23,9 +23,10 @@ caller's responsibility: that keeps the client domain-agnostic.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import re
+
 import json
 import os
-import re
 
 
 class LLMError(Exception):
@@ -53,10 +54,10 @@ _MENSAJE_RE = re.compile(r"<mensaje>(.*?)</mensaje>", re.DOTALL | re.IGNORECASE)
 
 
 def _extract_mensaje(prompt: str) -> str:
-    """Devuelve el contenido de `<mensaje> ... </mensaje>` (o "" si no está).
+    """Return the content of `<mensaje> ... </mensaje>` (or "" if absent).
 
-    El prompt de análisis delimita el mensaje del usuario con esas etiquetas;
-    para clasificar solo se debe mirar ese fragmento, nunca las instrucciones.
+    The analysis prompt delimits the user message with those tags; only that
+    fragment should be inspected for classification, never the instructions.
     """
     match = _MENSAJE_RE.search(prompt)
     return match.group(1).strip() if match else ""
@@ -84,11 +85,16 @@ class RuleBasedClient(LLMClient):
 
         # Analysis prompt (unified analyzer)
         if "analizá el mensaje de una comunidad técnica" in prompt_lower:
-            # Los indicadores deben mirar SOLO el mensaje del usuario, no el
-            # prompt completo: las instrucciones contienen palabras ("éxito",
-            # "error", "?") que sesgarían la clasificación. Se extrae el
-            # contenido entre <mensaje> ... </mensaje>.
-            text_lower = _extract_mensaje(prompt_lower) or prompt_lower
+            # Indicators must look ONLY at the user message, not at the whole
+            # prompt: the instructions contain words ("éxito", "error", "?")
+            # that would bias the classification. Extract the content between
+            # <mensaje> ... </mensaje> instead.
+            text_lower = _extract_mensaje(prompt_lower)
+            # Never fall back to the full prompt: if <mensaje> is missing or empty,
+            # there is nothing to classify. The instructions themselves contain
+            # "éxito" and "?" which would bias classification (e.g. false
+            # testimonial). If no rules match, fall through to the final else
+            # (fail closed) returning "discusion"/"neutral".
             # Question-like content
             question_indicators = (
                 "?", "¿", "cómo hago", "cómo se", "ayuda", "error", "bug",
