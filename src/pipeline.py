@@ -34,6 +34,7 @@ from src.domain.models import (
     CommunitySummary,
     DecisionResult,
     DistributionAssets,
+    FAQCandidate,
     InputBatch,
     InputMessage,
     LinkedInCandidate,
@@ -145,6 +146,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
           back to the first interaction that is neither discarded nor derived
           to a human (a DERIVAR message is not a marketing asset).
         - FAQ suggestion -> first CREAR_FAQ decision.
+        - FAQ candidates -> every CREAR_FAQ decision, listed only (no LLM call).
     A generator that returns None (LLM/JSON/validation failure) leaves its
     asset as None instead of failing the batch.
     """
@@ -207,11 +209,29 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             )
         )
 
+    # FAQ candidates: every CREAR_FAQ decision in batch order, listed with the
+    # original question only. NO generator call here: `sugerencia_contenido_faq`
+    # above stays the single materialized asset, so listing candidates never
+    # adds an LLM request.
+    candidatos_faq = [
+        FAQCandidate(
+            autor=msg.autor,
+            canal=msg.canal,
+            texto_original=msg.texto,
+            relevancia=(
+                analysis.relevance.score if analysis.relevance is not None else 0.0
+            ),
+        )
+        for msg, analysis, decision in results
+        if decision.action == ActionType.CREAR_FAQ
+    ]
+
     return DistributionAssets(
         post_linkedin=post_linkedin,
         destaque_newsletter_semanal=destaque_newsletter,
         sugerencia_contenido_faq=_run(faq_gen, faq_target),
         candidatos_post_linkedin=candidatos,
+        candidatos_faq=candidatos_faq,
     )
 
 

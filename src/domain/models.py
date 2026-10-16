@@ -206,6 +206,19 @@ class LinkedInCandidate(BaseModel):
     newsletter_resumen: str = ""
 
 
+class FAQCandidate(BaseModel):
+    """A technical question routed by the FAQ rule, listed WITHOUT generated copy.
+
+    Mirrors `LinkedInCandidate` but cheaper: the FAQ suggestion the contract
+    materializes is a single asset, so the candidates only expose the original
+    question and who asked it (no title/copy fields, no LLM call).
+    """
+    autor: str = ""
+    canal: str = ""
+    texto_original: str = ""
+    relevancia: float = 0.0
+
+
 class NewsletterHighlight(BaseModel):
     """Maps to the JSON key `destaque_newsletter_semanal`."""
     seccion: str
@@ -228,6 +241,11 @@ class DistributionAssets(BaseModel):
     # Option A: every publishable testimonio with its LLM copy, so the UI can
     # offer a manual selector. Additive via default_factory: old outputs lack it.
     candidatos_post_linkedin: List[LinkedInCandidate] = Field(default_factory=list)
+    # Every technical question routed by the FAQ rule (CREAR_FAQ), in batch
+    # order, listed WITHOUT generated copy (no extra LLM call). Additive via
+    # default_factory: old outputs lack it. The contract still materializes a
+    # single `sugerencia_contenido_faq`.
+    candidatos_faq: List[FAQCandidate] = Field(default_factory=list)
 
 
 class OCIStorage(BaseModel):
