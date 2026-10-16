@@ -23,10 +23,9 @@ caller's responsibility: that keeps the client domain-agnostic.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-import re
-
 import json
 import os
+import re
 
 
 class LLMError(Exception):
@@ -111,7 +110,24 @@ class RuleBasedClient(LLMClient):
                 ind in text_lower for ind in testimonial_indicators
             )
 
-            if has_question and not has_testimonial:
+            # Complaint/frustration content (R4, decision D-F #97). Without this
+            # branch the deterministic backend NEVER marks a message "negativo",
+            # so feedback_negativo is always 0 on demos/CI even though the CSV
+            # samples carry real complaints. Sentiment wins over the question
+            # branch so a complaint that happens to contain "ayuda"/"error" is
+            # still derived to the community manager instead of a FAQ.
+            # Now it also wins over the testimonial branch: a complaint that
+            # contains "!" or "gracias" (e.g. "¡Qué desastre! Gracias por nada...")
+            # must still be classified as negativo.
+            negative_indicators = (
+                "sin respuestas", "no hay plan", "no hubo espacio",
+                "quedó sin", "confuso", "tardan demasiado", "perdí",
+                "no me sirvió", "no se explicaron", "termine apurada",
+                "terminó apurada", "frustrado", "desastre", "mala experiencia"
+            )
+            has_negative = any(ind in text_lower for ind in negative_indicators)
+
+            if has_question and not has_testimonial and not has_negative:
                 payload = {
                     "sentiment": {
                         "type": "neutral",
@@ -125,6 +141,21 @@ class RuleBasedClient(LLMClient):
                         "entities": [],
                     },
                     "relevance": {"score": 0.4},
+                }
+            elif has_negative:
+                payload = {
+                    "sentiment": {
+                        "type": "negativo",
+                        "score": 0.2,
+                        "reasoning": "Deterministic rule: complaint detected",
+                    },
+                    "categorization": {
+                        "category": "feedback",
+                        "confidence": 0.9,
+                        "topics": ["feedback_negativo"],
+                        "entities": [],
+                    },
+                    "relevance": {"score": 0.3},
                 }
             elif has_testimonial:
                 payload = {
