@@ -615,6 +615,58 @@ def test_pip_06_degraded_analyses_counted_in_summary(tmp_path, caplog):
     assert "1/2 interacciones degradadas al default" in caplog.messages
 
 
+def test_o16_measures_tipo_vs_llm_category_disagreement(tmp_path, caplog):
+    # O-16: the fake LLM always answers category "otro", so two recognized
+    # `tipo`s disagree with it. The disagreement is measured and logged once;
+    # the routing precedence itself is unchanged.
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Dev 1",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo instalo Docker?",
+            },
+            {
+                "autor": "Dev 2",
+                "canal": "#logros",
+                "tipo": "testimonio",
+                "texto": "Conseguí mi primer empleo!",
+            },
+        ],
+    )
+    with caplog.at_level(logging.WARNING):
+        output = run_pipeline(source)
+
+    assert output.resumen_comunidad.tipos_discrepantes == 2
+    assert (
+        "2/2 interacciones con tipo y categoria del LLM discrepantes (O-16)"
+        in caplog.messages
+    )
+
+
+def test_o16_zero_when_tipo_not_recognized(tmp_path, caplog):
+    # `otro` is not a recognized `tipo`: the LLM category governs it, so there
+    # is no comparison and no aggregate warning.
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Ana",
+                "canal": "#general",
+                "tipo": "otro",
+                "texto": "Hola a todos.",
+            }
+        ],
+    )
+    with caplog.at_level(logging.WARNING):
+        output = run_pipeline(source)
+
+    assert output.resumen_comunidad.tipos_discrepantes == 0
+    assert not any("discrepantes (O-16)" in message for message in caplog.messages)
+
+
 def test_empty_messages_not_counted_as_degraded(tmp_path, caplog):
     # Empty/whitespace messages short-circuit before any LLM call: they are
     # not failures and must not be counted as degraded (issue #87).
