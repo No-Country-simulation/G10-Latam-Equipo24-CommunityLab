@@ -26,7 +26,7 @@ from src.utils.topics import rank_topics
 from dotenv import load_dotenv
 
 from src.analysis.unified_analyzer import GeminiUnifiedAnalyzer
-from src.decisions.engine import RuleBasedDecisionEngine
+from src.decisions.engine import RECOGNIZED_TYPES, RuleBasedDecisionEngine
 from src.domain.models import (
     ActionType,
     AnalysisComplete,
@@ -240,6 +240,21 @@ def _is_linkedin_decision(decision: DecisionResult) -> bool:
     return decision.action == ActionType.PUBLISH and decision.asset_type == AssetType.LINKEDIN
 
 
+def _disagrees_with_llm_category(
+    message: InputMessage, analysis: AnalysisComplete
+) -> bool:
+    """True when a recognized `tipo` disagrees with the LLM category (O-16).
+
+    Only compared where both values are available: the engine's recognized
+    `tipo` set (D-B) and a present categorization.
+    """
+    if message.tipo not in RECOGNIZED_TYPES:
+        return False
+    if analysis.categorization is None:
+        return False
+    return analysis.categorization.category != message.tipo
+
+
 def _first_target(
     results: List[_Result], predicate: Callable[[DecisionResult], bool]
 ) -> Optional[_Target]:
@@ -343,6 +358,21 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         1 for _, _, decision in results if decision.action == ActionType.CREAR_FAQ
     )
 
+    # Risk O-16: measure how often a recognized `tipo` disagrees with the LLM
+    # category. Measurement only: the engine keeps the `tipo` precedence (D-B)
+    # untouched. One aggregate warning, like the degraded one above.
+    tipos_discrepantes = sum(
+        1
+        for msg, analysis, _ in results
+        if _disagrees_with_llm_category(msg, analysis)
+    )
+    if tipos_discrepantes > 0:
+        logger.warning(
+            "%d/%d interacciones con tipo y categoria del LLM discrepantes (O-16)",
+            tipos_discrepantes,
+            len(results),
+        )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
@@ -350,6 +380,7 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         analisis_degradados=degraded,
         feedback_negativo=feedback_negativo,
         dudas_frecuentes=dudas_frecuentes,
+        tipos_discrepantes=tipos_discrepantes,
         distribucion_sentimiento=distribucion_sentimiento,
         temas_principales_conteo=temas_principales_conteo,
     )

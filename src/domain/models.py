@@ -170,6 +170,9 @@ class CommunitySummary(BaseModel):
     # How many messages triggered the FAQ suggestion rule (CREAR_FAQ). Additive:
     # the contract already exposes one suggestion; this counts the volume.
     dudas_frecuentes: int = 0
+    # How often a recognized `tipo` disagreed with the LLM category (risk O-16).
+    # Measurement only: routing precedence is unchanged. Additive via default.
+    tipos_discrepantes: int = 0
     # Option A (HU-S4-003): counts per SentimentType value across the analyzed
     # batch. Keys are the sentiment values ("positivo", "negativo", "neutral").
     # Additive via default_factory: an empty batch yields {}.
