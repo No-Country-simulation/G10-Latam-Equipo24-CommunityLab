@@ -143,6 +143,9 @@ Rutas:
   `content`, igual que el CSV). Responde 200 con
   `{status, resumen, activos, almacenamiento}`; 400 si el body es inválido;
   500 si el pipeline falla.
+- `POST /telegram`: recibe un Update de la Bot API de Telegram (Fase 1 del
+  webhook de Telegram, ver más abajo). Responde 200 con
+  `{status, ruta, update_id, resumen, activos, almacenamiento}`.
 - `GET /health`: 200 `{"status": "ok"}`.
 
 Cualquier otra ruta o método responde 404/405. El backend LLM lo decide
@@ -155,9 +158,12 @@ sobreescribirlo.
 python scripts/run_webhook.py                          # http://127.0.0.1:8765, backend auto
 python scripts/run_webhook.py --port 9000 --backend rule_based
 python scripts/run_webhook.py --backend ollama --model gemma4:31b
+python scripts/run_webhook.py --secret "mi-secret"     # habilita POST /telegram
 ```
 
 El server imprime ejemplos de curl al arrancar y se apaga con Ctrl-C (salida 0).
+`--secret` setea `TELEGRAM_WEBHOOK_SECRET` (también se puede exportar como
+variable de entorno); sin él, `POST /telegram` responde 503.
 
 ### Ejemplos con los datasets existentes
 
@@ -175,6 +181,58 @@ curl -X POST http://127.0.0.1:8765/ingest \
 # Chequeo de vida.
 curl http://127.0.0.1:8765/health
 ```
+
+### Webhook de Telegram (Fase 1)
+
+`POST /telegram` recibe un **Update** de la Bot API de Telegram, lo convierte
+en un `InputBatch` con `messages_to_batch` (`src/ingest/telegram.py`) y lo corre
+por el mismo helper `_run_with_batch` que `/ingest`. Es la Fase 1 del webhook de
+Telegram y hace tres cosas:
+
+1. Valida el header `X-Telegram-Bot-Api-Secret-Token` contra el secret
+   configurado en `TELEGRAM_WEBHOOK_SECRET` (comparación en tiempo constante).
+2. Deduplica por `update_id`: un update repetido responde 200 `duplicado` sin
+   volver a correr el pipeline (Telegram reintenta hasta recibir 2xx).
+3. Responde el resumen del pipeline, igual que `/ingest`, más `ruta` y
+   `update_id` para correlacionar.
+
+Es **fail closed**: si `TELEGRAM_WEBHOOK_SECRET` no está configurado, la ruta
+responde **503** y no acepta input. Si el header falta o no coincide, responde
+**401**. Un update sin contenido utilizable (sin `message`, sin texto o un
+comando que empieza con `/`) responde 200 `ignorado` y no corre el pipeline; un
+body que no sea JSON responde 400; otro método responde 405 con `Allow: POST`.
+
+**Alcance de la Fase 1:** el webhook **no se registra** con Telegram (no se
+llama a `setWebhook`) y el camino de polling (`getUpdates`) queda **sin
+cambios**. Se prueba localmente con `curl`, simulando un update:
+
+```bash
+export TELEGRAM_WEBHOOK_SECRET="mi-secret"
+python scripts/run_webhook.py --secret "$TELEGRAM_WEBHOOK_SECRET"
+
+curl -X POST http://127.0.0.1:8765/telegram \
+     -H 'Content-Type: application/json' \
+     -H 'X-Telegram-Bot-Api-Secret-Token: mi-secret' \
+     -d '{
+           "update_id": 100001,
+           "message": {
+             "message_id": 42,
+             "date": 1730000000,
+             "text": "Logré mi primer empleo como desarrolladora!",
+             "from": {"id": 111, "first_name": "Ana"},
+             "chat": {"id": -1001234567890, "type": "supergroup", "title": "Comunidad"}
+           }
+         }'
+```
+
+Repetir el `curl` con el mismo `update_id` devuelve `{"status": "duplicado", ...}`
+sin reprocesar.
+
+**Limitación conocida:** el pipeline corre **sincrónicamente** dentro del
+request. Una entrega real de Telegram debería recibir un 2xx rápido (Telegram
+reintenta si tarda o falla), por lo que mover el procesamiento a segundo plano
+es un tema de la Fase 2 (junto con registrar el webhook y exponer una URL
+pública).
 
 ### Convergencia
 

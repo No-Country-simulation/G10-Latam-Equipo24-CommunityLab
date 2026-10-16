@@ -4,10 +4,14 @@
 Uso:
     python scripts/run_webhook.py [--host 127.0.0.1] [--port 8765]
         [--backend auto|ollama|openai|gemini|rule_based] [--model gemma4:31b]
+        [--secret <token>]
 
 El backend se resuelve: `--backend` > COMMUNITYLAB_LLM_BACKEND (.env) >
-rule_based. `--model` setea OLLAMA_MODEL en el entorno. Ctrl-C apaga el server
-y sale con código 0.
+rule_based. `--model` setea OLLAMA_MODEL en el entorno. `--secret` setea
+TELEGRAM_WEBHOOK_SECRET, el secret que Telegram manda en el header
+`X-Telegram-Bot-Api-Secret-Token` al `POST /telegram` (Fase 1 del webhook de
+Telegram); sin él esa ruta responde 503. Ctrl-C apaga el server y sale con
+código 0.
 """
 
 from __future__ import annotations
@@ -28,7 +32,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Levanta el webhook HTTP de ingesta de CommunityLab "
-            "(POST /ingest, GET /health)."
+            "(POST /ingest, GET /health, POST /telegram)."
         )
     )
     parser.add_argument(
@@ -55,6 +59,13 @@ def main() -> int:
         "--model",
         help="Modelo Ollama; setea OLLAMA_MODEL en el entorno.",
     )
+    parser.add_argument(
+        "--secret",
+        help=(
+            "Secret del webhook de Telegram; setea TELEGRAM_WEBHOOK_SECRET. "
+            "Sin él, POST /telegram responde 503."
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -64,6 +75,8 @@ def main() -> int:
     load_dotenv(REPO_ROOT / ".env")
     if args.model:
         os.environ["OLLAMA_MODEL"] = args.model
+    if args.secret:
+        os.environ["TELEGRAM_WEBHOOK_SECRET"] = args.secret
 
     sys.path.insert(0, str(REPO_ROOT))
     from src.ingest.webhook import apply_backend, make_server  # noqa: E402
@@ -91,6 +104,15 @@ def main() -> int:
         "\"texto\":\"Logré mi primer empleo como desarrolladora!\"}]'"
     )
     print(f"  curl http://{host}:{port}/health")
+    print("  # POST /telegram (Fase 1): requiere --secret / TELEGRAM_WEBHOOK_SECRET")
+    print(f"  curl -X POST http://{host}:{port}/telegram \\")
+    print("       -H 'Content-Type: application/json' \\")
+    print("       -H 'X-Telegram-Bot-Api-Secret-Token: <secret>' \\")
+    print(
+        "       -d '{\"update_id\":1,\"message\":{\"message_id\":1,"
+        "\"date\":1730000000,\"text\":\"Hola comunidad\","
+        "\"from\":{\"first_name\":\"Ana\"},\"chat\":{\"id\":-1001234567890}}}'"
+    )
     print("=" * 68)
     print("Ctrl-C para apagar el server.")
 
