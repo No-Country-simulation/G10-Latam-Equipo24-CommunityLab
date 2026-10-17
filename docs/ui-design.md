@@ -7,7 +7,7 @@
 
 ## 🎯 DIRECCIÓN DE DISEÑO
 
-**Estilo visual:** Professional pero cercano. Community-first. Debe sentirse como una herramienta de trabajo que los community managers quieran usar todos los días.
+**Estilo visual:** Profesional pero cercano. Community-first, con una identidad azul profundo, turquesa y violeta, sobre superficies limpias y legibles.
 
 **Analogía:** Piensa en un CRM simple pero poderoso. Como Notion meets Mailchimp. Limpio, espacioso, con información clara.
 
@@ -25,23 +25,31 @@
 
 | Elemento | Color | Hex | Uso |
 |----------|-------|-----|-----|
-| **Background** | Blanco cálido | `#FAFAF9` | Fondo general |
+| **Background** | Gris azulado claro | `#F4F7FB` | Fondo general |
 | **Surface** | Blanco puro | `#FFFFFF` | Tarjetas, paneles, modales |
-| **Text primary** | Gris oscuro | `#1C1917` | Títulos, texto principal |
-| **Text secondary** | Gris medio | `#78716C` | Descripciones, subtítulos |
-| **Border** | Gris claro | `#E7E5E4` | Bordes de tarjetas, inputs |
+| **Text primary** | Gris oscuro | `#1E2A3A` | Títulos, texto principal |
+| **Text secondary** | Azul grisáceo | `#52657C` | Descripciones, subtítulos |
+| **Border** | Gris azulado | `#DCE5EF` | Bordes de tarjetas, inputs |
 
 ### Brand colors (CommunityLab)
 
 | Color | Hex | Significado | Uso |
 |-------|-----|-------------|-----|
-| **Primary** | Verde bosque `#166534` | Comunidad, crecimiento | Botones principales, links activos, sidebar |
-| **Primary hover** | Verde oscuro `#14532D` | Hover states | Hover de botones |
-| **Secondary** | Dorado `#B45309` | Éxito, testimonios | Badges, estadísticas positivas, highlights |
-| **Accent** | Azul claro `#0369A1` | Información, datos | Links secundarios, info tooltips |
+| **Azul profundo** | `#0B2D4A` | Confianza, estabilidad, profesionalismo | Títulos, navegación y superficies oscuras |
+| **Turquesa** | `#00C2AB` | Colaboración, conexión, crecimiento | Acciones, acentos y elementos destacados |
+| **Violeta** | `#7C3AED` | Innovación, tecnología, creatividad | Gradientes, estados y gráficos |
+| **Gris claro** | `#F4F7FB` | Fondo de la aplicación | Fondo general y espacios de trabajo |
+| **Gris oscuro** | `#1E2A3A` | Lectura y jerarquía | Texto principal y descripciones |
 | **Danger** | Rojo `#DC2626` | Alertas, riesgo, error | Alertas de riesgo, errores, reject |
 | **Warning** | Amarillo `#D97706` | Preocupación moderada | Advertencias, pendientes |
 | **Success** | Verde `#16A34A` | Éxito, aprobado | Aprobación, aprobado, positivo |
+
+### Logos oficiales
+
+Las variantes aprobadas se guardan en `src/interface/assets/branding/`. El logo
+principal aparece en el encabezado sobre una superficie clara para conservar el
+contraste; el isotipo se usa como icono de la pestaña y la versión monocromática
+queda disponible para contextos donde corresponda.
 
 ### Sentimiento (para gráficos y badges)
 
@@ -51,15 +59,15 @@
 | Negativo | Rojo | `#EF4444` |
 | Neutral | Gris | `#94A3B8` |
 
-### Dark mode (opcional, Sprint 4+)
+### Modo oscuro
 
 | Elemento | Color | Hex |
 |----------|-------|-----|
-| Background | Gris muy oscuro | `#0C0A09` |
-| Surface | Gris oscuro | `#1C1917` |
-| Text primary | Blanco cálido | `#FAFAF9` |
-| Text secondary | Gris medio oscuro | `#A8A29E` |
-| Border | Gris oscuro claro | `#292524` |
+| Background | Azul noche | `#0B1728` |
+| Surface | Azul profundo | `#13283E` |
+| Text primary | Gris claro | `#F4F7FB` |
+| Text secondary | Azul grisáceo claro | `#A5B5C7` |
+| Border | Azul grisáceo oscuro | `#29435C` |
 
 ---
 
