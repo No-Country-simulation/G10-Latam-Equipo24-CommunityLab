@@ -1,0 +1,151 @@
+autor,canal,tipo,texto
+Ramiro,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Diego,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Mariana,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Carlos,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Mariana,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Luciana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Valentina,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Luciana,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Mariana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Carlos,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Diego,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Elena,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Federico,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Federico,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Diego,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Mariana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Federico,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Valentina,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Luciana,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Elena,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Elena,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Elena,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Ana,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Luciana,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Mariana,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Carlos,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Federico,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Ana,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Diego,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Elena,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Luciana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Ana,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Federico,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Carlos,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Valentina,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Ramiro,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ana,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Valentina,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Mariana,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Valentina,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Ramiro,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Valentina,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Mariana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Mariana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Ramiro,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Federico,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Mariana,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Ramiro,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Valentina,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Valentina,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Valentina,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Jorge,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Elena,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Jorge,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Luciana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Federico,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Carlos,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Luciana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Jorge,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Luciana,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Elena,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Diego,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Ana,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Jorge,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Mariana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Valentina,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Elena,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Mariana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Luciana,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Jorge,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Luciana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ramiro,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Federico,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Elena,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Luciana,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Elena,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Valentina,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Ana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Diego,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Jorge,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ramiro,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Mariana,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Federico,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Elena,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Ramiro,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Federico,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Luciana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Valentina,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Ana,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Luciana,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Luciana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Ramiro,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Valentina,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Ana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Carlos,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Luciana,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Luciana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Mariana,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Mariana,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Ramiro,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Elena,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Mariana,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Valentina,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Elena,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Luciana,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Diego,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Diego,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Jorge,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Luciana,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Luciana,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Ana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Federico,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Carlos,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Diego,ayuda,pregunta_tecnica,¿Cómo conecto el backend con una base de datos en la nube?
+Ramiro,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Valentina,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Elena,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Ana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Diego,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Elena,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Ramiro,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Jorge,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Federico,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Luciana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Luciana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Federico,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Valentina,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Valentina,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Valentina,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Ramiro,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ramiro,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Elena,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Luciana,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Diego,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Mariana,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Carlos,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Federico,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Federico,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Ramiro,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Ana,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Jorge,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Diego,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Ana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Elena,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Luciana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.

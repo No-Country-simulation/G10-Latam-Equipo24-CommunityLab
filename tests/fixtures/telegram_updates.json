@@ -1,0 +1,97 @@
+{
+  "ok": true,
+  "result": [
+    {
+      "update_id": 1001,
+      "message": {
+        "message_id": 41,
+        "from": {
+          "id": 111,
+          "is_bot": false,
+          "first_name": "Mariana",
+          "last_name": "Souza",
+          "username": "marisou"
+        },
+        "chat": {
+          "id": -1001234567890,
+          "title": "CommunityLab ONE",
+          "type": "supergroup"
+        },
+        "date": 1735689600,
+        "text": "https://example.com/empleo Conseguí mi primer empleo, gracias a la comunidad!",
+        "entities": [
+          {
+            "offset": 0,
+            "length": 26,
+            "type": "url"
+          }
+        ]
+      }
+    },
+    {
+      "update_id": 1002,
+      "message": {
+        "message_id": 42,
+        "from": {
+          "id": 222,
+          "is_bot": false,
+          "first_name": "Carlos",
+          "username": "carlosdev"
+        },
+        "chat": {
+          "id": -1001234567890,
+          "title": "CommunityLab ONE",
+          "type": "supergroup"
+        },
+        "date": 1735689660,
+        "text": "El pipeline offline corrió perfecto en mi máquina."
+      }
+    },
+    {
+      "update_id": 1003,
+      "message": {
+        "message_id": 43,
+        "from": {
+          "id": 333,
+          "is_bot": false,
+          "first_name": "Luciana",
+          "username": "lu"
+        },
+        "chat": {
+          "id": -1001234567890,
+          "title": "CommunityLab ONE",
+          "type": "supergroup"
+        },
+        "date": 1735689720,
+        "photo": [
+          {
+            "file_id": "abc123",
+            "file_unique_id": "uniq123",
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      }
+    },
+    {
+      "update_id": 1004,
+      "message": {
+        "message_id": 44,
+        "from": {
+          "id": 111,
+          "is_bot": false,
+          "first_name": "Mariana",
+          "last_name": "Souza",
+          "username": "marisou"
+        },
+        "chat": {
+          "id": -1001234567890,
+          "title": "CommunityLab ONE",
+          "type": "supergroup"
+        },
+        "date": 1735689780,
+        "text": "/start"
+      }
+    }
+  ]
+}

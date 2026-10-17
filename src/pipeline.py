@@ -36,9 +36,11 @@ from src.domain.models import (
     DistributionAssets,
     InputBatch,
     InputMessage,
+    LinkedInCandidate,
     OCIStorage,
     OutputBatch,
     SentimentType,
+    TopicFrequency,
 )
 from src.generators.base import BaseGenerator
 from src.generators.faq import FAQGenerator
@@ -69,6 +71,10 @@ _SNAPSHOT_DIR = Path("storage") / "activos"
 # Maximum number of topics exposed in `temas_principales` (issue #87): the
 # single place to change the cap.
 _MAX_TOPICS = 5
+
+# Option A (HU-S4-003): maximum number of topics exposed with their counts in
+# `temas_principales_conteo`. The single place to change the cap.
+_TOP_TOPICS_COUNTED = 10
 
 # Presentation phrase for `sentimiento_predominante` (decision B, issue #87):
 # the PDF example shows a phrase, not the raw enum value. The single place to
@@ -146,17 +152,66 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     newsletter_gen = NewsletterGenerator(client=llm)
     faq_gen = FAQGenerator(client=llm)
 
-    linkedin_target = _first_target(results, _is_linkedin_decision)
+    all_linkedin_targets = [
+        (msg, analysis)
+        for msg, analysis, decision in results
+        if _is_linkedin_decision(decision)
+    ]
+    linkedin_target = all_linkedin_targets[0] if all_linkedin_targets else None
     newsletter_target = linkedin_target or _first_target(
         results,
         lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
     faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
+    # Published post and weekly highlight stay single assets (backward
+    # compatible): the published post is the FIRST target, and the newsletter
+    # comes from that same testimonio (falling back to the first interaction
+    # that is neither discarded nor derived to a human).
+    post_linkedin = _run(linkedin_gen, linkedin_target)
+    destaque_newsletter = _run(newsletter_gen, newsletter_target)
+
+    # Option A: one candidate per publishable testimonio, in batch order, so the
+    # UI can offer a manual selector. "Grande": each candidate carries its FULL
+    # post and its own newsletter highlight, so the selector swaps every field.
+    # The FIRST target reuses the published post/highlight generated above, so
+    # the first candidate can never diverge from the published copy (a
+    # non-deterministic LLM would otherwise answer differently on a second
+    # call).
+    candidatos = []
+    for index, (msg, analysis) in enumerate(all_linkedin_targets):
+        if index == 0:
+            post = post_linkedin
+            newsletter = destaque_newsletter
+        else:
+            post = _run(linkedin_gen, (msg, analysis))
+            newsletter = _run(newsletter_gen, (msg, analysis))
+        if post is None:
+            continue
+        relevancia = (
+            analysis.relevance.score if analysis.relevance is not None else 0.0
+        )
+        candidatos.append(
+            LinkedInCandidate(
+                autor=msg.autor,
+                canal=msg.canal,
+                texto_original=msg.texto,
+                relevancia=relevancia,
+                copy=post.copy,
+                titulo=post.titulo,
+                canal_recomendado=post.canal_recomendado,
+                potencial_engagement=post.potencial_engagement,
+                newsletter_seccion=newsletter.seccion if newsletter else "",
+                newsletter_titular=newsletter.titular if newsletter else "",
+                newsletter_resumen=newsletter.resumen if newsletter else "",
+            )
+        )
+
     return DistributionAssets(
-        post_linkedin=_run(linkedin_gen, linkedin_target),
-        destaque_newsletter_semanal=_run(newsletter_gen, newsletter_target),
+        post_linkedin=post_linkedin,
+        destaque_newsletter_semanal=destaque_newsletter,
         sugerencia_contenido_faq=_run(faq_gen, faq_target),
+        candidatos_post_linkedin=candidatos,
     )
 
 
@@ -192,6 +247,21 @@ def _run(
     return asset
 
 
+def _ranked_topics(
+    topics: List[str], top_n: int = _TOP_TOPICS_COUNTED
+) -> List[TopicFrequency]:
+    """Top topics ranked by frequency with their counts (Option A, HU-S4-003).
+
+    Reuses `rank_topics` so `temas_principales` and `temas_principales_conteo`
+    share normalization (plural singularization), the alphabetical tie-break
+    and the ordering. Frequency descending; capped at `top_n`.
+    """
+    return [
+        TopicFrequency(tema=topic, conteo=count)
+        for topic, count in rank_topics(topics, top_n=top_n)
+    ]
+
+
 def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
     """Builds the community summary from the batch's analysis results."""
     sentiments = [
@@ -199,12 +269,20 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         for _, analysis, _ in results
         if analysis.sentiment is not None
     ]
+    # Option A (HU-S4-003): one Counter feeds both the predominant label and
+    # the per-value distribution, so the two can never disagree. Every analyzed
+    # message with a sentiment counts, including degraded fallbacks (NEUTRO).
+    sentiment_counts = Counter(sentiments)
     predominant_value = (
-        Counter(sentiments).most_common(1)[0][0]
+        sentiment_counts.most_common(1)[0][0]
         if sentiments
         else SentimentType.NEUTRO
     )
     predominant = _SENTIMENT_PHRASES[predominant_value]
+    distribucion_sentimiento = {
+        sentiment.value: count
+        for sentiment, count in sentiment_counts.items()
+    }
 
     all_topics = [
         topic
@@ -218,6 +296,9 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         topic
         for topic, _ in rank_topics(all_topics, top_n=_MAX_TOPICS)
     ]
+
+    # Option A (HU-S4-003): the same ranking, with counts, capped at 10.
+    temas_principales_conteo = _ranked_topics(all_topics)
 
     # Analyses that fell back to the safe default because of an LLM failure
     # (issue #87): expose the count and log one aggregate warning.
@@ -235,12 +316,22 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         1 for _, _, decision in results if decision.action == ActionType.DERIVAR
     )
 
+    # Technical questions routed to the FAQ rule (R2, CREAR_FAQ): the contract
+    # only materializes ONE suggestion, but every matching decision is a FAQ
+    # candidate asset. Count them for the assets-by-type summary.
+    dudas_frecuentes = sum(
+        1 for _, _, decision in results if decision.action == ActionType.CREAR_FAQ
+    )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
         temas_principales=topics,
         analisis_degradados=degraded,
         feedback_negativo=feedback_negativo,
+        dudas_frecuentes=dudas_frecuentes,
+        distribucion_sentimiento=distribucion_sentimiento,
+        temas_principales_conteo=temas_principales_conteo,
     )
 
 

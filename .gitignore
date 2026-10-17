@@ -41,3 +41,6 @@ opencode.json
 /secrets
 # Local OCI fallback snapshots (S3-005)
 /storage
+
+# Local CodeGraph index (machine-specific)
+.codegraph/

@@ -1,0 +1,91 @@
+autor,canal,tipo,texto
+Luciana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Carlos,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Federico,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Federico,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Elena,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Mariana,ayuda,pregunta_tecnica,¿Cómo valido un token JWT en una API con FastAPI?
+Valentina,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Elena,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Valentina,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Valentina,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Mariana,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Luciana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Carlos,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Federico,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Mariana,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Ramiro,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Ramiro,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Carlos,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Federico,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Luciana,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Elena,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Ramiro,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Mariana,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Federico,feedback,feedback,La demo de la semana pasada terminó apurada y no hubo espacio para preguntas.
+Carlos,ayuda,pregunta_tecnica,¿Cómo manejo variables de entorno sin exponer las claves?
+Federico,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Elena,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Mariana,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Carlos,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Diego,ayuda,pregunta_tecnica,"Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser."
+Ramiro,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Ramiro,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Valentina,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Carlos,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Valentina,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Federico,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Federico,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Diego,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Luciana,ayuda,pregunta_tecnica,¿Cuál es la mejor forma de estructurar un proyecto grande en Python?
+Jorge,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Mariana,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Ana,general,logro,Migré mi aplicación de pruebas a OCI y quedó funcionando de entrada.
+Jorge,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Valentina,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Elena,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Mariana,general,testimonio,Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.
+Ana,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Valentina,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Carlos,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Federico,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Valentina,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Luciana,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Elena,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Jorge,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Carlos,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Ana,ayuda,pregunta_tecnica,¿Conviene migrar el servidor o empezar de cero en la nube?
+Ramiro,general,discusion,¿Hacen un tutorial de autenticación con OAuth para el próximo encuentro?
+Diego,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Jorge,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
+Luciana,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Ramiro,ayuda,pregunta_tecnica,"El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?"
+Ramiro,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Elena,feedback,feedback,"El encuentro del sábado fue confuso, no se explicaron los objetivos de las actividades."
+Federico,feedback,feedback,La mentoría individual me sirvió muchísimo para ordenar el proyecto.
+Elena,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Federico,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Mariana,ayuda,pregunta_tecnica,El pipeline de CI falla por un error de dependencias y no entiendo el log.
+Carlos,general,testimonio,Quedé seleccionado para el puesto junior que recomendaron en la comunidad.
+Jorge,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Elena,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Ramiro,general,logro,Aprobé la certificación de la nube y lo festejo con el grupo.
+Carlos,ayuda,pregunta_tecnica,¿Cómo conecto el backend con una base de datos en la nube?
+Ana,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Diego,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Carlos,ayuda,pregunta_tecnica,¿Qué pasos sigo para desplegar un contenedor en OCI?
+Ramiro,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Jorge,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Luciana,general,discusion,Gracias por el tutorial de CI/CD: pude automatizar las pruebas del proyecto.
+Valentina,ayuda,pregunta_tecnica,¿Cuál es la diferencia entre una clase y una función en Python?
+Ana,feedback,feedback,"El taller de portafolios estuvo muy bueno, me llevé ideas concretas."
+Ana,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Jorge,general,discusion,"El tutorial de despliegue con Docker me ahorró un día entero, muy claro."
+Federico,general,logro,Publicaron mi proyecto en el newsletter de la comunidad.
+Jorge,ayuda,pregunta_tecnica,"El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?"
+Valentina,feedback,feedback,Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.
+Carlos,feedback,feedback,El canal de ayuda quedó sin respuestas varias horas y no hay un plan B.
+Valentina,general,testimonio,El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.
+Ana,ayuda,pregunta_tecnica,¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?
+Elena,general,testimonio,Terminé el bootcamp y ya estoy aplicando a vacantes con mi portafolio.
