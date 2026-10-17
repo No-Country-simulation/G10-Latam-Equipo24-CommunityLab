@@ -65,6 +65,29 @@ def test_delimiter_is_autodetected(tmp_path, sep):
     assert len(batch.interacciones) == 2
 
 
+@pytest.mark.parametrize(
+    "header, sep",
+    [
+        # CSV de Excel con ";": una celda citada con tantas comas como
+        # columnas no debe hacer que se elija la coma.
+        ('"nota, a, b, c, d";autor;canal;tipo;texto', ";"),
+        # Caso simétrico: CSV de comas con un ";" citado de más.
+        ('"nota; a; b; c; d; e",autor,canal,tipo,texto', ","),
+    ],
+)
+def test_quoted_header_cells_do_not_confuse_delimiter(tmp_path, header, sep):
+    rows = [
+        header,
+        sep.join(["ana", "general", TIPO, "hola", "extra"]),
+        sep.join(["luis", "general", TIPO, "que tal", "extra"]),
+    ]
+    path = _write(tmp_path, "\n".join(rows) + "\n")
+
+    batch = CSVInputLoader().load_batch(str(path))
+
+    assert len(batch.interacciones) == 2
+
+
 def test_english_aliases_with_comma(tmp_path):
     content = (
         "author,channel,tipo,content\n"

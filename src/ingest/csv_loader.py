@@ -29,6 +29,18 @@ _ENCODINGS = ("utf-8-sig", "cp1252")
 _DELIMITERS = ",;\t"
 
 
+def _count_outside_quotes(text: str, separator: str) -> int:
+    """Cuenta `separator` ignorando los que caen dentro de comillas."""
+    count = 0
+    in_quotes = False
+    for char in text:
+        if char == '"':
+            in_quotes = not in_quotes
+        elif char == separator and not in_quotes:
+            count += 1
+    return count
+
+
 class CSVInputLoader:
     """Carga un lote de interacciones desde un CSV (solo stdlib, sin pandas).
 
@@ -151,10 +163,22 @@ class CSVInputLoader:
     
     @staticmethod
     def _detect_delimiter(sample: str) -> str:
-        """Elige el delimitador más frecuente en la línea de encabezado."""
+        """Elige el delimitador más frecuente en la línea de encabezado.
+
+        Solo cuenta las apariciones fuera de celdas citadas: contar el
+        carácter a ciegas falla cuando el encabezado trae el otro
+        separador adentro de comillas
+        (``"nota, a, b, c, d";autor;canal;tipo;texto``), donde las comas
+        internas empatan con los punto y coma reales y ganaría la coma
+        por orden en ``_DELIMITERS``.
+        """
         header = sample.splitlines()[0] if sample else ""
-        best = max(_DELIMITERS, key=header.count)
-        return best if header.count(best) else ","
+        best_sep, best_count = ",", 0
+        for sep in _DELIMITERS:
+            count = _count_outside_quotes(header, sep)
+            if count > best_count:
+                best_sep, best_count = sep, count
+        return best_sep
 
     # [Mejora 3] Descartar la clave None (celdas sobrantes) y tolerar filas
     # cortas.
