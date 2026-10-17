@@ -270,6 +270,52 @@ def test_technical_question_generates_faq_from_decision():
     assert faq.status == "derivado_a_mentoria"
 
 
+class CountingFAQClient(FakeLLMClient):
+    """Counts FAQ generator calls to prove candidates add no LLM request."""
+
+    def __init__(self):
+        self.faq_calls = 0
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        if "TEMA de una FAQ" in prompt:
+            self.faq_calls += 1
+        return super().generate(prompt, **kwargs)
+
+
+def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, tmp_path):
+    # N technical questions -> len(candidatos_faq) == N, and the FAQ generator
+    # runs EXACTLY ONCE (the single `sugerencia_contenido_faq`): listing the
+    # candidates must not add an LLM call.
+    client = CountingFAQClient()
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": f"Dev {numero}",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": f"¿Cómo configuro el paso {numero}?",
+            }
+            for numero in range(1, 4)
+        ],
+    )
+    output = run_pipeline(source)
+    assets = output.activos_distribucion_generados
+
+    candidatos = assets.candidatos_faq
+    assert len(candidatos) == 3
+    assert [c.autor for c in candidatos] == ["Dev 1", "Dev 2", "Dev 3"]
+    assert all(c.relevancia == 0.9 for c in candidatos)
+
+    # The single materialized suggestion still works, generated only once.
+    assert assets.sugerencia_contenido_faq is not None
+    assert client.faq_calls == 1
+    # `dudas_frecuentes` stays the count of CREAR_FAQ decisions.
+    assert output.resumen_comunidad.dudas_frecuentes == 3
+
+
 def test_negative_testimonial_is_not_published(tmp_path):
     # The DECISION drives generation, not `tipo`: a testimonio whose analysis
     # says negativo must not produce a LinkedIn post nor a newsletter.
@@ -343,6 +389,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "destaque_newsletter_semanal",
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
+        "candidatos_faq",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 
@@ -566,6 +613,58 @@ def test_pip_06_degraded_analyses_counted_in_summary(tmp_path, caplog):
     assert output.status == "exito"
     assert output.resumen_comunidad.analisis_degradados == 1
     assert "1/2 interacciones degradadas al default" in caplog.messages
+
+
+def test_o16_measures_tipo_vs_llm_category_disagreement(tmp_path, caplog):
+    # O-16: the fake LLM always answers category "otro", so two recognized
+    # `tipo`s disagree with it. The disagreement is measured and logged once;
+    # the routing precedence itself is unchanged.
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Dev 1",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo instalo Docker?",
+            },
+            {
+                "autor": "Dev 2",
+                "canal": "#logros",
+                "tipo": "testimonio",
+                "texto": "Conseguí mi primer empleo!",
+            },
+        ],
+    )
+    with caplog.at_level(logging.WARNING):
+        output = run_pipeline(source)
+
+    assert output.resumen_comunidad.tipos_discrepantes == 2
+    assert (
+        "2/2 interacciones con tipo y categoria del LLM discrepantes (O-16)"
+        in caplog.messages
+    )
+
+
+def test_o16_zero_when_tipo_not_recognized(tmp_path, caplog):
+    # `otro` is not a recognized `tipo`: the LLM category governs it, so there
+    # is no comparison and no aggregate warning.
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Ana",
+                "canal": "#general",
+                "tipo": "otro",
+                "texto": "Hola a todos.",
+            }
+        ],
+    )
+    with caplog.at_level(logging.WARNING):
+        output = run_pipeline(source)
+
+    assert output.resumen_comunidad.tipos_discrepantes == 0
+    assert not any("discrepantes (O-16)" in message for message in caplog.messages)
 
 
 def test_empty_messages_not_counted_as_degraded(tmp_path, caplog):
