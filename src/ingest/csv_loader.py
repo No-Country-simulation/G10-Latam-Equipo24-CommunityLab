@@ -22,10 +22,10 @@ _REQUIRED_HEADERS = {
 }
 
 # [Mejora 5] codificaciones a probar, en orden. utf-8-sig tolera el BOM de
-# Exel; cp1252 cubre los csv exportados desde Exel en Windows.
+# Excel; cp1252 cubre los csv exportados desde Excel en Windows.
 _ENCODINGS = ("utf-8-sig", "cp1252")
 
-# [Mejora 1] Delimitadores aceptados (EXEL en español usa ";").
+# [Mejora 1] Delimitadores aceptados (Excel en español usa ";").
 _DELIMITERS = ",;\t"
 
 
@@ -111,12 +111,10 @@ class CSVInputLoader:
             # [Mejora 1] Detectar el delimitador con una muestra.
             sample = handle.read(4096)
             handle.seek(0)
-            try:
-                dialect = csv.Sniffer().sniff(sample, delimiters=_DELIMITERS)
-            except csv.Error:
-                dialect = csv.excel
+            reader = csv.DictReader(
+                handle, delimiter=self._detect_delimiter(sample)
+            )
 
-            reader = csv.DictReader(handle, dialect=dialect)
             if reader.fieldnames is None:
                 raise ValueError(f"CSV vacío sin encabezados: {path.name}")
 
@@ -151,6 +149,13 @@ class CSVInputLoader:
             raise ValueError(f"CSV vacío sin filas de datos: {path.name}")
         return rows
     
+    @staticmethod
+    def _detect_delimiter(sample: str) -> str:
+        """Elige el delimitador más frecuente en la línea de encabezado."""
+        header = sample.splitlines()[0] if sample else ""
+        best = max(_DELIMITERS, key=header.count)
+        return best if header.count(best) else ","
+
     # [Mejora 3] Descartar la clave None (celdas sobrantes) y tolerar filas
     # cortas.
     @staticmethod
