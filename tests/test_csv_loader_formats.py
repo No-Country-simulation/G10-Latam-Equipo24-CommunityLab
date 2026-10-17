@@ -1,15 +1,8 @@
-"""Tests de formatos y casos borde del CSVInputLoader.
-
-Complementan los tests existentes (casos negativos y pipeline punta a punta)
-con los caminos de Excel: encoding, BOM, delimitadores y filas irregulares.
-"""
 import pytest
 
-# AJUSTA esta ruta al módulo real del loader.
 from src.ingest.csv_loader import CSVInputLoader
 
-# AJUSTA si el normalizer solo acepta ciertos valores de "tipo".
-TIPO = "post"
+TIPO = "feedback"
 
 
 def _write(tmp_path, content, encoding="utf-8", name="datos.csv"):
@@ -17,9 +10,6 @@ def _write(tmp_path, content, encoding="utf-8", name="datos.csv"):
     path = tmp_path / name
     path.write_bytes(content.encode(encoding))
     return path
-
-
-# ---------------------------------------------------------------- encoding
 
 
 def test_utf8_bom_is_tolerated(tmp_path):
@@ -60,9 +50,6 @@ def test_undecodable_file_raises_clear_error(tmp_path):
         CSVInputLoader().load_batch(str(path))
 
 
-# -------------------------------------------------------------- delimitador
-
-
 @pytest.mark.parametrize("sep", [";", "\t", ","])
 def test_delimiter_is_autodetected(tmp_path, sep):
     rows = [
@@ -89,9 +76,6 @@ def test_english_aliases_with_comma(tmp_path):
     batch = CSVInputLoader().load_batch(str(path))
 
     assert len(batch.interacciones) == 2
-
-
-# ------------------------------------------------------------ encabezados
 
 
 def test_headers_are_normalized(tmp_path):
@@ -127,9 +111,6 @@ def test_missing_required_header_raises(tmp_path):
 
     with pytest.raises(ValueError, match="tipo"):
         CSVInputLoader().load_batch(str(path))
-
-
-# ------------------------------------------------------- filas irregulares
 
 
 def test_short_row_does_not_crash(tmp_path):
@@ -178,9 +159,6 @@ def test_normalization_error_reports_row_number(tmp_path, monkeypatch):
     # Encabezado = fila 1, así que "luis" es la fila 3 del archivo.
     with pytest.raises(ValueError, match=r"datos\.csv, fila 3: boom"):
         loader.load_batch(str(path))
-
-
-# ---------------------------------------------------------------- envelope
 
 
 def test_envelope_default_uses_file_stem(tmp_path):
