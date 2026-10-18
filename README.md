@@ -89,6 +89,14 @@ flowchart TB
 - `duda_tecnica` es alias de `pregunta_tecnica`; `comentario_general` y `pregunta_general` mapean a `otro`.
 - Ante fallo del LLM, el analizador devuelve un default seguro (neutral + `otro` + relevancia 0) y **nunca crashea**.
 
+## 🔄 CI/CD
+
+El repositorio cuenta con un pipeline de integración continua en [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+- **Tests**: `pytest tests/ -v`
+- **Linting**: `flake8 src/` con `max-line-length=100` e ignores definidos en el workflow.
+- **Diagrama de flujo y detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
+
 ---
 
 ## 📁 Estructura del proyecto
@@ -161,13 +169,35 @@ python3 -m pytest tests/ -q
 
 ## 📚 Documentación
 
-- [Arquitectura](docs/arquitectura.md)
-- [Deploy y OCI](docs/deploy.md)
-- [Análisis de datasets](docs/analisis_datasets.md)
-- [Fichas de historias de usuario](docs/fichas-historias-usuario.md)
-- [UI design](docs/ui-design.md)
-- [Checklist de review](docs/review-checklist.md)
-- [Guía de contribución](CONTRIBUTING.md)
+- **Arquitectura & Diseño**
+  - [Arquitectura](docs/arquitectura.md)
+  - [Arquitectura técnica](docs/arquitectura-tecnica/)
+  - [Decisiones y contrato](docs/decisiones-contrato.md)
+  - [Registro de decisiones (ADR)](docs/DECISIONS.md)
+
+- **DevOps / CI-CD / Deploy**
+  - [Pipeline CI](docs/pipeline-ci.md)
+  - [Deploy y OCI](docs/deploy.md)
+  - [Workflow Git](docs/git-workflow.md)
+
+- **Datos, LLM y Testing**
+  - [Análisis de datasets](docs/analisis_datasets.md)
+  - [Ingesta](docs/ingesta.md)
+  - [Pipeline LLM](docs/llm-pipeline.md)
+  - [Pruebas](docs/pruebas/)
+
+- **UX, Historias y Gestión**
+  - [Fichas de historias de usuario](docs/fichas-historias-usuario.md)
+  - [Fichas de nuevo compañero](docs/fichas-nuevo-compañero.md)
+  - [UI design](docs/ui-design.md)
+  - [Mockups](docs/mockups/README.md)
+  - [Demo](docs/demo.md)
+  - [Checklist de review](docs/review-checklist.md)
+  - [Sprint 1](docs/sprint-1/)
+  - [Templates](docs/templates/)
+
+- **Contribución**
+  - [Guía de contribución](CONTRIBUTING.md)
 
 ---
 

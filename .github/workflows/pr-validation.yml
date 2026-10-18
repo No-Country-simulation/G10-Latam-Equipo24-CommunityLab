@@ -1,0 +1,40 @@
+name: PR Validation
+
+on:
+  pull_request:
+    # labeled/unlabeled hacen que el check se re-evalue cuando se tocan
+    # los labels, así un PR puede pasar a verde sin tocar código.
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  type-label:
+    name: Check PR Has type:* Label
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check exactly one type:* label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          labels="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels \
+            --jq '[.labels[].name | select(startswith("type:"))] | join(",")')"
+
+          if [ -z "$labels" ]; then
+            echo "::error::El PR no tiene ningún label type:*. Agregá exactamente uno de: type:bug, type:feature, type:docs, type:refactor, type:chore."
+            exit 1
+          fi
+
+          count="$(awk -F, '{print NF}' <<< "$labels")"
+
+          if [ "$count" -gt 1 ]; then
+            echo "::error::El PR tiene $count labels type:* ($labels). Debe tener exactamente uno."
+            exit 1
+          fi
+
+          echo "OK: un solo label type:* ($labels)."
