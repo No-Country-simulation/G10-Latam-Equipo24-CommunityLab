@@ -4,10 +4,13 @@
 #
 # Uso:
 #   scripts/run_webhook_tunnel.sh start    # server + túnel + setWebhook (default)
+#   scripts/run_webhook_tunnel.sh restart  # reinicia el server y re-registra, sin tocar el túnel
 #   scripts/run_webhook_tunnel.sh status   # qué está corriendo y qué ve Telegram
 #   scripts/run_webhook_tunnel.sh stop     # apaga túnel y server
 #
-# Variables opcionales: WEBHOOK_PORT (8765) y WEBHOOK_BACKEND (rule_based).
+# Variables opcionales: WEBHOOK_PORT (8765) y WEBHOOK_BACKEND (auto, que usa el
+# COMMUNITYLAB_LLM_BACKEND de .env; poné WEBHOOK_BACKEND=rule_based para un
+# demo sin red y sin key).
 #
 # Por qué existe: el túnel rápido de Cloudflare genera una URL distinta en cada
 # arranque y Telegram exige HTTPS con un certificado válido (no acepta
@@ -23,7 +26,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 PORT="${WEBHOOK_PORT:-8765}"
-BACKEND="${WEBHOOK_BACKEND:-rule_based}"
+# "auto" = dejar que run_webhook.py resuelva desde .env (COMMUNITYLAB_LLM_BACKEND).
+BACKEND="${WEBHOOK_BACKEND:-auto}"
 PYTHON="$ROOT/venv/bin/python"
 CLOUDFLARED="${CLOUDFLARED:-$HOME/.local/bin/cloudflared}"
 ENV_FILE="$ROOT/.env"
@@ -42,14 +46,29 @@ env_val() {
 print(dotenv_values(sys.argv[1]).get(sys.argv[2]) or "")' "$ENV_FILE" "$1"
 }
 
-# PID escuchando en el puerto del webhook (evita pkill -f, que puede matar el
-# propio proceso si su línea de comando contiene el patrón).
-pid_en_puerto() {
-    ss -tlnp 2>/dev/null | grep ":$PORT " | grep -o 'pid=[0-9]*' \
-        | head -1 | cut -d= -f2
+# Backend efectivo, con la misma precedencia que run_webhook.py:
+# WEBHOOK_BACKEND > COMMUNITYLAB_LLM_BACKEND (.env) > rule_based.
+backend_efectivo() {
+    if [ "$BACKEND" != "auto" ]; then
+        printf '%s' "$BACKEND"
+        return
+    fi
+    local valor
+    valor="$(env_val COMMUNITYLAB_LLM_BACKEND)"
+    printf '%s' "${valor:-rule_based}"
 }
 
-pid_tunel() { pgrep -f "cloudflared tunnel --url" | head -1; }
+# PID escuchando en el puerto del webhook (evita pkill -f, que puede matar el
+# propio proceso si su línea de comando contiene el patrón).
+# `|| true` es obligatorio: con `set -euo pipefail`, un grep sin matchea sale
+# con 1 y mataría el script (lo que hizo fallar `status` y `restart` en seco
+# cuando el server está apagado).
+pid_en_puerto() {
+    ss -tlnp 2>/dev/null | grep ":$PORT " | grep -o 'pid=[0-9]*' \
+        | head -1 | cut -d= -f2 || true
+}
+
+pid_tunel() { pgrep -f "cloudflared tunnel --url" | head -1 || true; }
 
 salud() {
     curl -s -m 5 "http://127.0.0.1:$PORT/health" 2>/dev/null || true
@@ -57,8 +76,8 @@ salud() {
 
 info_webhook() {
     local token
-    token="$(env_val TELEGRAM_BOT_TOKEN)"
-    [ -n "$token" ] || die "TELEGRAM_BOT_TOKEN no está en .env"
+    token="$(env_val TELEGRAM_BOT_TOKEN || true)"
+    [ -n "$token" ] || return 1
     curl -s -m 15 "$API_BASE/bot${token}/getWebhookInfo"
 }
 
@@ -117,8 +136,8 @@ tunel_listo() {
 
 registrar_webhook() {
     local url="$1" token secret respuesta intento
-    token="$(env_val TELEGRAM_BOT_TOKEN)"
-    secret="$(env_val TELEGRAM_WEBHOOK_SECRET)"
+    token="$(env_val TELEGRAM_BOT_TOKEN || true)"
+    secret="$(env_val TELEGRAM_WEBHOOK_SECRET || true)"
     [ -n "$token" ] || die "TELEGRAM_BOT_TOKEN no está en .env"
     [ -n "$secret" ] \
         || die "TELEGRAM_WEBHOOK_SECRET no está en .env (sin él /telegram responde 503)"
@@ -144,7 +163,7 @@ otra URL."
 # reiniciarlo aunque "ya esté corriendo".
 server_desactualizado() {
     local pid="$1" et inicio
-    et="$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')"
+    et="$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
     [ -n "$et" ] || return 1
     [ -f "$ENV_FILE" ] || return 1
     inicio=$(( $(date +%s) - et ))
@@ -177,6 +196,7 @@ cmd_start() {
         log "server : OK (pid $(pid_en_puerto)) en http://127.0.0.1:$PORT"
     fi
     log "salud  : $(salud)"
+    log "backend: $(backend_efectivo)"
 
     local url
     url="$(tunel_url)" || {
@@ -201,6 +221,19 @@ cmd_start() {
     log "Logs: $WEBHOOK_LOG | $TUNNEL_LOG"
     log "Ojo: la URL del túnel rápido cambia en cada arranque; volvé a correr"
     log "     'start' después de reiniciar y setWebhook se repite solo."
+}
+
+# Reinicia sólo el server: sirve para cambiar backend o .env sin perder el túnel
+# (y por tanto sin cambiar la URL registrada en Telegram).
+cmd_restart() {
+    local pid
+    pid="$(pid_en_puerto)"
+    if [ -n "$pid" ]; then
+        log "server : reiniciando (pid $pid)"
+        kill "$pid" 2>/dev/null || true
+        sleep 2
+    fi
+    cmd_start
 }
 
 cmd_status() {
@@ -245,8 +278,9 @@ cmd_stop() {
 }
 
 case "${1:-start}" in
-    start)  cmd_start ;;
-    status) cmd_status ;;
-    stop)   cmd_stop ;;
-    *)      die "comando desconocido: $1 (usa start | status | stop)" ;;
+    start)   cmd_start ;;
+    restart) cmd_restart ;;
+    status)  cmd_status ;;
+    stop)    cmd_stop ;;
+    *)       die "comando desconocido: $1 (usa start | restart | status | stop)" ;;
 esac
