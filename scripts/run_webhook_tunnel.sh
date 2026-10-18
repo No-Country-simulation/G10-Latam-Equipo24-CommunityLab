@@ -139,6 +139,18 @@ llegó al resolver de Telegram: volvé a correr 'stop' y 'start' para generar
 otra URL."
 }
 
+# El server carga .env al arrancar: si el archivo cambió después, queda con
+# valores viejos (token rotado, secret nuevo, backend distinto) y hay que
+# reiniciarlo aunque "ya esté corriendo".
+server_desactualizado() {
+    local pid="$1" et inicio
+    et="$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')"
+    [ -n "$et" ] || return 1
+    [ -f "$ENV_FILE" ] || return 1
+    inicio=$(( $(date +%s) - et ))
+    [ "$(stat -c %Y "$ENV_FILE")" -gt "$inicio" ]
+}
+
 cmd_start() {
     [ -x "$PYTHON" ] || die "No se encontró $PYTHON (¿falta el venv?)"
     [ -x "$CLOUDFLARED" ] || die "No se encontró cloudflared. Instalalo con:
@@ -147,8 +159,17 @@ cmd_start() {
   chmod +x ~/.local/bin/cloudflared"
     mkdir -p "$LOGDIR"
 
-    if [ -n "$(pid_en_puerto)" ]; then
-        log "server : ya corriendo ($(pid_en_puerto)) en el puerto $PORT"
+    local pid
+    pid="$(pid_en_puerto)"
+    if [ -n "$pid" ] && server_desactualizado "$pid"; then
+        log "server : .env cambió después del arranque (pid $pid); lo reinicio"
+        kill "$pid" 2>/dev/null || true
+        sleep 2
+        pid=""
+    fi
+
+    if [ -n "$pid" ]; then
+        log "server : ya corriendo (pid $pid) en el puerto $PORT"
     else
         nohup "$PYTHON" scripts/run_webhook.py --host 127.0.0.1 \
             --port "$PORT" --backend "$BACKEND" > "$WEBHOOK_LOG" 2>&1 &
