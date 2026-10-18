@@ -41,6 +41,23 @@ def _count_outside_quotes(text: str, separator: str) -> int:
     return count
 
 
+def _header_line(sample: str) -> str:
+    """Devuelve la línea de encabezado de `sample`, respetando las comillas.
+
+    `splitlines()[0]` corta el encabezado si una celda citada trae un salto
+    de línea adentro, y con el encabezado corto el conteo de separadores
+    cambia y arrastra toda la detección. Acá el corte espera a un salto
+    fuera de comillas.
+    """
+    in_quotes = False
+    for index, char in enumerate(sample):
+        if char == '"':
+            in_quotes = not in_quotes
+        elif char == "\n" and not in_quotes:
+            return sample[:index]
+    return sample
+
+
 class CSVInputLoader:
     """Carga un lote de interacciones desde un CSV (solo stdlib, sin pandas).
 
@@ -160,7 +177,7 @@ class CSVInputLoader:
         if not rows:
             raise ValueError(f"CSV vacío sin filas de datos: {path.name}")
         return rows
-    
+
     @staticmethod
     def _detect_delimiter(sample: str) -> str:
         """Elige el delimitador más frecuente en la línea de encabezado.
@@ -168,11 +185,11 @@ class CSVInputLoader:
         Solo cuenta las apariciones fuera de celdas citadas: contar el
         carácter a ciegas falla cuando el encabezado trae el otro
         separador adentro de comillas
-        (``"nota, a, b, c, d";autor;canal;tipo;texto``), donde las comas
-        internas empatan con los punto y coma reales y ganaría la coma
-        por orden en ``_DELIMITERS``.
+        (``"nota, a, b, c, d";autor;canal;tipo;texto``), donde las cuatro
+        comas internas empatan con los cuatro punto y coma reales y ganaría
+        la coma por orden en ``_DELIMITERS``.
         """
-        header = sample.splitlines()[0] if sample else ""
+        header = _header_line(sample)
         best_sep, best_count = ",", 0
         for sep in _DELIMITERS:
             count = _count_outside_quotes(header, sep)

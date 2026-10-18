@@ -1,6 +1,6 @@
 import pytest
 
-from src.ingest.csv_loader import CSVInputLoader
+from src.ingest.csv_loader import CSVInputLoader, _count_outside_quotes
 
 TIPO = "feedback"
 
@@ -68,24 +68,91 @@ def test_delimiter_is_autodetected(tmp_path, sep):
 @pytest.mark.parametrize(
     "header, sep",
     [
-        # CSV de Excel con ";": una celda citada con tantas comas como
-        # columnas no debe hacer que se elija la coma.
+        # CSV de Excel con ";": el encabezado trae 4 comas citadas y solo4
+        # punto y coma reales, así que empatan en cantidad. Contando a
+        # ciegas, el desempate por orden de `_DELIMITERS` elegiría la coma.
         ('"nota, a, b, c, d";autor;canal;tipo;texto', ";"),
         # Caso simétrico: CSV de comas con un ";" citado de más.
         ('"nota; a; b; c; d; e",autor,canal,tipo,texto', ","),
     ],
 )
 def test_quoted_header_cells_do_not_confuse_delimiter(tmp_path, header, sep):
+    # La primera columna es un descartable a propósito: pone el encabezado y
+    # las filas en el mismo orden de modo que el mapeo por nombre quede
+    # alineado y se pueda assertar. Assertar solo `len(...)` no detectaría
+    # un desplazamiento de columnas.
     rows = [
         header,
-        sep.join(["ana", "general", TIPO, "hola", "extra"]),
-        sep.join(["luis", "general", TIPO, "que tal", "extra"]),
+        sep.join(["x", "ana", "general", TIPO, "hola"]),
+        sep.join(["y", "luis", "general", TIPO, "que tal"]),
     ]
     path = _write(tmp_path, "\n".join(rows) + "\n")
 
     batch = CSVInputLoader().load_batch(str(path))
 
     assert len(batch.interacciones) == 2
+    assert [i.autor for i in batch.interacciones] == ["ana", "luis"]
+    assert [i.canal for i in batch.interacciones] == ["general", "general"]
+    assert [i.tipo for i in batch.interacciones] == [TIPO, TIPO]
+    assert [i.texto for i in batch.interacciones] == ["hola", "que tal"]
+
+
+# ---------------------------------------------------------------------------
+# Unidades del detector de delimitador
+#
+# Pasan por `load_batch` son pruebas de extremo a extremo: si el delimitador
+# sale mal, el error aparece lejos de su causa. Estas prueban la función
+# directamente, así el fallo nombra al culpable y se cubren los casos que la
+# ruta completa no alcanza (tab y comillas escapadas).
+# ---------------------------------------------------------------------------
+
+
+def test_count_outside_quotes_ignores_quoted_separators():
+    assert _count_outside_quotes("a,b;c;d", ",") == 1
+    assert _count_outside_quotes('"a,b";c;d', ",") == 0
+    assert _count_outside_quotes('"a,b";c,d', ",") == 1
+
+
+def test_count_outside_quotes_tolerates_escaped_quotes():
+    # Una comilla escapada (`""`) alterna dos veces y deja el estado igual.
+    assert _count_outside_quotes('"a""b,c";d,e', ",") == 1
+    assert _count_outside_quotes('"a""b,c"', ",") == 0
+
+
+@pytest.mark.parametrize(
+    "sample, expected",
+    [
+        # Un solo separador presente: ese gana.
+        ("autor,canal,tipo,texto", ","),
+        ("autor;canal;tipo;texto", ";"),
+        ("autor\tcanal\ttipo\ttexto", "\t"),
+        # Empate en cantidad: desempata el orden de `_DELIMITERS`
+        # (la coma va primero), igual que hacía el `max` anterior.
+        ("a,b;c", ","),
+        # Sin ningún separador, o muestra vacía: fallback a la coma.
+        ("autortexto", ","),
+        ("", ","),
+    ],
+)
+def test_detect_delimiter_picks_the_unquoted_winner(sample, expected):
+    assert CSVInputLoader._detect_delimiter(sample) == expected
+
+
+def test_detect_delimiter_ignores_separators_inside_quoted_header():
+    # El caso del fix: 4 comas citadas empatan con 4 punto y coma reales.
+    header = '"nota, a, b, c, d";autor;canal;tipo;texto'
+    assert CSVInputLoader._detect_delimiter(header) == ";"
+
+
+def test_detect_delimiter_waits_for_a_newline_outside_quotes():
+    # Un salto de línea DENTRO de una celda citada no termina el encabezado:
+    # los punto y coma reales están DESPUÉS del salto, así que un corte a la
+    # primera línea (`splitlines()[0]`) los pierde y cae al fallback ",".
+    sample = (
+        '"nota\nnota2,nota3,nota4";autor;canal;tipo;texto\n'
+        "global,general,feedback,hola\n"
+    )
+    assert CSVInputLoader._detect_delimiter(sample) == ";"
 
 
 def test_english_aliases_with_comma(tmp_path):
