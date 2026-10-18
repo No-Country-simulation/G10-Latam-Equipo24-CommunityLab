@@ -6,7 +6,7 @@ Pipeline de integración continua definido en `.github/workflows/ci.yml`.
 
 ```mermaid
 flowchart TD
-    A["Trigger: push a main/develop<br/>o PR hacia main"] --> B["Job CI<br/>runs-on: ubuntu-22.04"]
+    A["Trigger: push o pull_request<br/>en cualquier rama"] --> B["Job test<br/>runs-on: ubuntu-22.04"]
     B --> C["Checkout del código<br/>actions/checkout@v4"]
     C --> D["Setup Python 3.11<br/>actions/setup-python@v5"]
     D --> E["Instalar dependencias<br/>pip install -r requirements.txt"]
@@ -21,7 +21,7 @@ flowchart TD
 
 | Paso | Herramienta | Configuración |
 |---|---|---|
-| Trigger | GitHub Actions | `push` a `main`/`develop`, `pull_request` a `main` |
+| Trigger | GitHub Actions | `push` y `pull_request` en cualquier rama |
 | Runner | ubuntu-22.04 | — |
 | Test | pytest | `pytest tests/ -v` |
 | Lint | flake8 | `--max-line-length=100 --ignore=E501,E303,W291,W293` |
