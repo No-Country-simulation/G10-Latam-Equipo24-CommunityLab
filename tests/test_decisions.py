@@ -67,6 +67,41 @@ def test_positive_relevant_testimonial_goes_to_linkedin():
     assert result.message_id == "msg-test"
 
 
+def test_positive_relevant_logro_goes_to_linkedin():
+    """R1 también cubre `logro`: la arquitectura define R1 como
+    "Testimonio o logro positivo y relevante". Un mensaje de logro con
+    `tipo="otro"` (el default de Telegram) llega por la categoría del LLM.
+    """
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="logro",
+        sentiment=SentimentType.POSITIVO,
+        relevance=0.9,
+    )
+
+    message = build_message(tipo="otro")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.PUBLISH
+    assert result.asset_type == AssetType.LINKEDIN
+    assert result.message_id == "msg-test"
+
+
+def test_positive_logro_below_relevance_threshold_is_discarded():
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="logro",
+        sentiment=SentimentType.POSITIVO,
+        relevance=0.4,
+    )
+
+    message = build_message(tipo="otro")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DESCARTAR
+    assert result.asset_type is None
+
+
 def test_positive_testimonial_below_relevance_threshold_is_discarded():
     engine = RuleBasedDecisionEngine()
     analysis = build_analysis(

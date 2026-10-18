@@ -38,8 +38,13 @@ class RuleBasedDecisionEngine(DecisionEngine):
         else:
             effective_type = None
 
-        # Rule 1: positive testimonial with sufficient relevance -> LinkedIn.
-        is_testimonial = effective_type == "testimonio"
+        # Rule 1: positive testimonial or achievement ("logro") with sufficient
+        # relevance -> LinkedIn. The architecture doc defines R1 as "Testimonio
+        # o logro positivo y relevante", and "logro" is a canonical category the
+        # LLM emits for achievements, so accepting only "testimonio" silently
+        # discarded every achievement (docs/arquitectura-tecnica/analisis-
+        # arquitectura.md, Regla 1).
+        is_publishable_type = effective_type in {"testimonio", "logro"}
 
         is_positive = False
         is_negative = False
@@ -51,12 +56,12 @@ class RuleBasedDecisionEngine(DecisionEngine):
         if analysis.relevance is not None:
             is_relevant = analysis.relevance.score >= self.RELEVANCE_THRESHOLD
 
-        if is_testimonial and is_positive and is_relevant:
+        if is_publishable_type and is_positive and is_relevant:
             return DecisionResult(
                 message_id=message_id,
                 action=ActionType.PUBLISH,
                 asset_type=AssetType.LINKEDIN,
-                reason="Testimonio positivo relevante",
+                reason="Testimonio o logro positivo relevante",
             )
 
         # Rule 2: technical question -> FAQ.
