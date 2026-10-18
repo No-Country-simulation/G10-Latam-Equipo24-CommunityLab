@@ -93,24 +93,9 @@ flowchart TB
 
 El repositorio cuenta con un pipeline de integración continua en [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-### Diagrama del pipeline
-
-```mermaid
-flowchart TD
-    A["Trigger: push o pull_request<br/>en cualquier rama"] --> B["Job test<br/>runs-on: ubuntu-22.04"]
-    B --> C["Checkout del código<br/>actions/checkout@v4"]
-    C --> D["Setup Python 3.11<br/>actions/setup-python@v5"]
-    D --> E["Instalar dependencias<br/>pip install -r requirements.txt"]
-    E --> F["Run tests<br/>pytest tests/ -v"]
-    F --> G["Run linting<br/>flake8 src/<br/>max-line-length=100<br/>ignore: E501, E303, W291, W293"]
-    G --> H{"¿Tests y lint OK?"}
-    H -- "éxito" --> I["✅ CI exitoso"]
-    H -- "fallo" --> J["❌ CI fallido<br/>corregir y re-push"]
-```
-
 - **Tests**: `pytest tests/ -v`
 - **Linting**: `flake8 src/` con `max-line-length=100` e ignores definidos en el workflow.
-- **Más detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
+- **Diagrama de flujo y detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
 
 ---
 
