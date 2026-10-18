@@ -156,6 +156,29 @@ def test_pipeline_output_has_exact_contract_keys():
     }
 
 
+def test_pipeline_resumen_has_exact_contract_keys():
+    """The summary the pipeline really emits must match the contract exactly.
+
+    `test_resumen_exact_contract_keys` guards the model in isolation; this one
+    guards the wiring: `_summarize` has to keep emitting every documented
+    field, so a field that stops being populated fails here too.
+    """
+    output = run_pipeline(str(SAMPLE))
+    claves = set(output.resumen_comunidad.model_dump().keys())
+    assert claves == {
+        "total_interacciones_procesadas",
+        "sentimiento_predominante",
+        "temas_principales",
+        "analisis_degradados",
+        "feedback_negativo",
+        "dudas_frecuentes",
+        "tipos_discrepantes",
+        # Opción A (HU-S4-003, issue #113)
+        "distribucion_sentimiento",
+        "temas_principales_conteo",
+    }
+
+
 def test_pipeline_output_is_json_serializable():
     output = run_pipeline(str(SAMPLE))
     payload = output.model_dump_json(indent=2)
