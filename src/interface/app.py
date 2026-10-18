@@ -33,6 +33,15 @@ BRAND_ICON_PATH = Path(__file__).resolve().parent.joinpath(
     "assets", "branding", "communitylab-isotipo-fondo-azul.png"
 )
 
+# Brand palette: aligns with .streamlit/config.toml and the hero CSS in
+# apply_dashboard_styles() so charts share the dashboard accent colours.
+BRAND_NAVY = "#0B2D4A"
+BRAND_TEAL = "#00C2AB"
+BRAND_VIOLET = "#7C3AED"
+# Harmonised chart tones that complement the brand palette.
+BRAND_NEUTRAL = "#8CA0B3"  # grey-blue
+BRAND_NEGATIVE = "#E2574C"  # tempered red
+
 # Estado de curaduría por activo. Los nombres de constante van en inglés y los
 # valores en español porque son copy de UI (radio buttons en el panel).
 CURATION_STATUS_PENDING = "Pendiente"
@@ -207,12 +216,70 @@ def build_sentiment_pie_chart(df):
                 type="nominal",
                 scale=alt.Scale(
                     domain=["positivo", "negativo", "neutral"],
-                    range=["#4CAF50", "#F44336", "#9E9E9E"],
+                    range=[BRAND_TEAL, BRAND_NEGATIVE, BRAND_NEUTRAL],
                 ),
             ),
             tooltip=["sentimiento", "conteo"],
         )
         .properties(height=250)
+    )
+
+
+def build_top_topics_chart(df):
+    """Builds a horizontal Altair bar chart for the top community topics.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns ["tema", "conteo"] as produced by
+        build_top_topics_df().
+
+    Returns
+    -------
+    alt.Chart | None
+        Horizontal bar chart sorted descending by count, with the numeric
+        axis pinned at zero, or None when the DataFrame is empty.
+    """
+    if df is None or df.empty:
+        return None
+    return (
+        alt.Chart(df)
+        .mark_bar(color=BRAND_TEAL)
+        .encode(
+            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
+            y=alt.Y("tema:N", sort="-x", title="Tema"),
+            tooltip=["tema", "conteo"],
+        )
+        .properties(height=max(180, 26 * len(df)))
+    )
+
+
+def build_assets_chart(df):
+    """Builds a horizontal Altair bar chart for the generated assets by type.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns ["activo", "conteo"] as produced by
+        build_assets_summary_df().
+
+    Returns
+    -------
+    alt.Chart | None
+        Horizontal bar chart sorted descending by count, with the numeric
+        axis pinned at zero, or None when the DataFrame is empty.
+    """
+    if df is None or df.empty:
+        return None
+    return (
+        alt.Chart(df)
+        .mark_bar(color=BRAND_TEAL)
+        .encode(
+            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
+            y=alt.Y("activo:N", sort="-x", title="Activo"),
+            tooltip=["activo", "conteo"],
+        )
+        .properties(height=max(180, 26 * len(df)))
     )
 
 
@@ -703,30 +770,22 @@ def main():
             with chart_col2:
                 with st.container(border=True):
                     st.subheader("Temas Principales (Top)")
-                    if temas_df.empty:
+                    chart = build_top_topics_chart(temas_df)
+                    if chart is None:
                         st.info("No hay datos suficientes para mostrar temas principales.")
                     else:
-                        st.bar_chart(
-                            temas_df,
-                            x="tema",
-                            y="conteo",
-                            horizontal=True,
-                        )
+                        st.altair_chart(chart, width="stretch")
 
             with st.container(border=True):
                 st.subheader("📦 Activos generados por tipo")
                 assets_df = build_assets_summary_df(
                     resumen, results["activos_distribucion_generados"]
                 )
-                if assets_df.empty:
+                chart = build_assets_chart(assets_df)
+                if chart is None:
                     st.info("No hay activos generados para mostrar.")
                 else:
-                    st.bar_chart(
-                        assets_df,
-                        x="activo",
-                        y="conteo",
-                        horizontal=True,
-                    )
+                    st.altair_chart(chart, width="stretch")
                 st.caption(
                     "Los candidatos de LinkedIn son los publicables; los derivados "
                     "a humano salen del feedback negativo."
