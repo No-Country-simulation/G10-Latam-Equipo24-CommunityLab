@@ -9,6 +9,7 @@ Run from the repo root:
     python3 -m pytest tests/test_contract.py -q
 """
 from src.domain.models import (
+    CommunitySummary,
     InputBatch,
     OutputBatch,
 )
@@ -139,4 +140,91 @@ def test_output_exact_contract_keys():
         "resumen_comunidad",
         "activos_distribucion_generados",
         "almacenamiento_oci",
+    }
+
+
+# ---------------------------------------------------------------------------
+# RESUMEN tests (HU-S4-009_PS / issue #113, Opción A)
+# ---------------------------------------------------------------------------
+
+def test_resumen_exact_contract_keys():
+    """`resumen_comunidad` keys must be EXACTLY the documented contract.
+
+    Additive fields are the intended way to extend the summary, so every
+    addition has to be written here on purpose: a silent change of shape
+    breaks whoever already consumes the contract, and an exact assertion is
+    the only shape that notices. Add the field name here AND keep its default
+    value, and the change stays backward compatible.
+    """
+    resumen = CommunitySummary(**SALIDA_EJEMPLO["resumen_comunidad"])
+    claves = set(resumen.model_dump().keys())
+    assert claves == {
+        "total_interacciones_procesadas",
+        "sentimiento_predominante",
+        "temas_principales",
+        "analisis_degradados",
+        "feedback_negativo",
+        "dudas_frecuentes",
+        "tipos_discrepantes",
+        # Opción A (HU-S4-003, issue #113)
+        "distribucion_sentimiento",
+        "temas_principales_conteo",
+    }
+
+
+def test_option_a_fields_stay_additive():
+    """A payload written before Opción A must still validate unchanged.
+
+    This is the retro-compatibility the issue requires: the two new fields
+    carry `default_factory` values, so an old consumer that sends or stores
+    only the original keys keeps working and gets empty containers back.
+    """
+    resumen_viejo = {
+        clave: SALIDA_EJEMPLO["resumen_comunidad"][clave]
+        for clave in (
+            "total_interacciones_procesadas",
+            "sentimiento_predominante",
+            "temas_principales",
+        )
+    }
+    resumen = CommunitySummary(**resumen_viejo)
+
+    # The pre-existing fields are untouched.
+    assert resumen.total_interacciones_procesadas == 2
+    assert resumen.sentimiento_predominante == "Altamente Positivo"
+    assert resumen.temas_principales == [
+        "Contratacion / Logros",
+        "LangGraph / Nodos Condicionales",
+    ]
+    # And the Opción A fields default to empty, never to None or an error.
+    assert resumen.distribucion_sentimiento == {}
+    assert resumen.temas_principales_conteo == []
+
+
+def test_option_a_fields_accept_the_pipeline_shape():
+    """The shape `_summarize` actually emits must validate and round-trip.
+
+    `distribucion_sentimiento` is a plain dict keyed by the sentiment value;
+    `temas_principales_conteo` is a list of `{tema, conteo}` objects.
+    """
+    resumen = CommunitySummary(
+        **SALIDA_EJEMPLO["resumen_comunidad"],
+        distribucion_sentimiento={"positivo": 1, "neutral": 1},
+        temas_principales_conteo=[
+            {"tema": "Contratacion / Logros", "conteo": 2},
+            {"tema": "LangGraph / Nodos Condicionales", "conteo": 1},
+        ],
+    )
+
+    assert resumen.distribucion_sentimiento == {"positivo": 1, "neutral": 1}
+    assert [(tf.tema, tf.conteo) for tf in resumen.temas_principales_conteo] == [
+        ("Contratacion / Logros", 2),
+        ("LangGraph / Nodos Condicionales", 1),
+    ]
+    # Round-trips through JSON: the serialized summary carries both fields.
+    payload = resumen.model_dump()
+    assert payload["distribucion_sentimiento"] == {"positivo": 1, "neutral": 1}
+    assert payload["temas_principales_conteo"][0] == {
+        "tema": "Contratacion / Logros",
+        "conteo": 2,
     }
