@@ -996,6 +996,32 @@ def main():
                 faq_edited = ""
                 faq_estado = CURATION_STATUS_PENDING
 
+            # List-only visibility of every question routed by the FAQ rule:
+            # the curator can SEE the candidates (text, author, relevance)
+            # without any extra generation and without a selector.
+            candidatos_faq = assets.get("candidatos_faq") or []
+            if candidatos_faq:
+                st.caption(
+                    f"{len(candidatos_faq)} preguntas detectadas en este lote "
+                    "(solo listado, sin generación adicional)."
+                )
+                for numero, candidato in enumerate(candidatos_faq, start=1):
+                    texto = str(candidato.get("texto_original") or "").strip()
+                    autor = str(candidato.get("autor") or "").strip()
+                    canal = str(candidato.get("canal") or "").strip()
+                    try:
+                        relevancia = f"{float(candidato.get('relevancia') or 0.0):.0%}"
+                    except (TypeError, ValueError):
+                        relevancia = str(candidato.get("relevancia"))
+                    st.write(f"**{numero}.** {texto}")
+                    st.caption(
+                        " · ".join(
+                            parte
+                            for parte in (autor, canal, f"Relevancia: {relevancia}")
+                            if parte
+                        )
+                    )
+
         # Un activo entra al paquete sólo si está Aprobado y su texto editado
         # no está vacío. Pendiente y Rechazado quedan afuera.
         payload_to_save = {
