@@ -26,7 +26,7 @@ from src.utils.topics import rank_topics
 from dotenv import load_dotenv
 
 from src.analysis.unified_analyzer import GeminiUnifiedAnalyzer
-from src.decisions.engine import RuleBasedDecisionEngine
+from src.decisions.engine import RECOGNIZED_TYPES, RuleBasedDecisionEngine
 from src.domain.models import (
     ActionType,
     AnalysisComplete,
@@ -34,6 +34,7 @@ from src.domain.models import (
     CommunitySummary,
     DecisionResult,
     DistributionAssets,
+    FAQCandidate,
     InputBatch,
     InputMessage,
     LinkedInCandidate,
@@ -145,6 +146,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
           back to the first interaction that is neither discarded nor derived
           to a human (a DERIVAR message is not a marketing asset).
         - FAQ suggestion -> first CREAR_FAQ decision.
+        - FAQ candidates -> every CREAR_FAQ decision, listed only (no LLM call).
     A generator that returns None (LLM/JSON/validation failure) leaves its
     asset as None instead of failing the batch.
     """
@@ -207,17 +209,50 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             )
         )
 
+    # FAQ candidates: every CREAR_FAQ decision in batch order, listed with the
+    # original question only. NO generator call here: `sugerencia_contenido_faq`
+    # above stays the single materialized asset, so listing candidates never
+    # adds an LLM request.
+    candidatos_faq = [
+        FAQCandidate(
+            autor=msg.autor,
+            canal=msg.canal,
+            texto_original=msg.texto,
+            relevancia=(
+                analysis.relevance.score if analysis.relevance is not None else 0.0
+            ),
+        )
+        for msg, analysis, decision in results
+        if decision.action == ActionType.CREAR_FAQ
+    ]
+
     return DistributionAssets(
         post_linkedin=post_linkedin,
         destaque_newsletter_semanal=destaque_newsletter,
         sugerencia_contenido_faq=_run(faq_gen, faq_target),
         candidatos_post_linkedin=candidatos,
+        candidatos_faq=candidatos_faq,
     )
 
 
 def _is_linkedin_decision(decision: DecisionResult) -> bool:
     """True for the decision that calls for a LinkedIn post."""
     return decision.action == ActionType.PUBLISH and decision.asset_type == AssetType.LINKEDIN
+
+
+def _disagrees_with_llm_category(
+    message: InputMessage, analysis: AnalysisComplete
+) -> bool:
+    """True when a recognized `tipo` disagrees with the LLM category (O-16).
+
+    Only compared where both values are available: the engine's recognized
+    `tipo` set (D-B) and a present categorization.
+    """
+    if message.tipo not in RECOGNIZED_TYPES:
+        return False
+    if analysis.categorization is None:
+        return False
+    return analysis.categorization.category != message.tipo
 
 
 def _first_target(
@@ -323,6 +358,21 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         1 for _, _, decision in results if decision.action == ActionType.CREAR_FAQ
     )
 
+    # Risk O-16: measure how often a recognized `tipo` disagrees with the LLM
+    # category. Measurement only: the engine keeps the `tipo` precedence (D-B)
+    # untouched. One aggregate warning, like the degraded one above.
+    tipos_discrepantes = sum(
+        1
+        for msg, analysis, _ in results
+        if _disagrees_with_llm_category(msg, analysis)
+    )
+    if tipos_discrepantes > 0:
+        logger.warning(
+            "%d/%d interacciones con tipo y categoria del LLM discrepantes (O-16)",
+            tipos_discrepantes,
+            len(results),
+        )
+
     return CommunitySummary(
         total_interacciones_procesadas=len(batch.interacciones),
         sentimiento_predominante=predominant,
@@ -330,6 +380,7 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
         analisis_degradados=degraded,
         feedback_negativo=feedback_negativo,
         dudas_frecuentes=dudas_frecuentes,
+        tipos_discrepantes=tipos_discrepantes,
         distribucion_sentimiento=distribucion_sentimiento,
         temas_principales_conteo=temas_principales_conteo,
     )
