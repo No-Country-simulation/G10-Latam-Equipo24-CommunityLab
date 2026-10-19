@@ -91,10 +91,21 @@ flowchart TB
 
 ## 🔄 CI/CD
 
-El repositorio cuenta con un pipeline de integración continua en [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+El repositorio cuenta con dos workflows de integración continua:
 
-- **Tests**: `pytest tests/ -v`
-- **Linting**: `flake8 src/` con `max-line-length=100` e ignores definidos en el workflow.
+- **[`ci.yml`](.github/workflows/ci.yml)** (en cada push y pull request, en cualquier rama): ejecuta `pytest tests/ -v` y `flake8` sobre `src`, `tests` y `scripts`. La configuración de flake8 (`max-line-length`, `extend-ignore`) vive en [`.flake8`](.flake8).
+- **[`pr-validation.yml`](.github/workflows/pr-validation.yml)** (en cada pull request): exige **exactamente un** label `type:*` de la lista `type:bug`, `type:feature`, `type:docs`, `type:refactor`, `type:chore`.
+
+Del lado del **CD**, el merge a `main` redeploya automáticamente el dashboard y mantiene despierto el webhook:
+
+| Servicio | URL | Deploy |
+|----------|-----|--------|
+| Dashboard (panel de curaduría) | <https://g10-latam-equipo24-communitylab-fw6yecvhzpqe8fqpdovhiw.streamlit.app/> | Streamlit Community Cloud — [guía](docs/deploy-streamlit-cloud.md) |
+| Webhook de Telegram | <https://g10-latam-equipo24-communitylab.onrender.com/health> | Render (Web Service) — [guía](docs/deploy-render-webhook.md) |
+
+> El dashboard en Streamlit Cloud es privado: para abrirlo hay que estar logueado con una cuenta con acceso a la app.
+> El webhook de Render corre en el plan free: el workflow [`keep-warm-webhook.yml`](.github/workflows/keep-warm-webhook.yml) lo pinguea cada 10 minutos para que no se duerma.
+
 - **Diagrama de flujo y detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
 
 ---
@@ -158,6 +169,8 @@ streamlit run src/interface/app.py       # panel de curaduría (editar + aprobar
 ```
 
 > Detalle, salida esperada y troubleshooting en [docs/demo.md](docs/demo.md).
+>
+> El dashboard también está desplegado: <https://g10-latam-equipo24-communitylab-fw6yecvhzpqe8fqpdovhiw.streamlit.app/>. Ver la sección **CI/CD** más arriba para el detalle y la guía de deploy.
 
 ### 5. Tests
 
@@ -178,6 +191,8 @@ python3 -m pytest tests/ -q
 - **DevOps / CI-CD / Deploy**
   - [Pipeline CI](docs/pipeline-ci.md)
   - [Deploy y OCI](docs/deploy.md)
+  - [Deploy en Streamlit Community Cloud](docs/deploy-streamlit-cloud.md)
+  - [Deploy del webhook en Render](docs/deploy-render-webhook.md)
   - [Workflow Git](docs/git-workflow.md)
 
 - **Datos, LLM y Testing**
