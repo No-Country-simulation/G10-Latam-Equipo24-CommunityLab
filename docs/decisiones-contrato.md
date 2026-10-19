@@ -20,7 +20,7 @@ Verifiqué qué produce cada fuente hoy:
 
 ---
 
-## 2. Las 5 decisiones
+## 2. Las 6 decisiones
 
 ### D-A — ¿Toda duda técnica genera FAQ, o solo las recurrentes?
 
@@ -82,13 +82,42 @@ Verifiqué qué produce cada fuente hoy:
 
 **Qué decide:** si la regla R1 (publicar LinkedIn/Newsletter) aplica solo a `testimonio` o también a `logro`.
 
-**Estado:** 🟡 pendiente (Yis + Rox). Propuesta: **sí**, R1 aplica a `testimonio` y a `logro`.
+**Estado:** ✅ resuelta. `src/decisions/engine.py` publica `category in {"testimonio", "logro"}` en la regla R1, y el pipeline emite `post_linkedin` y newsletter con la muestra actual.
 
 **¿En el PDF?** **SÍ, y es la decisión más importante para cumplir el reto.** El "testimonio" de Mariana **es un logro** ("quedé seleccionada para el puesto de Dev Jr"), y es lo que genera el `post_linkedin` y el newsletter ("Logro de la Semana").
 
 **Factor datos sintéticos:** como la muestra actual no trae testimonios, la **única** forma de alimentar el LinkedIn/Newsletter es que el LLM clasifique algo como `logro` y que el motor lo publique. Si R1 exige `category == "testimonio"` y el analizador devuelve `logro` (que ya sabe hacer), **el sistema publica cero historias de éxito**.
 
-**Recomendación:** **Sí, ratificarla.** Es la decisión que hace que el reto tenga sentido con los datos disponibles. En #84 es un `or` de una línea (`category in {"testimonio", "logro"}`).
+**Comprobado en `main`:** con `data/sample/demo_fixed.json` el pipeline emite `post_linkedin` ("Logro destacado de la comunidad") y el destaque de newsletter ("Logro de la Semana") a partir de un `logro`.
+
+---
+
+### D-J — `resumen_comunidad`: Opción A (campos aditivos), no una capa aparte
+
+**Qué decide:** dónde viven los conteos que `_summarize` ya calcula — la **Opción A** (extender `resumen_comunidad`) contra la **Opción B** (una capa de analítica aparte del contrato).
+
+**Estado:** ✅ implementada (HU-S4-009_PS / issue #113). Decisión del equipo: **Opción A**; la Opción B quedó descartada.
+
+**Qué agrega, y solo eso:**
+
+| Campo | Forma | Origen |
+|---|---|---|
+| `distribucion_sentimiento` | dict `{valor_sentimiento: conteo}` | un único `Counter` que alimenta también a `sentimiento_predominante` |
+| `temas_principales_conteo` | lista de `{tema, conteo}` (`TopicFrequency`) | el mismo ranking de `temas_principales`, con conteo |
+
+**Por qué A y no B:** la Opción B obliga a los consumidores a leer dos contratos distintos para una sola pregunta ("¿qué pasó en la comunidad?"). Con A, el dashboard grafica leyendo el mismo objeto que ya consume, y el contrato sigue siendo uno solo. El costo de A — dos campos más — es menor que el costo de B — una superficie de API adicional que hay que versionar por separado.
+
+**Invariantes que sostienen la retrocompatibilidad** (esto es lo que hace que el cambio sea seguro para quien ya consume el contrato):
+
+1. **Los campos existentes no se tocan.** `sentimiento_predominante` y `temas_principales` siguen iguales, con tope **5**. El tope **10** es exclusivo de `temas_principales_conteo`.
+2. **Los campos nuevos son aditivos con `default_factory`.** Un payload escrito antes de Opción A valida sin cambios y devuelve `{}` / `[]`, nunca `None` ni un error.
+3. **La forma del resumen está blindada por test.** `test_resumen_exact_contract_keys` (y su par en `test_pipeline.py`) assertea el conjunto **exacto** de claves del resumen: agregar un campo exige sumarlo ahí a propósito, así que ninguna modificación silenciosa de la forma pasa inadvertida.
+
+**Un solo `Counter`, dos salidas:** `distribucion_sentimiento` se deriva del mismo `Counter` que produce `sentimiento_predominante`, de modo que los dos números **nunca** pueden contradecirse.
+
+**Archivos:** `src/domain/models.py` (`CommunitySummary`, `TopicFrequency`), `src/pipeline.py` (`_summarize`, `_TOP_TOPICS_COUNTED = 10`), `tests/test_contract.py`, `tests/test_pipeline.py`.
+
+**No toca:** la precedencia de `tipo` sobre la categoría del LLM (D-B), ni el vocabulario de categorías (D-C).
 
 ---
 
@@ -100,7 +129,8 @@ Verifiqué qué produce cada fuente hoy:
 | **D-B** | Mantener (ya resuelta) | Solo falta que #84 reciba el `tipo` |
 | **D-C** | Mantener (ya resuelta) | Que #84 use `InteractionType`, no strings |
 | **D-D** | Ratificar `count >= 2`, pero **no como gate** | El detector es nice-to-have; la FAQ sale de D-A |
-| **D-E** | `logro` se publica como testimonio | Sin esto, el sistema no publica nada con la muestra actual |
+| **D-E** | `logro` se publica como testimonio — ✅ **ya resuelta** | Sin esto, el sistema no publica nada con la muestra actual |
+| **D-J** | Opción A: campos aditivos en `resumen_comunidad` — ✅ **ya implementada** | Dos campos cuestan menos que un segundo contrato que hay que versionar por separado |
 
 **La decisión-meta:** el equipo debe aceptar que **la señal rica (`logro`, y en gran medida `testimonio`) no viene de Mastodon en la práctica — viene del LLM**. Por lo tanto, la calidad del producto depende de (a) cerrar D-E, y (b) confiar en la clasificación del analizador. El detector de temas recurrentes es un agregador opcional que, con los datos actuales, no va a aportar — y no debe ser lo que desbloquea la FAQ.
 

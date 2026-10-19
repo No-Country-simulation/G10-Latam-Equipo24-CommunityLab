@@ -271,3 +271,53 @@ ni cambiar la respuesta pública de la API.
   `test_publish_button_requires_approval_and_unsent_signature`
 - `src/ingest/telegram.py`, `src/ingest/bot.py` — mensajes de error que el panel muestra
 - `docs/DECISIONS.md` — esta entrada
+
+---
+
+### D-I — Orden de reglas: R4 antes de R2
+
+**Fecha:** 2026-10-16
+**Estado:** decidida
+
+**Qué decide.** El orden de evaluación cuando un mensaje es **negativo y además pregunta
+técnica**: si decide R2 (`crear_faq`) o R4 (`derivar`).
+
+**Decisión.** El orden pasa a **R1 → R4 → R2 → R3**. R4 se evalúa antes que R2:
+
+```
+R1 → R4 (negativo → DERIVAR) → R2 (pregunta_tecnica → CREAR_FAQ) → R3
+```
+
+Esta entrada **reemplaza la nota de orden de D-F** ("Orden: R1 → R2 → R4 → R3" y "la condición
+`!= pregunta_tecnica` del borrador original es redundante: R2 ya captura las preguntas técnicas
+y retorna antes"). Ese argumento es exactamente el que deja de ser cierto: hoy R2 no retorna
+primero, así que una pregunta técnica negativa llega a R4. La condición `!= pregunta_tecnica`
+tampoco hace falta ahora, pero por otro motivo: R4 atiende los negativos antes de que R2 corra,
+y R2 se queda con las preguntas técnicas no negativas.
+
+**Por qué.**
+
+1. **Producto:** una queja negativa cuyo `tipo` es `pregunta_tecnica` se tragaba en R2 y nunca
+   llegaba a un humano. El `tipo` lo asigna el clasificador por palabras clave de la ingesta,
+   así que el LLM no podía corregir el error (O-16).
+2. **Sin cambios para el resto:** en un mensaje no negativo R4 no se activa y R2 sigue
+   capturando las preguntas técnicas, con la misma decisión que antes.
+3. **Cobertura:** DEC-22 y `test_dec_22_negative_technical_question_is_derived` cubren el caso;
+   DEC-09 queda cubierta por R4.
+
+**Alternativas evaluadas.**
+
+| Alternativa | Por qué no |
+|---|---|
+| Dejar R2 antes que R4 y agregar la condición `!= pregunta_tecnica` a R4 | Mantiene el hueco: la queja negativa se sigue publicando como FAQ y no llega a un humano |
+| Quitar la precedencia del `tipo` (D-B) para que decida el LLM | Arriesga la demo con datos etiquetados a mano y mezcla dos decisiones distintas |
+
+**Desvío respecto al PDF.** Ninguno. Es un reordenamiento de reglas internas; las claves del
+contrato no cambian.
+
+**Dónde vive.**
+
+- `src/decisions/engine.py` — orden R1 → R4 → R2 → R3
+- `tests/test_decisions.py` — `test_dec_22_negative_technical_question_is_derived`
+- `docs/pruebas/analisis-decisiones.md` — DEC-22 (nueva) y DEC-09 (actualizada)
+- `docs/DECISIONS.md` — esta entrada (reemplaza la nota de orden de D-F)
