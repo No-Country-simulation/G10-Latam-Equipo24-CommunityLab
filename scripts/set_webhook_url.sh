@@ -34,10 +34,16 @@ print(dotenv_values(sys.argv[1]).get(sys.argv[2]) or "")' "$ENV_FILE" "$1"
 
 [ -x "$PYTHON" ] || die "No se encontró $PYTHON (¿falta el venv?)"
 
-[ $# -eq 1 ] || die "Uso: scripts/set_webhook_url.sh https://<servicio>.onrender.com"
+[ $# -eq 1 ] || die "Uso: scripts/set_webhook_url.sh https://<base>.onrender.com"
 BASE="${1%/}"
-[[ "$BASE" =~ ^https?://[^/[:space:]]+ ]] \
-    || die "el argumento debe ser una URL http(s), p. ej. https://communitylab-webhook.onrender.com"
+# Si pegaron la URL del health check, quedarse con el origen: /health/telegram
+# no existe, y el error de Telegram ("wrong response from the webhook") no lo
+# dice. Se avisa en vez de corregir en silencio.
+if [[ "$BASE" == */health ]]; then
+    die "la URL parece la del health check. Usá la base sin path: ${BASE%/health}"
+fi
+[[ "$BASE" =~ ^https?://[^/[:space:]]+$ ]] \
+    || die "el argumento debe ser una URL http(s) sin path, p. ej. https://g10-latam-equipo24-communitylab.onrender.com"
 
 token="$(env_val TELEGRAM_BOT_TOKEN || true)"
 [ -n "$token" ] || die "TELEGRAM_BOT_TOKEN no está en .env"

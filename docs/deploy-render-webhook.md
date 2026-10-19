@@ -15,7 +15,7 @@ sin crear una VM:
 
 | Necesidad del webhook | Cómo la cubre Render |
 |-----------------------|----------------------|
-| HTTPS con certificado válido (Telegram no acepta autofirmados) | TLS administrado por Render y dominio estable `https://<servicio>.onrender.com` |
+| HTTPS con certificado válido (Telegram no acepta autofirmados) | TLS administrado por Render y dominio estable `https://<servicio>.onrender.com` (la URL exacta la da Render al crear el servicio) |
 | Servidor siempre direccionable (la URL del túnel de Cloudflare cambia en cada arranque) | URL fija mientras el servicio exista |
 | Ejecutar el mismo código del repo | El Blueprint lee `render.yaml` de la rama `main` y despliega en cada push |
 
@@ -68,6 +68,22 @@ Detalles del Blueprint que conviene conocer:
   (3.14.8 desde el 12/10/2026), más nueva que la del proyecto.
 - `autoDeployTrigger` queda sin declarar: Render usa su default (`commit`),
   o sea redespliegue automático en cada push a `main`.
+
+### La URL del servicio
+
+Al terminar el primer build, Render muestra la URL pública en la parte
+superior del servicio (y en **Settings → URL**). **Anotala**, porque es la base
+que usan los pasos 4, 5 y el keep-warm.
+
+> **La URL NO es necesariamente `communitylab-webhook.onrender.com`.** El campo
+> `name` del blueprint nombra el servicio, pero Render puede ajustar el
+> subdominio si el nombre ya está tomado (el caso real quedó en
+> `g10-latam-equipo24-communitylab.onrender.com`). **No la adivines: copiala
+> del panel.**
+
+En todos los comandos de esta guía, `<base>` es esa URL **sin barra final y sin
+path**. El health check cuelga de `<base>/health` y el webhook de Telegram se
+registra en `<base>/telegram`.
 
 ---
 
@@ -128,7 +144,7 @@ Dos advertencias sobre el filesystem:
 ## Paso 4: verificar el health check
 
 ```bash
-curl https://<servicio>.onrender.com/health
+curl <base>/health
 # Esperado: {"status": "ok"}
 ```
 
@@ -140,7 +156,7 @@ si responde, el servicio está vivo y Render marca el health check en verde.
 ## Paso 5: registrar el webhook en Telegram
 
 ```bash
-scripts/set_webhook_url.sh https://<servicio>.onrender.com
+scripts/set_webhook_url.sh <base>
 ```
 
 El script:
@@ -158,7 +174,7 @@ Verificación manual:
 curl -s "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 ```
 
-Esperado: `"url": "https://<servicio>.onrender.com/telegram"`,
+Esperado: `"url": "<base>/telegram"`,
 `"pending_update_count": 0` y `"last_error_message": ""`.
 
 ---
@@ -172,8 +188,10 @@ despierto.
 
 - Lee la URL base desde la variable de repositorio **`WEBHOOK_HEALTH_URL`**
   (sin barra final), definida en **Settings → Secrets and variables →
-  Actions → Variables**. Ejemplo de valor:
-  `https://communitylab-webhook.onrender.com`.
+  Actions → Variables**. El valor es `<base>`, la misma URL de los pasos 4 y 5
+  (p. ej. `https://g10-latam-equipo24-communitylab.onrender.com`). Tiene que
+  ser **la URL real del panel**, no un nombre supuesto: si apunta a un servicio
+  inexistente, el ping recibe 404 y el workflow falla sin decir por qué.
 - Si la variable no está definida, el workflow lo avisa con un `::notice::`
   y termina sin fallar.
 - Los cron sólo corren desde la rama por defecto del repo, y GitHub
@@ -231,6 +249,7 @@ este cambio.
 | `POST /telegram` responde 401 | El `TELEGRAM_WEBHOOK_SECRET` cargado en Render no coincide con el que se registró con `setWebhook` | Re-cargar la variable en Render con el valor del `.env` y volver a correr `scripts/set_webhook_url.sh` |
 | El bot no responde en Telegram | El registro del webhook falló o hay error de entrega | Ejecutar `getWebhookInfo` y leer `last_error_message` y `pending_update_count` |
 | El primer mensaje tarda ~1 min | El servicio estaba dormido (cold start) | Esperar; con el keep-warm activo casi no ocurre |
+| El workflow **Keep-warm del webhook** falla con 404 | `WEBHOOK_HEALTH_URL` apunta a una URL que no es la del servicio (p. ej. un nombre supuesto, o con `/health` pegado) | Copiar la URL exacta del panel de Render, **sin barra final y sin path**, y actualizar la variable de repositorio |
 
 ---
 

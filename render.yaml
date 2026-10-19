@@ -9,6 +9,8 @@
 #   la ruta donde Render lo monta.
 # - autoDeployTrigger queda sin declarar: Render usa su default (commit),
 #   es decir, redespliegue en cada push a la rama trackeada.
+# - El subdominio publico NO es necesariamente <name>.onrender.com: Render lo
+#   ajusta si el nombre ya esta tomado. Copiar la URL real del panel.
 services:
   - type: web
     name: communitylab-webhook
