@@ -10,6 +10,7 @@ from src.domain.interfaces import (
     StorageClient,
 )
 
+
 def test_interfaces_are_abstract():
     # These ABCs cannot be instantiated directly
     with pytest.raises(TypeError):

@@ -276,6 +276,7 @@ def test_elemento_invalido_interrumpe_lote_y_aplica_espera(monkeypatch):
     assert offsets == [None, 2]
     assert pausas == [1]
 
+
 def test_update_sin_id_conserva_offset_y_aplica_espera(monkeypatch):
     offsets = []
     pausas = []

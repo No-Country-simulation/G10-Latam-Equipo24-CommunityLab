@@ -3,13 +3,10 @@ Test Suite for OCI Object Storage Integration.
 """
 
 import os
-import sys
 import pytest
 
-# Append project root to sys.path to allow imports from src regardless of execution path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from src.oci.storage import OCIStorage
+
 
 @pytest.mark.skipif(
     not os.getenv("OCI_USER_ID") or not os.getenv("OCI_PRIVATE_KEY_PATH"),
@@ -28,6 +25,7 @@ def test_oci_storage_integration():
     
     assert success is True, f"OCI integration failed: {message}"
     print(f"✅ {message}")
+
 
 if __name__ == "__main__":
     if not os.getenv("OCI_USER_ID"):
