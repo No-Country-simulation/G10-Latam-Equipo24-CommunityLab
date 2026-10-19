@@ -29,6 +29,35 @@ _ENCODINGS = ("utf-8-sig", "cp1252")
 _DELIMITERS = ",;\t"
 
 
+def _count_outside_quotes(text: str, separator: str) -> int:
+    """Cuenta `separator` ignorando los que caen dentro de comillas."""
+    count = 0
+    in_quotes = False
+    for char in text:
+        if char == '"':
+            in_quotes = not in_quotes
+        elif char == separator and not in_quotes:
+            count += 1
+    return count
+
+
+def _header_line(sample: str) -> str:
+    """Devuelve la línea de encabezado de `sample`, respetando las comillas.
+
+    `splitlines()[0]` corta el encabezado si una celda citada trae un salto
+    de línea adentro, y con el encabezado corto el conteo de separadores
+    cambia y arrastra toda la detección. Acá el corte espera a un salto
+    fuera de comillas.
+    """
+    in_quotes = False
+    for index, char in enumerate(sample):
+        if char == '"':
+            in_quotes = not in_quotes
+        elif char == "\n" and not in_quotes:
+            return sample[:index]
+    return sample
+
+
 class CSVInputLoader:
     """Carga un lote de interacciones desde un CSV (solo stdlib, sin pandas).
 
@@ -148,13 +177,25 @@ class CSVInputLoader:
         if not rows:
             raise ValueError(f"CSV vacío sin filas de datos: {path.name}")
         return rows
-    
+
     @staticmethod
     def _detect_delimiter(sample: str) -> str:
-        """Elige el delimitador más frecuente en la línea de encabezado."""
-        header = sample.splitlines()[0] if sample else ""
-        best = max(_DELIMITERS, key=header.count)
-        return best if header.count(best) else ","
+        """Elige el delimitador más frecuente en la línea de encabezado.
+
+        Solo cuenta las apariciones fuera de celdas citadas: contar el
+        carácter a ciegas falla cuando el encabezado trae el otro
+        separador adentro de comillas
+        (``"nota, a, b, c, d";autor;canal;tipo;texto``), donde las cuatro
+        comas internas empatan con los cuatro punto y coma reales y ganaría
+        la coma por orden en ``_DELIMITERS``.
+        """
+        header = _header_line(sample)
+        best_sep, best_count = ",", 0
+        for sep in _DELIMITERS:
+            count = _count_outside_quotes(header, sep)
+            if count > best_count:
+                best_sep, best_count = sep, count
+        return best_sep
 
     # [Mejora 3] Descartar la clave None (celdas sobrantes) y tolerar filas
     # cortas.

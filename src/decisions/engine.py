@@ -9,6 +9,19 @@ from src.domain.models import (
     InputMessage,
 )
 
+# Explicit `tipo` values that take precedence over the LLM category (decision
+# D-B). Shared with the pipeline, which counts `tipo` vs category disagreements
+# to measure risk O-16 without changing this precedence.
+RECOGNIZED_TYPES = frozenset(
+    {
+        "testimonio",
+        "pregunta_tecnica",
+        "feedback",
+        "logro",
+        "discusion",
+    }
+)
+
 
 class RuleBasedDecisionEngine(DecisionEngine):
     """Decides the action for a message using business rules."""
@@ -18,20 +31,14 @@ class RuleBasedDecisionEngine(DecisionEngine):
     def decide(
         self, message: InputMessage, analysis: AnalysisComplete
     ) -> DecisionResult:
-        """Evaluate an analysis and return the corresponding decision."""
+        """Evaluate an analysis and return the corresponding decision.
+
+        Rule order: R1 -> R4 -> R2 -> R3 (decision D-I).
+        """
 
         message_id = analysis.message_id
 
-        # Explicit message type takes precedence over LLM category.
-        recognized_types = {
-            "testimonio",
-            "pregunta_tecnica",
-            "feedback",
-            "logro",
-            "discusion",
-        }
-
-        if message.tipo in recognized_types:
+        if message.tipo in RECOGNIZED_TYPES:
             effective_type = message.tipo
         elif analysis.categorization is not None:
             effective_type = analysis.categorization.category
@@ -64,7 +71,21 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 reason="Testimonio o logro positivo relevante",
             )
 
-        # Rule 2: technical question -> FAQ.
+        # Rule 4: negative feedback -> derive to a human (community manager).
+        # Evaluated BEFORE R2 (decision D-I): a negative message needs personal
+        # attention even when its type is a technical question, so R2 no longer
+        # swallows it. No relevance threshold: every negative message is routed.
+        if is_negative:
+            return DecisionResult(
+                message_id=message_id,
+                action=ActionType.DERIVAR,
+                asset_type=None,
+                reason="Feedback negativo: requiere atención personalizada por el community manager",
+            )
+
+        # Rule 2: technical question -> FAQ. Every non-negative technical
+        # question reaches this point, because R4 already returned for all
+        # negative messages.
         is_technical_question = effective_type == "pregunta_tecnica"
 
         if is_technical_question:
@@ -73,17 +94,6 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 action=ActionType.CREAR_FAQ,
                 asset_type=AssetType.FAQ,
                 reason="Duda tecnica o pregunta frecuente",
-            )
-
-        # Rule 4: negative feedback -> derive to a human (community manager).
-        # No relevance threshold and no type check: R2 already handled technical
-        # questions, so any remaining negative message needs personal attention.
-        if is_negative:
-            return DecisionResult(
-                message_id=message_id,
-                action=ActionType.DERIVAR,
-                asset_type=None,
-                reason="Feedback negativo: requiere atención personalizada por el community manager",
             )
 
         # Rule 3: all other cases -> discard.
