@@ -1,15 +1,16 @@
-# Puerto fijo del panel de curaduría de CommunityLab.
+# Aviso: NO fijar `server.port` en este archivo.
 #
-# Sin esta configuración Streamlit arranca en su puerto por defecto (8501) y,
-# si está ocupado, salta al siguiente libre (8502, 8503, ...). Como quedaban
-# instancias viejas escuchando, cada corrida abría una URL distinta y no era
-# obvio cuál de todas era la que se estaba mirando.
+# Esta configuración la lee cualquier `streamlit run` sobre el repo, en
+# cualquier entorno, incluido Streamlit Community Cloud. La nube arranca la app
+# y verifica su salud en el puerto 8501 (`GET http://localhost:8501/healthz`);
+# si este archivo fuerza otro puerto, el health check nunca conecta y el deploy
+# termina en "Error running app" aunque la app funcione bien.
 #
-# Con el puerto fijado, `streamlit run src/interface/app.py` siempre abre el
-# mismo panel. Si el puerto está ocupado hay que cerrar la instancia anterior
-# en vez de dejar que Streamlit elija otro.
-[server]
-port = 8502
+# El puerto fijo del desarrollo local (8502, para no confundir la instancia
+# propia con otras que queden escuchando) se pasa en la línea de comandos al
+# arrancar: ver `make run` y `PORT` en el Makefile. La línea de comandos tiene
+# prioridad sobre este archivo, así que el puerto por defecto de la nube queda
+# intacto.
 
 [theme]
 font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"

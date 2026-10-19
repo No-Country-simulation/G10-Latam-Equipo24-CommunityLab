@@ -118,4 +118,35 @@ PR → CI (lint + tests) → code owner review → merge a main → redeploy en 
 
 ---
 
+## Si el deploy falla con "Error running app"
+
+Ese mensaje es genérico: siempre hay que mirar los **logs del deploy** (botón
+*Manage app* en la esquina inferior derecha de la página de error) para ver la
+causa real. Los dos problemas que ya aparecieron:
+
+### 1. La app arranca en otro puerto
+
+En los logs:
+
+```
+Uvicorn server started on :::8502
+❗️ error while checking the health of the Streamlit app:
+   Get "http://localhost:8501/healthz": connect: connection refused
+```
+
+Community Cloud verifica la salud de la app en el **puerto 8501**. Si
+`.streamlit/config.toml` fija `server.port`, la app escucha en otro puerto y el
+health check nunca conecta. **Ese archivo no debe fijar el puerto**: el puerto
+local se pasa por línea de comandos (`make run`, ver `PORT` en el `Makefile`).
+
+### 2. `ModuleNotFoundError: No module named 'src'`
+
+Streamlit agrega al `sys.path` únicamente el directorio del archivo principal
+(`src/interface/`), nunca la raíz del repo, aunque el directorio de trabajo sea
+la raíz. Por eso `src/interface/app.py` inserta la raíz del repo en `sys.path`
+antes de importar `src.*`. Si se mueve ese bloque, el panel funciona en local
+con `make run` (que exporta `PYTHONPATH`) pero rompe en la nube.
+
+---
+
 *Guía creada para el despliegue de demostración — Oracle ONE Hackathon G10.*
