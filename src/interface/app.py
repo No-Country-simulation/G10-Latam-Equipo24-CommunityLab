@@ -7,6 +7,12 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
+
+# Imported before the ``src.*`` modules on purpose: it maps
+# ``.streamlit/secrets.toml`` into the environment so the cloud deployment
+# sees the same ``os.getenv`` values that a local ``.env`` provides. It must
+# run before ``src.pipeline`` / ``src.oci`` are imported below.
+import src.interface.cloud_secrets  # noqa: F401  (side-effect import)
 from src.domain.models import InputBatch
 from src.ingest.loader import load_batch
 from src.interface import telegram_publish
