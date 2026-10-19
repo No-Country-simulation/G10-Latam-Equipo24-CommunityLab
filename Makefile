@@ -4,7 +4,10 @@
 #   make stop     cierra las instancias del panel
 #   make status   dice si el panel está arriba y en qué puerto
 #
-# El panel corre en el puerto 8502 (fijado en .streamlit/config.toml).
+# El panel corre en el puerto 8502. El puerto se pasa por línea de comandos a
+# propósito: fijarlo en .streamlit/config.toml también lo fija en Streamlit
+# Community Cloud, que verifica la salud de la app en el 8501 y falla el deploy
+# con "Error running app".
 
 # Raíz del repo, resuelta desde la ubicación de este Makefile: así `make run`
 # funciona aunque lo invoques desde otro directorio.
@@ -28,7 +31,7 @@ APP_PATTERN := streamlit run src/interface/app[.]py
 # en el navegador (el servidor responde 200 igual, así que el fallo pasa inadvertido).
 run: stop
 	@echo "▶ Arrancando el panel en http://localhost:$(PORT) ..."
-	@cd "$(ROOT)" && PYTHONPATH="$(ROOT)" $(STREAMLIT) run $(APP)
+	@cd "$(ROOT)" && PYTHONPATH="$(ROOT)" $(STREAMLIT) run $(APP) --server.port $(PORT)
 
 stop:
 	@-pkill -f "$(APP_PATTERN)" 2>/dev/null || true
