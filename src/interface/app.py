@@ -1,5 +1,6 @@
 import base64
 import json
+import sys
 import tempfile
 from datetime import date, datetime
 from pathlib import Path
@@ -7,10 +8,27 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
-from src.domain.models import InputBatch
-from src.ingest.loader import load_batch
-from src.interface import telegram_publish
-from src.pipeline import run_pipeline
+
+# ``streamlit run src/interface/app.py`` puts only the folder holding this file
+# on ``sys.path``, never the repository root. Locally that goes unnoticed
+# because the process usually starts from the repository root, but Streamlit
+# Community Cloud runs the app from a freshly built environment where every
+# ``from src...`` import below fails with
+# ``ModuleNotFoundError: No module named 'src'``. Inserting the root here is
+# idempotent and makes the app run under either entry point.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+# Imported before the ``src.*`` modules on purpose: it maps
+# ``.streamlit/secrets.toml`` into the environment so the cloud deployment
+# sees the same ``os.getenv`` values that a local ``.env`` provides. It must
+# run before ``src.pipeline`` / ``src.oci`` are imported below.
+import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
+from src.domain.models import InputBatch  # noqa: E402
+from src.ingest.loader import load_batch  # noqa: E402
+from src.interface import telegram_publish  # noqa: E402
+from src.pipeline import run_pipeline  # noqa: E402
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
 # (``linkedin_edit_<index>``) and so are their curation-state radios
@@ -1006,6 +1024,32 @@ def main():
                 st.info("No se detectó una pregunta frecuente para este lote.")
                 faq_edited = ""
                 faq_estado = CURATION_STATUS_PENDING
+
+            # List-only visibility of every question routed by the FAQ rule:
+            # the curator can SEE the candidates (text, author, relevance)
+            # without any extra generation and without a selector.
+            candidatos_faq = assets.get("candidatos_faq") or []
+            if candidatos_faq:
+                st.caption(
+                    f"{len(candidatos_faq)} preguntas detectadas en este lote "
+                    "(solo listado, sin generación adicional)."
+                )
+                for numero, candidato in enumerate(candidatos_faq, start=1):
+                    texto = str(candidato.get("texto_original") or "").strip()
+                    autor = str(candidato.get("autor") or "").strip()
+                    canal = str(candidato.get("canal") or "").strip()
+                    try:
+                        relevancia = f"{float(candidato.get('relevancia') or 0.0):.0%}"
+                    except (TypeError, ValueError):
+                        relevancia = str(candidato.get("relevancia"))
+                    st.write(f"**{numero}.** {texto}")
+                    st.caption(
+                        " · ".join(
+                            parte
+                            for parte in (autor, canal, f"Relevancia: {relevancia}")
+                            if parte
+                        )
+                    )
 
         # Un activo entra al paquete sólo si está Aprobado y su texto editado
         # no está vacío. Pendiente y Rechazado quedan afuera.

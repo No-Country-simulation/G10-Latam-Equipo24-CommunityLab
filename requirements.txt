@@ -13,6 +13,7 @@ oci>=2.90.0
 # Interface
 # st.altair_chart only accepts width="stretch" from 1.51.0
 streamlit>=1.51.0
+altair>=5.0.0
 
 # Data processing
 pandas>=2.0.0

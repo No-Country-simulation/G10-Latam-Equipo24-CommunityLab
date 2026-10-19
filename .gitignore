@@ -44,3 +44,6 @@ opencode.json
 
 # Local CodeGraph index (machine-specific)
 .codegraph/
+
+# Streamlit Community Cloud secrets (never commit real credentials)
+.streamlit/secrets.toml
