@@ -1,5 +1,6 @@
 import base64
 import json
+import sys
 import tempfile
 from datetime import date, datetime
 from pathlib import Path
@@ -8,15 +9,26 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+# ``streamlit run src/interface/app.py`` puts only the folder holding this file
+# on ``sys.path``, never the repository root. Locally that goes unnoticed
+# because the process usually starts from the repository root, but Streamlit
+# Community Cloud runs the app from a freshly built environment where every
+# ``from src...`` import below fails with
+# ``ModuleNotFoundError: No module named 'src'``. Inserting the root here is
+# idempotent and makes the app run under either entry point.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 # Imported before the ``src.*`` modules on purpose: it maps
 # ``.streamlit/secrets.toml`` into the environment so the cloud deployment
 # sees the same ``os.getenv`` values that a local ``.env`` provides. It must
 # run before ``src.pipeline`` / ``src.oci`` are imported below.
-import src.interface.cloud_secrets  # noqa: F401  (side-effect import)
-from src.domain.models import InputBatch
-from src.ingest.loader import load_batch
-from src.interface import telegram_publish
-from src.pipeline import run_pipeline
+import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
+from src.domain.models import InputBatch  # noqa: E402
+from src.ingest.loader import load_batch  # noqa: E402
+from src.interface import telegram_publish  # noqa: E402
+from src.pipeline import run_pipeline  # noqa: E402
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
 # (``linkedin_edit_<index>``) and so are their curation-state radios
