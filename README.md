@@ -89,13 +89,14 @@ flowchart TB
 - `duda_tecnica` es alias de `pregunta_tecnica`; `comentario_general` y `pregunta_general` mapean a `otro`.
 - Ante fallo del LLM, el analizador devuelve un default seguro (neutral + `otro` + relevancia 0) y **nunca crashea**.
 
-## 🔄 CI/CD
+## 🔄 CI
 
-El repositorio cuenta con un pipeline de integración continua en [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+El repositorio cuenta con dos workflows de integración continua:
 
-- **Tests**: `pytest tests/ -v`
-- **Linting**: `flake8 src tests scripts`, con la configuración (`max-line-length`, `extend-ignore`) en [`.flake8`](.flake8).
-- **Diagrama de flujo y detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
+- **[`ci.yml`](.github/workflows/ci.yml)** (en cada push y pull request, en cualquier rama): ejecuta `pytest tests/ -v` y `flake8` sobre `src`, `tests` y `scripts`. La configuración de flake8 (`max-line-length`, `extend-ignore`) vive en [`.flake8`](.flake8).
+- **[`pr-validation.yml`](.github/workflows/pr-validation.yml)** (en cada pull request): exige **exactamente un** label `type:*` de la lista `type:bug`, `type:feature`, `type:docs`, `type:refactor`, `type:chore`.
+
+- **Diagrama de flujo y detalles del pipeline**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
 
 ---
 
