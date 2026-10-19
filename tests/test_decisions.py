@@ -118,8 +118,9 @@ def test_negative_feedback_is_derived_to_human():
     )
 
 
-def test_negative_technical_question_still_goes_to_faq():
-    # R2 runs before R4: a negative technical question is still a FAQ.
+def test_dec_22_negative_technical_question_is_derived():
+    # DEC-22: R4 runs before R2 (decision D-I), so a negative technical
+    # question is derived to a human instead of being swallowed by the FAQ rule.
     engine = RuleBasedDecisionEngine()
     analysis = build_analysis(
         category="pregunta_tecnica",
@@ -130,8 +131,8 @@ def test_negative_technical_question_still_goes_to_faq():
     message = build_message(tipo="pregunta_tecnica")
     result = engine.decide(message, analysis)
 
-    assert result.action == ActionType.CREAR_FAQ
-    assert result.asset_type == AssetType.FAQ
+    assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
 
 
 def test_negative_message_without_relevance_is_still_derived():
