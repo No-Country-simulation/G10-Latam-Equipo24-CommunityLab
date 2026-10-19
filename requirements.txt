@@ -11,7 +11,8 @@ ollama>=0.3.0
 oci>=2.90.0
 
 # Interface
-streamlit>=1.49.0
+# st.altair_chart only accepts width="stretch" from 1.51.0
+streamlit>=1.51.0
 
 # Data processing
 pandas>=2.0.0

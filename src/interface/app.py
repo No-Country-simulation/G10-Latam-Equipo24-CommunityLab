@@ -246,7 +246,7 @@ def build_top_topics_chart(df):
         alt.Chart(df)
         .mark_bar(color=BRAND_TEAL)
         .encode(
-            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
+            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo", axis=alt.Axis(tickMinStep=1, format="d")),
             y=alt.Y("tema:N", sort="-x", title="Tema"),
             tooltip=["tema", "conteo"],
         )
@@ -275,7 +275,7 @@ def build_assets_chart(df):
         alt.Chart(df)
         .mark_bar(color=BRAND_TEAL)
         .encode(
-            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
+            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo", axis=alt.Axis(tickMinStep=1, format="d")),
             y=alt.Y("activo:N", sort="-x", title="Activo"),
             tooltip=["activo", "conteo"],
         )

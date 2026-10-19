@@ -410,6 +410,26 @@ def test_build_assets_chart_pins_axis_at_zero_and_sorts_desc():
     assert tooltip_fields == {"activo", "conteo"}
 
 
+def test_build_top_topics_chart_axis_uses_integer_ticks():
+    """El eje de conteo debe marcar solo enteros, sin ticks decimales."""
+    df = app.build_top_topics_df([{"tema": "aprendizaje", "conteo": 3}])
+
+    spec = app.build_top_topics_chart(df).to_dict()
+
+    assert spec["encoding"]["x"]["axis"]["tickMinStep"] == 1
+    assert spec["encoding"]["x"]["axis"]["format"] == "d"
+
+
+def test_build_assets_chart_axis_uses_integer_ticks():
+    """El eje de conteo debe marcar solo enteros, sin ticks decimales."""
+    df = app.build_assets_summary_df({}, {})
+
+    spec = app.build_assets_chart(df).to_dict()
+
+    assert spec["encoding"]["x"]["axis"]["tickMinStep"] == 1
+    assert spec["encoding"]["x"]["axis"]["format"] == "d"
+
+
 def test_build_linkedin_candidate_options():
     candidatos = [
         {
