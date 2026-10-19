@@ -1,448 +1,267 @@
-# 🚀 GUÍA DE DESPLIEGUE Y CONFIGURACIÓN — CommunityLab
+# Guía de despliegue y configuración — CommunityLab
 
-> Paso a paso para tener la aplicación funcionando desde cero hasta el despliegue en OCI.
-
----
-
-## 📋 FASE 0: PREREQUISITOS
-
-Antes de empezar, necesitás:
-
-| Requisito | Cómo obtenerlo |
-|-----------|----------------|
-| **Cuenta GitHub** | github.com (ya tenés una) |
-| **Cuenta Oracle Cloud** | cloud.oracle.com (gratis, Always Free) |
-| **API Key Gemini** | aicentral.google.com o ajusting.google.dev |
-| **Python 3.11+** | python.org |
-| **Git** | git-scm.com |
-| **Node.js** | nodejs.org (opcional para algunas herramientas) |
+> Cómo pasar de cero a la aplicación funcionando, y cómo desplegarla en cada
+> uno de los entornos disponibles.
+>
+> Documentos complementarios, con el detalle de cada camino:
+> - [Configuración de OCI Object Storage](oci-setup.md)
+> - [Despliegue del dashboard en Streamlit Community Cloud](deploy-streamlit-cloud.md)
+> - [Despliegue del webhook de Telegram en Render](deploy-render-webhook.md)
 
 ---
 
-## 🔧 FASE 1: CONFIGURACIÓN LOCAL (Sprint 1)
+## 1. Resumen de entornos
 
-### Paso 1.1: Clonar el repo
+CommunityLab puede correr en tres modalidades. No son excluyentes: el dashboard
+y el webhook se despliegan por separado porque tienen necesidades distintas.
 
-```powershell
-git clone https://github.com/emanuelperacchia/communitylab.git
-cd communitylab
+| Entorno | Qué corre | Dónde | Guía |
+|---------|-----------|-------|------|
+| Local | Pipeline, panel y pruebas | Tu máquina | Este documento |
+| Streamlit Community Cloud | Dashboard de curaduría | Nube administrada | [deploy-streamlit-cloud.md](deploy-streamlit-cloud.md) |
+| Render | Webhook de Telegram (`POST /telegram`) | Nube administrada | [deploy-render-webhook.md](deploy-render-webhook.md) |
+| OCI (VM) | Reemplazo del despliegue anterior | Oracle Cloud | [oci-setup.md](oci-setup.md) |
+
+> La instancia Always Free de OCI puede no estar disponible (error de capacidad
+> al crearla). Las guías de Community Cloud y Render existen justamente como
+> alternativa sin VM propia, y son las que usa la demo actual.
+
+---
+
+## 2. Requisitos previos
+
+| Requisito | Detalle |
+|-----------|---------|
+| Python 3.11+ | El CI usa 3.11 |
+| Git | Para clonar y trabajar por ramas |
+| Cuenta de Telegram | Solo para el bot y el webhook |
+| Cuenta de Oracle Cloud | Solo si vas a usar Object Storage |
+| Cuenta de GitHub | Para el repositorio y el CI |
+
+No hace falta Node.js ni ninguna herramienta adicional.
+
+---
+
+## 3. Configuración local
+
+### 3.1. Clonar el repositorio
+
+```bash
+git clone https://github.com/No-Country-simulation/G10-Latam-Equipo24-CommunityLab.git
+cd G10-Latam-Equipo24-CommunityLab
 ```
 
-### Paso 1.2: Crear entorno virtual
+### 3.2. Crear el entorno virtual
 
-```powershell
-python -m venv venv
-venv\Scripts\activate
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
 ```
 
-### Paso 1.3: Instalar dependencias
+### 3.3. Instalar dependencias
 
-```powershell
+```bash
 pip install -r requirements.txt
 ```
 
-### Paso 1.4: Configurar variables de entorno
+### 3.4. Configurar variables de entorno
 
-Crear archivo `.env` en la raíz del proyecto:
+Crear un archivo `.env` en la raíz del proyecto:
 
 ```env
-# Gemini API Key
-GEMINI_API_KEY=tu_api_key_aqui
+# Backend de análisis: rule_based | ollama | openai | gemini
+# rule_based no usa red ni credenciales (determinista, ideal para tests).
+COMMUNITYLAB_LLM_BACKEND=rule_based
 
-# OCI Credentials (para cuando despliegues)
+# Backend Ollama (el que usa la demo)
+OLLAMA_BASE_URL=https://ollama.com/v1
+OLLAMA_MODEL=gemma4:31b
+OLLAMA_API_KEY=tu_api_key_de_ollama
+
+# Telegram (bot y webhook)
+TELEGRAM_BOT_TOKEN=tu_token_del_bot
+TELEGRAM_WEBHOOK_SECRET=un_texto_secreto_a_eleccion
+
+# OCI Object Storage (opcional; ver docs/oci-setup.md)
 OCI_USER_ID=ocid1.user.oc1..xxxxx
 OCI_TENANCY_ID=ocid1.tenancy.oc1..xxxxx
 OCI_FINGERPRINT=xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
-OCI_PRIVATE_KEY_PATH=C:\Users\TU_USUARIO\.oci\oci_api_key.pem
-OCI_REGION=sa-santiago-1
+OCI_PRIVATE_KEY_PATH=/home/tu_usuario/.oci/oci_api_key.pem
+OCI_REGION=sa-valparaiso-1
 ```
 
-> **IMPORTANTE:** El archivo `.env` está en `.gitignore`. NO se sube al repo.
+> **Importante:** `.env` está en `.gitignore`. Nunca se sube al repositorio.
 
-### Paso 1.5: Verificar que funciona localmente
+Si no configurás OCI, el pipeline **degrada limpiamente**: guarda el paquete de
+distribución en `storage/activos/` (local, ignorado por git) en lugar de subirlo
+a Object Storage. Nunca falla por falta de credenciales.
 
-```powershell
-# Verificar Python
+### 3.5. Verificar la instalación
+
+```bash
+# Dependencias y versión de Python
 python --version
-# Debe mostrar: Python 3.11.x
 
-# Verificar dependencias
-pytest tests/ -v
-# Debe mostrar tests pasando (o 0 failed)
+# Suite de pruebas
+python -m pytest -q
 ```
+
+La suite completa pasa en verde sin necesidad de credenciales ni red.
 
 ---
 
-## ☁️ FASE 2: CONFIGURACIÓN DE OCI (Sprint 4)
+## 4. Formas de ejecutar el sistema
 
-### Paso 2.1: Crear cuenta en Oracle Cloud
+### 4.1. Pipeline sobre un archivo (camino principal)
 
-1. Ir a https://cloud.oracle.com
-2. Crear cuenta (gratis, Always Free tier)
-3. Verificar email
-4. Completar perfil
+El camino por archivo siempre funciona, con o sin LLM remoto:
 
-### Paso 2.2: Crear API Key
+```bash
+# Con el backend configurado en .env
+python scripts/run_demo.py data/sample/demo_fixed.json
 
-1. En Oracle Cloud Console → Menu (☰) → Identity & Security → Users
-2. Click en tu usuario
-3. Pestaña **"API Keys"**
-4. Click **"Add API Key"**
-5. Descargar el archivo `.pem` (la clave privada)
-6. Copiar la **Fingerprint** (la huella digital)
-7. Copiar el **User OCID** (ID del usuario)
-8. Copiar el **Tenancy OCID** (ID del tenancy)
+# Forzando el backend determinista, sin red ni credenciales
+python scripts/run_demo.py data/sample/demo_fixed.json --offline
 
-### Paso 2.3: Guardar credenciales localmente
-
-```powershell
-# Crear carpeta para OCI
-mkdir C:\Users\WIN10\.oci
-
-# Mover el archivo .pem descargado ahí
-# C:\Users\WIN10\.oci\oci_api_key.pem
+# Varios archivos a la vez
+python scripts/run_demo.py dataset.json dataset2.csv
 ```
 
-Actualizar `.env` con los datos de OCI:
-```env
-OCI_USER_ID=ocid1.user.oc1..xxxxx
-OCI_TENANCY_ID=ocid1.tenancy.oc1..xxxxx
-OCI_FINGERPRINT=xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx
-OCI_PRIVATE_KEY_PATH=C:\Users\WIN10\.oci\oci_api_key.pem
-OCI_REGION=sa-santiago-1
+Opciones útiles: `--backend <rule_based|ollama|openai|gemini>` y
+`--model <nombre>`. El snapshot queda en
+`storage/activos/paquete-distribucion-<fecha>.json` cuando no hay credenciales
+OCI configuradas.
+
+### 4.2. Panel de curaduría (Streamlit)
+
+```bash
+make run      # cierra instancias previas y abre el panel
+make status   # indica si está arriba y en qué puerto
+make stop     # cierra las instancias del panel
 ```
 
-### Paso 2.4: Crear Object Storage Bucket
+El panel corre en `http://localhost:8502` (puerto fijado en
+`.streamlit/config.toml`). `make run` resuelve la ruta del repo y exporta
+`PYTHONPATH`, así que funciona aunque lo invoques desde otro directorio.
 
-1. Oracle Cloud Console → Menu → Object Storage
-2. Click **"Create Bucket"**
-3. Nombre: `communitylab-activos-marketing`
-4. Region: sa-santiago-1 (o la más cercana)
-5. Storage Tier: Standard
-6. Click **"Create"**
+### 4.3. Webhook HTTP (ingesta en tiempo real)
 
-### Paso 2.5: Verificar conexión localmente
-
-```powershell
-# Activar entorno virtual
-venv\Scripts\activate
-
-# Abrir Python
-python
-
-# Probar conexión
-from src.oci.client import OCIClient
-client = OCIClient()
-print(client.test_connection())
-# Debe mostrar: ✅ Conexión con OCI exitosa
+```bash
+python scripts/run_webhook.py
+python scripts/run_webhook.py --backend ollama --model gemma4:31b
+python scripts/run_webhook.py --host 0.0.0.0 --port 8765 --secret mi_secreto
 ```
+
+Rutas expuestas:
+
+| Ruta | Método | Respuesta |
+|------|--------|-----------|
+| `/health` | GET | `{"status": "ok"}` |
+| `/ingest` | POST | `{status, resumen, activos, almacenamiento}` |
+| `/telegram` | POST | Resumen del pipeline; sin el secret configurado responde 503 |
+
+Ejemplo de verificación local:
+
+```bash
+curl http://localhost:8765/health
+# -> {"status": "ok"}
+```
+
+### 4.4. Bot interactivo de Telegram
+
+```bash
+python scripts/run_bot.py
+python scripts/run_bot.py --backend ollama --model gemma4:31b
+```
+
+El bot responde a cada mensaje con el análisis del pipeline. Es un diferencial
+del demo, nunca el camino obligatorio.
+
+### 4.5. Otros scripts
+
+| Script | Para qué |
+|--------|----------|
+| `scripts/run_timeline_demo.py` | Demo sobre datos de línea de tiempo |
+| `scripts/ingest_telegram.py` | Ingesta puntual desde Telegram |
+| `scripts/generar_muestra.py` | Genera una muestra de datos sintéticos |
+| `scripts/run_webhook_tunnel.sh` | Publica el webhook vía túnel (ver advertencia abajo) |
+
+> **Advertencia sobre el túnel:** `run_webhook_tunnel.sh start` re-registra el
+> webhook de Telegram contra la URL de Cloudflare. Si ya hay un webhook activo
+> en Render, **lo pisa**. No corras `start` si el webhook de producción está en
+> uso; `stop` no toca Telegram.
 
 ---
 
-## 🧪 FASE 3: TESTING LOCAL (Sprint 5 - antes del despliegue)
+## 5. Estructura de la salida
 
-### Paso 3.1: Crear dataset de prueba
-
-Crear archivo `data/raw/communitylab-sample.json`:
+El pipeline produce un `OutputBatch` con esta forma:
 
 ```json
 {
   "batch_id": "sample-001",
-  "source": "discord",
-  "channel": "#testimonios",
-  "processed_at": "2026-09-21T10:00:00Z",
-  "interactions": [
-    {
-      "id": "msg-001",
-      "content": "Me encantó el curso, me contrataron!",
-      "author": "estudiante-01",
-      "channel": "#testimonios",
-      "timestamp": "2026-09-15T14:30:00Z",
-      "metadata": {"reactions": 5}
-    },
-    {
-      "id": "msg-002",
-      "content": "No entiendo cómo usar LangGraph",
-      "author": "estudiante-02",
-      "channel": "#ayuda",
-      "timestamp": "2026-09-15T15:00:00Z",
-      "metadata": {"reactions": 2}
-    },
-    {
-      "id": "msg-003",
-      "content": "Excelente docente, muy claro todo",
-      "author": "estudiante-03",
-      "channel": "#testimonios",
-      "timestamp": "2026-09-15T16:00:00Z",
-      "metadata": {"reactions": 8}
-    }
-  ]
+  "analysis": [],
+  "decisions": [],
+  "assets": {},
+  "summary": {},
+  "alerts": [],
+  "oci_storage": {},
+  "visualization": {}
 }
 ```
 
-### Paso 3.2: Ejecutar pipeline completo localmente
-
-```powershell
-python -c "
-from src.pipeline import run_pipeline
-
-# Cargar dataset
-from src.ingest.input_loader import JSONInputLoader
-loader = JSONInputLoader()
-data = loader.load('data/raw/communitylab-sample.json')
-
-# Ejecutar pipeline
-result = run_pipeline(data)
-
-# Mostrar resultados
-import json
-print(json.dumps(result, indent=2, ensure_ascii=False))
-"
-```
-
-### Paso 3.3: Verificar salida JSON
-
-El resultado debe tener esta estructura:
-```json
-{
-  "batch_id": "sample-001",
-  "analysis": [...],
-  "decisions": [...],
-  "assets": [...],
-  "summary": {...},
-  "alerts": [...],
-  "oci_storage": {...},
-  "visualization": {...}
-}
-```
-
-### Paso 3.4: Probar API localmente
-
-```powershell
-# En una terminal, levantar la API
-python -c "from src.api.app import app; app.run(port=8000)"
-
-# En otra terminal, probar
-curl -X POST http://localhost:8000/procesar \
-  -H "Content-Type: application/json" \
-  -d @data/raw/communitylab-sample.json
-```
-
-### Paso 3.5: Probar Streamlit localmente
-
-```powershell
-streamlit run src/interface/app.py --server.port=8501
-```
-
-Abrir navegador: `http://localhost:8501`
+El campo `assets` (activos de distribución) puede venir vacío: eso significa que
+el lote no calificó para generar activos, no que el LLM haya fallado. La señal
+correcta está en `analysis[].relevance.is_marketing_worthy` y en
+`analysis[].categorization.category`.
 
 ---
 
-## 🖥️ FASE 4: DESPLIEGUE EN OCI (Sprint 5)
-
-### Paso 4.1: Crear Compute Instance
-
-1. Oracle Cloud Console → Menu → Compute → Instances
-2. Click **"Create Instance"**
-3. Configuración:
-   - **Name:** communitylab
-   - **Image:** Ubuntu 22.04 (o la más reciente)
-   - **Shape:** VM.Standard.E2.1.Micro (Always Free eligible)
-   - **Region:** sa-santiago-1
-4. Click **"Create"**
-
-### Paso 4.2: Configurar SSH
-
-```powershell
-# Descargar el archivo .pem del Instance (desde OCI Console)
-# O usar el que ya tenés
-
-# Conectar al servidor (reemplazar IP)
-ssh -i C:\Users\WIN10\.oci\oci_api_key.pem ubuntu@IP_DEL_SERVIDOR
-```
-
-### Paso 4.3: Instalar Python en OCI
-
-```bash
-# Dentro del servidor OCI
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3.11 python3.11-venv python3-pip git -y
-```
-
-### Paso 4.4: Subir código al servidor
-
-```powershell
-# Desde tu PC, subir el código via SCP (reemplazar IP y paths)
-scp -i C:\Users\WIN10\.oci\oci_api_key.pem -r ./communitylab ubuntu@IP_DEL_SERVIDOR:/home/ubuntu/communitylab
-```
-
-### Paso 4.5: Configurar entorno en OCI
-
-```bash
-# Dentro del servidor OCI
-cd /home/ubuntu/communitylab
-
-# Crear entorno virtual
-python3.11 -m venv venv
-source venv/bin/activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Crear .env con las mismas variables de tu PC
-nano .env
-# Pegar las mismas variables (GEMINI_API_KEY, OCI credentials, etc.)
-```
-
-### Paso 4.6: Crear bucket en OCI (si no lo creaste)
-
-```bash
-# Dentro del servidor OCI, usar OCI CLI
-oci os bucket create --namespace-name TU_NAMESPACE --name communitylab-activos-marketing --region sa-santiago-1
-```
-
-> **Para obtener TU_NAMESPACE:**
-> ```bash
-> oci os namespace get
-> ```
-
-### Paso 4.7: Levantar Streamlit
-
-```powershell
-# Dentro del servidor OCI, en la carpeta del proyecto
-source venv/bin/activate
-streamlit run src/interface/app.py --server.port=8501 --server.address=0.0.0.0
-```
-
-### Paso 4.8: Configurar Firewall (puerto 8501)
-
-En Oracle Cloud Console:
-1. Net → Virtual Cloud Networks → tu VCN
-2. Security Lists → Default
-3. Add Ingress Rules:
-   - Source: 0.0.0.0/0
-   - Protocol: TCP
-   - Destination Port: 8501
-4. Save
-
-### Paso 4.9: Verificar despliegue
-
-```powershell
-# Desde tu PC, abrir el navegador
-http://IP_DEL_SERVIDOR:8501
-```
-
-Debe mostrar el dashboard de CommunityLab.
-
----
-
-## 📋 FASE 5: CONFIGURACIÓN GITHUB COMPLETA
-
-### Paso 5.1: Repo (ya configurado)
-- Repo: github.com/emanuelperacchia/communitylab
-- Branch Protection: configurado en main
-- CODEOWNERS: configurado con `@Rox-0864` y `@emanuelperacchia`; GitHub no permite auto-aprobación
-- CI/CD: .github/workflows/ci.yml
-
-### Paso 5.2: Invitar equipo
-Settings → Collaborators → Add:
-- @Elias → Write
-- @Rox-0864 → Write
-- @Yis-ai-eng → Write
-- @Marcelo Rolon → Write
-- @Antonio3051 → Write
-- @emanuelperacchia → Admin
-
-### Paso 5.3: Configurar GitHub Projects
-1. Projects → New Project → Board
-2. Nombre: CommunityLab - Hackathon ONE
-3. Columnas: Backlog, Todo, En Progreso, Review, Done
-4. Campos: Sprint, Priority, Epic, Assignees
-
-### Paso 5.4: Crear las 45 issues
-Copiar de `docs/fichas-historias-usuario-v2.md`
-
-### Paso 5.5: Labels y Milestones
-Ya creados (verificar en Issues → Labels/Milestones)
-
----
-
-## 🔍 FASE 6: VERIFICACIÓN FINAL (antes de la demo)
-
-### Checklist de verificación
+## 6. Verificación antes de la demo
 
 ```
-✅ Pipeline procesa sample sin errores
-✅ Dashboard carga en localhost:8501
-✅ Dashboard carga en IP:8501 (OCI)
-✅ Panel de curaduría funciona
-✅ Panel de alertas muestra datos
-✅ API /procesar retorna JSON válido
-✅ API /health retorna {"status": "healthy"}
-✅ OCI upload/download funciona
-✅ Tests pasan: pytest tests/ -v
-✅ CI/CD pasa en GitHub Actions
-✅ Branch protection activa
-✅ CODEOWNERS funciona
-✅ README.md actualizado
-✅ docs/deploy.md documentado
+[ ] La suite de pruebas pasa: python -m pytest -q
+[ ] El pipeline procesa un dataset de ejemplo sin errores
+[ ] El panel carga en http://localhost:8502
+[ ] El panel de curaduría permite aprobar y descargar activos
+[ ] /health responde {"status": "ok"}
+[ ] Si hay credenciales OCI: el paquete se sube a Object Storage
+[ ] Si no hay credenciales OCI: se guarda el snapshot local sin romper
+[ ] El CI pasa en GitHub Actions
+[ ] La protección de rama y CODEOWNERS están activos (ver sección 7)
 ```
 
 ---
 
-## 📊 RESUMEN DE COMANDOS POR FASE
+## 7. Configuración de GitHub
 
-### Localmente (tu PC)
-```powershell
-# Setup inicial
-cd communitylab
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+| Elemento | Estado |
+|----------|--------|
+| Repositorio | `github.com/No-Country-simulation/G10-Latam-Equipo24-CommunityLab` |
+| Rama por defecto | `main` |
+| Protección de `main` | 1 aprobación + code owner + check `test` + estricto al día |
+| CODEOWNERS | `@emanuelperacchia`, `@Rox-0864`, `@itanflores` |
+| CI | `.github/workflows/ci.yml` |
+| Validación de PR | `.github/workflows/pr-validation.yml` (exige exactamente un label `type:*`) |
 
-# Testear
-pytest tests/ -v
-
-# Pipeline local
-python -c "from src.pipeline import run_pipeline; ..."
-
-# API local
-python -c "from src.api.app import app; app.run(port=8000)"
-
-# Streamlit local
-streamlit run src/interface/app.py --server.port=8501
-```
-
-### En OCI (servidor)
-```bash
-# Instalar Python
-sudo apt install python3.11 python3.11-venv git -y
-
-# Subir código (desde tu PC)
-scp -r ./communitylab ubuntu@IP:/home/ubuntu/
-
-# Configurar (en servidor)
-cd /home/ubuntu/communitylab
-python3.11 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-streamlit run src/interface/app.py --server.port=8501 --server.address=0.0.0.0
-```
+> La protección de `main` tiene `dismiss_stale_reviews` activo: **no conviene
+> pushear a un PR ya aprobado**, porque la aprobación se descarta. Para dejar un
+> PR listo para mergear conviene actualizarlo con `main` antes de pedir review.
 
 ---
 
-## 🆘 SOLUCIÓN DE PROBLEMAS COMUNES
+## 8. Solución de problemas comunes
 
-| Problema | Causa | Solución |
-|----------|-------|----------|
-| ModuleNotFoundError | Entorno virtual no activado | `venv\Scripts\activate` |
-| OCI connection error | .env mal configurado | Verificar variables de entorno |
-| Streamlit no abre | Puerto bloqueado | Verificar firewall (8501) |
-| Tests fallan | Dependencias faltantes | `pip install -r requirements.txt` |
-| API no responde | No está corriendo | Verificar proceso con `ps aux \| grep python` |
-| Bucket no se crea | Namespace incorrecto | `oci os namespace get` para obtener namespace |
+| Problema | Causa probable | Solución |
+|----------|----------------|----------|
+| `ModuleNotFoundError: No module named 'src'` | Falta `PYTHONPATH` | Usar `make run` (lo exporta) o exportarlo a mano |
+| El panel responde 200 pero muestra un error | Falta `PYTHONPATH` al invocar streamlit directo | Usar `make run` |
+| `OCI credentials not configured` | Faltan variables de OCI | Es esperado sin credenciales; guarda snapshot local |
+| El puerto 8502 sigue ocupado | Quedó una instancia previa | `make stop` |
+| El webhook responde 503 en `/telegram` | Falta `TELEGRAM_WEBHOOK_SECRET` | Definirlo en `.env` o pasarlo con `--secret` |
+| `409 Conflict` en `getUpdates` | Hay un webhook activo | Es una protección: Telegram no permite long polling con webhook activo |
+| Los tests fallan | Dependencias faltantes | `pip install -r requirements.txt` |
 
 ---
 
-*Guía de despliegue para CommunityLab — Oracle ONE Hackathon G10*
-*Actualizado: Sprint 5*
+*Guía de despliegue de CommunityLab — Oracle ONE Hackathon G10.*
