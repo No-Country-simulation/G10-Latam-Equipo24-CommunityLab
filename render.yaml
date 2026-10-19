@@ -1,0 +1,60 @@
+# Blueprint de Render: webhook de Telegram de CommunityLab (servicio web free).
+# Guía completa de despliegue: docs/deploy-render-webhook.md
+#
+# Notas:
+# - Los valores "sync: false" se cargan UNA sola vez, en la creación inicial del
+#   Blueprint (después hay que cargarlos a mano desde el panel de Render).
+# - El .pem de la API key de OCI no se puede declarar acá: se sube como
+#   Secret File en el panel (ver la guía). OCI_PRIVATE_KEY_PATH sólo indica
+#   la ruta donde Render lo monta.
+# - autoDeployTrigger queda sin declarar: Render usa su default (commit),
+#   es decir, redespliegue en cada push a la rama trackeada.
+# - El subdominio publico NO es necesariamente <name>.onrender.com: Render lo
+#   ajusta si el nombre ya esta tomado. Copiar la URL real del panel.
+services:
+  - type: web
+    name: communitylab-webhook
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scripts/run_webhook.py --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: OCI_REGION
+        value: sa-valparaiso-1
+      - key: OCI_NAMESPACE
+        value: axcyr94oehmi
+      - key: OCI_BUCKET_NAME
+        value: communitylab-activos-marketing
+      - key: OCI_PRIVATE_KEY_PATH
+        value: /etc/secrets/oci_api_key.pem
+      - key: COMMUNITYLAB_LLM_BACKEND
+        sync: false
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_WEBHOOK_ORIGEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: OCI_USER_ID
+        sync: false
+      - key: OCI_FINGERPRINT
+        sync: false
+      - key: OCI_TENANCY_ID
+        sync: false
