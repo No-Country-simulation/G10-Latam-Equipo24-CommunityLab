@@ -178,6 +178,7 @@ python3 -m pytest tests/ -q
 - **DevOps / CI-CD / Deploy**
   - [Pipeline CI](docs/pipeline-ci.md)
   - [Deploy y OCI](docs/deploy.md)
+  - [Deploy en Streamlit Community Cloud](docs/deploy-streamlit-cloud.md)
   - [Workflow Git](docs/git-workflow.md)
 
 - **Datos, LLM y Testing**
