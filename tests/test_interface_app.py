@@ -430,6 +430,27 @@ def test_build_assets_chart_axis_uses_integer_ticks():
     assert spec["encoding"]["x"]["axis"]["format"] == "d"
 
 
+def test_top_topics_and_assets_charts_share_the_same_shape():
+    """Los dos builders públicos deben producir la misma forma de gráfico."""
+    topics = app.build_top_topics_chart(
+        app.build_top_topics_df([{"tema": "aprendizaje", "conteo": 2}])
+    )
+    assets = app.build_assets_chart(
+        pd.DataFrame([{"activo": "Post LinkedIn", "conteo": 2}])
+    )
+
+    topics_spec = topics.to_dict()
+    assets_spec = assets.to_dict()
+
+    assert topics_spec["mark"] == assets_spec["mark"]
+    assert topics_spec["encoding"]["x"] == assets_spec["encoding"]["x"]
+    assert topics_spec["encoding"]["y"]["sort"] == assets_spec["encoding"]["y"]["sort"]
+    assert topics_spec["height"] == assets_spec["height"]
+    topics_tooltip = {t["field"] for t in topics_spec["encoding"]["tooltip"]}
+    assets_tooltip = {t["field"] for t in assets_spec["encoding"]["tooltip"]}
+    assert topics_tooltip - {"tema"} == assets_tooltip - {"activo"}
+
+
 def test_build_linkedin_candidate_options():
     candidatos = [
         {
