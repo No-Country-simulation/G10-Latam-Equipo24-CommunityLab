@@ -68,7 +68,7 @@ C1, C2 y C3 son las transformaciones de R6. C4 y C5 son los contrastes.
 |-------|-------|
 | `action` | `publicar` |
 | `asset_type` | `linkedin` |
-| Razón | "Testimonio positivo relevante" |
+| Razón | "Testimonio o logro positivo relevante" |
 
 **Activo generado — post de LinkedIn**
 
@@ -112,7 +112,7 @@ Semana"), porque el newsletter se arma con el primer testimonio publicable.
 | `is_marketing_worthy` | `True` |
 | Temas | certificación, estudio |
 
-**Decisión:** `publicar` / `linkedin` — "Testimonio positivo relevante".
+**Decisión:** `publicar` / `linkedin` — "Testimonio o logro positivo relevante".
 
 **Activo generado — destaque de newsletter**
 
@@ -125,6 +125,12 @@ Semana"), porque el newsletter se arma con el primer testimonio publicable.
 Es el caso de un logro **académico** (no un empleo): el sistema lo trata igual que
 un logro laboral, porque la categoría `logro` marca el contenido y no distingue
 entre empleo y certificación.
+
+**Nota sobre la regla R1.** El motivo de la decisión es "Testimonio o logro
+positivo relevante", no "Testimonio positivo relevante": R1 acepta tanto
+`testimonio` como `logro` (`is_publishable_type = effective_type in {"testimonio",
+"logro"}`). Antes de ese cambio, C2 —cuyo análisis devuelve la categoría `logro`—
+se descartaba en silencio. El cambio entra con el PR #144.
 
 ---
 
