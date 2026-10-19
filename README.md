@@ -94,7 +94,7 @@ flowchart TB
 El repositorio cuenta con un pipeline de integración continua en [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 - **Tests**: `pytest tests/ -v`
-- **Linting**: `flake8 src/` con `max-line-length=100` e ignores definidos en el workflow.
+- **Linting**: `flake8 src tests scripts`, con la configuración (`max-line-length`, `extend-ignore`) en [`.flake8`](.flake8).
 - **Diagrama de flujo y detalles**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
 
 ---
