@@ -328,6 +328,88 @@ def test_build_sentiment_pie_chart_all_zero_counts_returns_none():
     assert app.build_sentiment_pie_chart(df) is None
 
 
+def test_build_sentiment_pie_chart_uses_brand_palette():
+    """La torta usa la paleta de marca y ya no los colores Material legacy."""
+    df = app.build_sentiment_distribution_df({"positivo": 5, "negativo": 2, "neutral": 3})
+    chart = app.build_sentiment_pie_chart(df)
+
+    color_range = chart.to_dict()["encoding"]["color"]["scale"]["range"]
+    assert color_range == [app.BRAND_TEAL, app.BRAND_NEGATIVE, app.BRAND_NEUTRAL]
+    for legacy in ("#4CAF50", "#F44336", "#9E9E9E"):
+        assert legacy not in color_range
+
+
+def _assert_descending_by_x(sort):
+    """El sort del eje categórico debe ser descendente por el eje x.
+
+    Altair serializa sort="-x" como string o como objeto de sort; aceptamos
+    ambas formas para no acoplarnos a la serialización exacta.
+    """
+    if isinstance(sort, str):
+        assert sort == "-x"
+    else:
+        assert sort.get("field") == "x"
+        assert sort.get("order") == "descending"
+
+
+def test_build_top_topics_chart_returns_none_for_empty_df():
+    df = app.build_top_topics_df([])
+
+    assert app.build_top_topics_chart(df) is None
+
+
+def test_build_top_topics_chart_returns_none_for_none():
+    assert app.build_top_topics_chart(None) is None
+
+
+def test_build_top_topics_chart_pins_axis_at_zero_and_sorts_desc():
+    df = app.build_top_topics_df(
+        [
+            {"tema": "aprendizaje", "conteo": 10},
+            {"tema": "empleos", "conteo": 5},
+        ]
+    )
+
+    chart = app.build_top_topics_chart(df)
+
+    assert isinstance(chart, alt.Chart)
+    spec = chart.to_dict()
+    assert spec["encoding"]["x"]["scale"]["domainMin"] == 0
+    _assert_descending_by_x(spec["encoding"]["y"]["sort"])
+    assert spec["mark"]["color"] == app.BRAND_TEAL
+    # Altair expands shorthand tooltips into field objects; assert on fields.
+    tooltip_fields = {t["field"] for t in spec["encoding"]["tooltip"]}
+    assert tooltip_fields == {"tema", "conteo"}
+
+
+def test_build_assets_chart_returns_none_for_empty_df():
+    df = pd.DataFrame(columns=["activo", "conteo"])
+
+    assert app.build_assets_chart(df) is None
+
+
+def test_build_assets_chart_returns_none_for_none():
+    assert app.build_assets_chart(None) is None
+
+
+def test_build_assets_chart_pins_axis_at_zero_and_sorts_desc():
+    df = app.build_assets_summary_df(
+        {"dudas_frecuentes": 3, "feedback_negativo": 2},
+        {"candidatos_post_linkedin": [{"autor": "a"}, {"autor": "b"}]},
+    )
+
+    chart = app.build_assets_chart(df)
+
+    assert isinstance(chart, alt.Chart)
+    spec = chart.to_dict()
+    assert spec["encoding"]["x"]["scale"]["domainMin"] == 0
+    _assert_descending_by_x(spec["encoding"]["y"]["sort"])
+    assert spec["mark"]["color"] == app.BRAND_TEAL
+    # Altair expands shorthand tooltips into field objects; assert on fields.
+    tooltip_fields = {t["field"] for t in spec["encoding"]["tooltip"]}
+    assert tooltip_fields == {"activo", "conteo"}
+
+
 def test_build_linkedin_candidate_options():
     candidatos = [
         {
