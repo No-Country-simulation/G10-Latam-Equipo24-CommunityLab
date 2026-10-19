@@ -140,9 +140,12 @@ make status   # indica si está arriba y en qué puerto
 make stop     # cierra las instancias del panel
 ```
 
-El panel corre en `http://localhost:8502` (puerto fijado en
-`.streamlit/config.toml`). `make run` resuelve la ruta del repo y exporta
-`PYTHONPATH`, así que funciona aunque lo invoques desde otro directorio.
+El panel corre en `http://localhost:8502`. El puerto lo pasa `make run` por
+línea de comandos (`PORT` en el `Makefile`), no `.streamlit/config.toml`: el
+puerto no se fija en ese archivo a propósito, porque Streamlit Community Cloud
+lo leería y verificaría la salud de la app en el 8501, y el deploy fallaría.
+`make run` resuelve además la ruta del repo y exporta `PYTHONPATH`, así que
+funciona aunque lo invoques desde otro directorio.
 
 ### 4.3. Webhook HTTP (ingesta en tiempo real)
 
