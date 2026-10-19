@@ -80,11 +80,11 @@ def main() -> int:
 
     sys.path.insert(0, str(REPO_ROOT))
     from src.ingest.bot import run_bot  # noqa: E402
+    from src.ingest.runtime import apply_backend  # noqa: E402
     from src.ingest.telegram import (  # noqa: E402
         TelegramAuthError,
         TelegramPermanentError,
     )
-    from src.ingest.webhook import apply_backend  # noqa: E402
 
     backend = apply_backend(args.backend)
 
