@@ -1,8 +1,6 @@
 # Script para añadir descripciones técnicas a las fichas
 # Ejecutar en la carpeta del proyecto
 
-import re
-
 descripciones = {
     "HU-S1-001": {
         "que_hace": "Crear las clases Python que representan los datos del sistema (mensajes, sentimientos, decisiones, activos)",
