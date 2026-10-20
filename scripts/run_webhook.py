@@ -79,7 +79,8 @@ def main() -> int:
         os.environ["TELEGRAM_WEBHOOK_SECRET"] = args.secret
 
     sys.path.insert(0, str(REPO_ROOT))
-    from src.ingest.webhook import apply_backend, make_server  # noqa: E402
+    from src.ingest.runtime import apply_backend  # noqa: E402
+    from src.ingest.webhook import make_server  # noqa: E402
 
     backend = apply_backend(args.backend)
     server = make_server(args.host, args.port)

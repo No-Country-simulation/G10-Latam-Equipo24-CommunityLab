@@ -8,9 +8,10 @@ lote de interacciones en memoria por `POST /ingest`, corre el pipeline
 Tres rutas:
     - `GET  /health`   -> 200 {"status": "ok"}.
     - `POST /ingest`   -> 200 con {status, resumen, activos, almacenamiento}.
-    - `POST /telegram` -> 200 con el resumen del pipeline (Fase 1 del webhook
-      de Telegram: recibir un update de la Bot API, validar el secret del
-      header y deduplicar por update_id).
+    - `POST /telegram` -> 200 con el resumen del pipeline: recibe un update de
+      la Bot API, valida el secret del header, deduplica por update_id y, si
+      hay TELEGRAM_BOT_TOKEN configurado, le devuelve el análisis al chat por
+      sendMessage (la misma experiencia que el bot en polling).
 
 Cualquier otra ruta o método responde 404/405. El backend LLM lo decide
 `COMMUNITYLAB_LLM_BACKEND` (por defecto rule_based); el CLI de demo
@@ -34,8 +35,15 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from src.domain.models import InputBatch, OutputBatch
+from src.ingest.bot import WELCOME_TEXT, comando_de_texto, format_reply, send_message
 from src.ingest.normalizer import InputNormalizer
-from src.ingest.telegram import messages_to_batch
+from src.ingest.runtime import apply_backend
+from src.ingest.telegram import (
+    TelegramAuthError,
+    TelegramPermanentError,
+    TelegramTransientError,
+    messages_to_batch,
+)
 from src.pipeline import _run_with_batch
 
 logger = logging.getLogger(__name__)
@@ -56,9 +64,20 @@ _ALLOWED_METHODS = {
     "/telegram": "POST",
 }
 
-# update_id ya procesados. Acotado a _DEDUPE_LIMIT (el más viejo se descarta)
-# y protegido por _dedupe_lock porque el server usa un hilo por request.
-_seen_update_ids: "OrderedDict[Any, None]" = OrderedDict()
+# Estado de un update_id memorizado: el pipeline ya terminó (_ESTADO_PROCESADO)
+# o terminó y además la respuesta al chat salió / no aplica (_ESTADO_RESPONDIDO).
+# Dos marcas para que un reintento de Telegram no vuelva a correr el pipeline
+# (duplicaría activos) pero sí complete la respuesta pendiente, que queda
+# guardada en el registro.
+_ESTADO_PROCESADO = "procesado"
+_ESTADO_RESPONDIDO = "respondido"
+
+# update_id ya vistos: {"estado": _ESTADO_*, "texto": respuesta pendiente}.
+# Acotado a _DEDUPE_LIMIT (el más viejo se descarta) y protegido por
+# _dedupe_lock porque el server usa un hilo por request. Vive en memoria: un
+# reinicio del server lo vacía y Telegram reentregaría ese update (mismo
+# límite que el dedupe de la fase 1).
+_seen_update_ids: "OrderedDict[Any, Dict[str, Any]]" = OrderedDict()
 _dedupe_lock = threading.Lock()
 
 
@@ -140,16 +159,22 @@ def _webhook_secret() -> str:
     return os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
 
 
-def _is_duplicate_update(update_id: Any) -> bool:
-    """True si el update_id ya fue procesado; toma el lock del dedupe."""
+def _registro_update(update_id: Any) -> Optional[Dict[str, Any]]:
+    """Registro del update_id ({estado, texto}), o None si nunca lo vimos."""
     with _dedupe_lock:
-        return update_id in _seen_update_ids
+        registro = _seen_update_ids.get(update_id)
+        return dict(registro) if registro is not None else None
 
 
-def _remember_update(update_id: Any) -> None:
-    """Registra un update_id como procesado (FIFO, tope _DEDUPE_LIMIT)."""
+def _remember_update(
+    update_id: Any, estado: str, texto: Optional[str] = None
+) -> None:
+    """Memoriza el estado (y la respuesta pendiente) de un update_id.
+
+    FIFO con tope _DEDUPE_LIMIT, el más viejo se descarta.
+    """
     with _dedupe_lock:
-        _seen_update_ids[update_id] = None
+        _seen_update_ids[update_id] = {"estado": estado, "texto": texto}
         _seen_update_ids.move_to_end(update_id)
         while len(_seen_update_ids) > _DEDUPE_LIMIT:
             _seen_update_ids.popitem(last=False)
@@ -167,6 +192,81 @@ def _chat_de_update(update: Dict[str, Any]) -> str:
     return "desconocido"
 
 
+def _chat_id_de_update(update: Dict[str, Any]) -> Optional[int]:
+    """chat.id del update para sendMessage; None si el update no lo trae.
+
+    Misma regla que el polling del bot: el bot escucha en cualquier chat pero
+    sólo contesta en privado, así que un chat de grupo devuelve None.
+    """
+    mensaje = update.get("message")
+    chat = mensaje.get("chat") if isinstance(mensaje, dict) else None
+    if not isinstance(chat, dict) or chat.get("id") is None:
+        return None
+    if chat.get("type") is not None and chat.get("type") != "private":
+        return None
+    return chat["id"]
+
+
+def _texto_de_respuesta(
+    update: Dict[str, Any], result: Optional[OutputBatch]
+) -> Optional[str]:
+    """Texto a responder en el chat, o None si no corresponde responder.
+
+    Reutiliza el análisis que este mismo request ya corrió (`result`) en vez de
+    volver a pasarlo por el pipeline: `bot.build_reply` hace eso y duplicaría
+    los activos. Los comandos se tratan igual que en el polling: `/start` y
+    `/help` reciben la bienvenida, el resto no recibe respuesta.
+    """
+    mensaje = update.get("message")
+    texto = mensaje.get("text") if isinstance(mensaje, dict) else None
+    if not isinstance(texto, str) or not texto.strip():
+        return None
+
+    comando = comando_de_texto(texto)
+    if comando is not None:
+        return WELCOME_TEXT if comando in ("/start", "/help") else None
+
+    return format_reply(result) if result is not None else None
+
+
+def _responder_chat(update: Dict[str, Any], texto: str) -> Optional[str]:
+    """Estado de la respuesta al chat; None significa "reintentar" (500).
+
+    Devuelve "enviada", "omitida" (no hay token, no hay chat o chat de grupo)
+    o "fallida" (error permanente de la Bot API, al que los reintentos de
+    Telegram no le agregan nada). Sin `TELEGRAM_BOT_TOKEN` el webhook sigue
+    siendo ingesta pura: el mensaje se procesa y no se responde, con un warning
+    en el log para que no pase inadvertido.
+    """
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        logger.warning(
+            "TELEGRAM_BOT_TOKEN sin configurar: el mensaje se procesó, "
+            "pero no se respondió en el chat."
+        )
+        return "omitida"
+
+    chat_id = _chat_id_de_update(update)
+    if chat_id is None:
+        # Sin chat identificable o chat de grupo: no hay a quién responderle.
+        return "omitida"
+
+    try:
+        send_message(token, chat_id, texto)
+    except TelegramAuthError as exc:
+        logger.error("No se pudo responder en el chat (token inválido): %s", exc)
+        return "fallida"
+    except TelegramPermanentError as exc:
+        logger.error("No se pudo responder en el chat (error permanente): %s", exc)
+        return "fallida"
+    except TelegramTransientError as exc:
+        logger.warning("Respuesta al chat pendiente (error transitorio): %s", exc)
+        return None
+
+    logger.info("Webhook /telegram respondió en el chat de %s.", chat_id)
+    return "enviada"
+
+
 def _result_payload(result: OutputBatch) -> Dict[str, Any]:
     """Cuerpo JSON común de la respuesta del pipeline (misma forma en /ingest)."""
     return {
@@ -175,24 +275,6 @@ def _result_payload(result: OutputBatch) -> Dict[str, Any]:
         "activos": result.activos_distribucion_generados.model_dump(mode="json"),
         "almacenamiento": result.almacenamiento_oci.model_dump(mode="json"),
     }
-
-
-def resolve_backend(name: Optional[str]) -> str:
-    """Resuelve el backend: argumento explícito > env > rule_based."""
-    if name and name != "auto":
-        return name
-    return os.getenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-
-
-def apply_backend(name: Optional[str] = None) -> str:
-    """Aplica el backend elegido a COMMUNITYLAB_LLM_BACKEND y lo devuelve.
-
-    `COMMUNITYLAB_LLM_BACKEND` es la fuente de verdad que lee get_llm_client();
-    este helper solo la setea desde el parámetro del server/CLI.
-    """
-    backend = resolve_backend(name)
-    os.environ["COMMUNITYLAB_LLM_BACKEND"] = backend
-    return backend
 
 
 def make_server(
@@ -285,7 +367,7 @@ class IngestHandler(BaseHTTPRequestHandler):
         self._send_json(200, _result_payload(result))
 
     def _telegram(self) -> None:
-        """POST /telegram: recibe un update de Telegram y lo corre por el pipeline.
+        """POST /telegram: recibe un update, lo corre por el pipeline y responde.
 
         Orden de controles:
         1. Fail closed: sin `TELEGRAM_WEBHOOK_SECRET` responde 503 (no se acepta
@@ -293,12 +375,16 @@ class IngestHandler(BaseHTTPRequestHandler):
         2. Secret del header `X-Telegram-Bot-Api-Secret-Token` ausente o distinto
            -> 401 (comparado en tiempo constante con hmac.compare_digest).
         3. Body no parseable -> 400.
-        4. update_id ya visto -> 200 {"status": "duplicado"} sin reprocesar.
+        4. update_id ya respondido -> 200 {"status": "duplicado"} sin reprocesar.
         5. Update sin mensaje utilizable -> 200 {"status": "ignorado"}.
 
         Un update procesado responde 200 con la misma forma que /ingest mas
-        `ruta` y `update_id` para correlacionar. Un error del pipeline responde
-        500 con un mensaje sanitizado (nunca el body crudo).
+        `ruta`, `update_id` y `respuesta` ("enviada", "omitida" o "fallida").
+        El análisis se le devuelve al chat por sendMessage cuando hay
+        TELEGRAM_BOT_TOKEN configurado; si esa respuesta falla de forma
+        transitoria responde 500 para que Telegram reentregue, y el reintento
+        sólo reenvía el chat sin volver a correr el pipeline. Un error del
+        pipeline responde 500 con un mensaje sanitizado (nunca el body crudo).
         """
         secret = _webhook_secret()
         if not secret:
@@ -328,47 +414,83 @@ class IngestHandler(BaseHTTPRequestHandler):
             return
 
         update_id = update.get("update_id")
+        registro = _registro_update(update_id)
 
-        # Telegram reintenta las entregas no confirmadas; un update ya procesado
-        # se confirma con 200 para cortar los reintentos sin reprocesar.
-        if update_id is not None and _is_duplicate_update(update_id):
+        # Telegram reintenta las entregas no confirmadas; un update ya
+        # respondido se confirma con 200 para cortar los reintentos.
+        if registro is not None and registro["estado"] == _ESTADO_RESPONDIDO:
             self._send_json(200, {"status": "duplicado", "update_id": update_id})
             return
 
-        origen = os.getenv("TELEGRAM_WEBHOOK_ORIGEN") or None
-        batch = messages_to_batch([update], _chat_de_update(update), origen=origen)
+        # Reintento de un update cuyo pipeline ya terminó: no se vuelve a
+        # correr (duplicaría activos), sólo se reenvía la respuesta pendiente
+        # que quedó registrada en la entrega anterior.
+        reintento = registro is not None
+        result: Optional[OutputBatch] = None
+        body: Optional[Dict[str, Any]] = None
+        texto: Optional[str] = registro["texto"] if reintento else None
 
-        if not batch.interacciones:
-            # Update válido de Telegram sin contenido utilizable (sin message,
-            # sin texto o comando): se ignora sin correr el pipeline.
+        if not reintento:
+            origen = os.getenv("TELEGRAM_WEBHOOK_ORIGEN") or None
+            batch = messages_to_batch([update], _chat_de_update(update), origen=origen)
+
+            if batch.interacciones:
+                try:
+                    result = _run_with_batch(batch)
+                except Exception as exc:  # el pipeline no debe filtrar el input crudo
+                    logger.exception("Error interno del pipeline en /telegram: %s", exc)
+                    self._send_error(500, "Error interno del pipeline")
+                    return
+
+                logger.info(
+                    "Webhook /telegram procesado: status=%s, update_id=%s, "
+                    "interacciones=%d",
+                    result.status,
+                    update_id,
+                    result.resumen_comunidad.total_interacciones_procesadas,
+                )
+
+                body = _result_payload(result)
+            else:
+                # Update válido de Telegram sin contenido utilizable (sin
+                # message, sin texto o comando desconocido): se ignora sin
+                # correr el pipeline. Un /start o /help igual recibe la
+                # bienvenida, igual que con el bot en polling.
+                body = {"status": "ignorado", "update_id": update_id}
+
+            texto = _texto_de_respuesta(update, result)
+
+            # Se memoriza recién cuando el resultado es terminal: si el
+            # pipeline falla (500) NO se marca, para que Telegram reintente y
+            # no se pierda. En "procesado" queda guardada la respuesta
+            # pendiente por si el envío al chat necesita otro intento.
             if update_id is not None:
-                _remember_update(update_id)
-            self._send_json(200, {"status": "ignorado", "update_id": update_id})
-            return
+                _remember_update(update_id, _ESTADO_PROCESADO, texto)
 
-        try:
-            result = _run_with_batch(batch)
-        except Exception as exc:  # el pipeline no debe filtrar el input crudo
-            logger.exception("Error interno del pipeline en /telegram: %s", exc)
-            self._send_error(500, "Error interno del pipeline")
-            return
+        if body is None:
+            # Reintento: el pipeline ya corrió en una entrega anterior.
+            body = {
+                "status": "procesado",
+                "update_id": update_id,
+                "nota": "pipeline ejecutado en una entrega anterior de Telegram",
+            }
 
-        # Se memoriza recién cuando el resultado es terminal: si el pipeline
-        # falla (500) NO se marca, para que Telegram reintente y no se pierda.
+        estado_respuesta = "omitida"
+        if texto is not None:
+            estado_respuesta = _responder_chat(update, texto)
+            if estado_respuesta is None:
+                # Falla transitoria de la Bot API: 500 para que Telegram
+                # reentregue. El estado queda "procesado" y el reintento sólo
+                # reenvía el chat, sin volver a correr el pipeline.
+                self._send_error(500, "No se pudo enviar la respuesta a Telegram.")
+                return
+
         if update_id is not None:
-            _remember_update(update_id)
+            _remember_update(update_id, _ESTADO_RESPONDIDO, texto)
 
-        logger.info(
-            "Webhook /telegram procesado: status=%s, update_id=%s, "
-            "interacciones=%d",
-            result.status,
-            update_id,
-            result.resumen_comunidad.total_interacciones_procesadas,
-        )
-
-        body = _result_payload(result)
         body["ruta"] = "/telegram"
         body["update_id"] = update_id
+        body["respuesta"] = estado_respuesta
         self._send_json(200, body)
 
     # --- Utilidades de request/response ---------------------------------
