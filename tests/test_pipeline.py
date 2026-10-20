@@ -21,6 +21,7 @@ from src.domain.models import (
     AnalysisComplete,
     CategorizationResult,
     DecisionResult,
+    DistributionAssets,
     InputBatch,
     InputMessage,
     OutputBatch,
@@ -294,7 +295,12 @@ def test_technical_question_generates_faq_from_decision():
 
 
 class CountingFAQClient(FakeLLMClient):
-    """Counts FAQ generator calls to prove candidates add no LLM request."""
+    """Counts FAQ generator calls and answers a different tema per call.
+
+    The sequence-based tema ("Tema 1", "Tema 2", ...) lets a test prove WHICH
+    result each candidate carries: if the first candidate reuses the published
+    suggestion, its tema is the first one ever generated.
+    """
 
     def __init__(self):
         self.faq_calls = 0
@@ -302,13 +308,15 @@ class CountingFAQClient(FakeLLMClient):
     def generate(self, prompt: str, **kwargs) -> str:
         if "TEMA de una FAQ" in prompt:
             self.faq_calls += 1
+            return json.dumps({"tema": f"Tema {self.faq_calls}"})
         return super().generate(prompt, **kwargs)
 
 
-def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, tmp_path):
+def test_faq_candidates_carry_tema_and_first_reuses_suggestion(monkeypatch, tmp_path):
     # N technical questions -> len(candidatos_faq) == N, and the FAQ generator
-    # runs EXACTLY ONCE (the single `sugerencia_contenido_faq`): listing the
-    # candidates must not add an LLM call.
+    # runs EXACTLY N times: once for the materialized suggestion (reused by the
+    # first candidate) and once per remaining candidate. The first candidate
+    # must NOT trigger a second call for the same question.
     client = CountingFAQClient()
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
 
@@ -332,11 +340,97 @@ def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, t
     assert [c.autor for c in candidatos] == ["Dev 1", "Dev 2", "Dev 3"]
     assert all(c.relevancia == 0.9 for c in candidatos)
 
-    # The single materialized suggestion still works, generated only once.
+    # The single materialized suggestion keeps working, generated only once.
     assert assets.sugerencia_contenido_faq is not None
-    assert client.faq_calls == 1
+    assert assets.sugerencia_contenido_faq.tema == "Tema 1"
+    # 3 calls for 3 questions: no extra call for the first one, whose
+    # candidate reuses the already generated suggestion.
+    assert client.faq_calls == 3
+    assert candidatos[0].tema == "Tema 1"
+    assert candidatos[1].tema == "Tema 2"
+    assert candidatos[2].tema == "Tema 3"
     # `dudas_frecuentes` stays the count of CREAR_FAQ decisions.
     assert output.resumen_comunidad.dudas_frecuentes == 3
+
+
+class TopicAwareFAQClient(FakeLLMClient):
+    """Routes FAQ prompts by a marker in the question text.
+
+    Questions mentioning "docker" get tema "Docker"; questions mentioning
+    "git" get tema "Git". Lets a test exercise frequency grouping with
+    repeated and distinct temas.
+    """
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        if "TEMA de una FAQ" in prompt:
+            if "docker" in prompt:
+                return json.dumps({"tema": "Docker"})
+            if "git" in prompt:
+                return json.dumps({"tema": "Git"})
+            return json.dumps({"tema": "Otro"})
+        return super().generate(prompt, **kwargs)
+
+
+def test_faq_frecuencia_ranks_repeated_temas_by_count_desc(monkeypatch, tmp_path):
+    # Two questions share the tema "Docker", one asks about "git": the
+    # frequency ranking groups the repeated tema and orders desc by count.
+    monkeypatch.setattr(
+        "src.pipeline.get_llm_client", lambda: TopicAwareFAQClient()
+    )
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Ana",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo configuro docker compose?",
+            },
+            {
+                "autor": "Beto",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo instalo docker en la nube?",
+            },
+            {
+                "autor": "Carla",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo hago un rebase con git?",
+            },
+        ],
+    )
+    output = run_pipeline(source)
+    assets = output.activos_distribucion_generados
+
+    candidatos = assets.candidatos_faq
+    assert [c.tema for c in candidatos] == ["Docker", "Docker", "Git"]
+
+    # `rank_topics` normalizes to lowercase labels; frequency descending.
+    assert [
+        (tf.tema, tf.conteo) for tf in assets.faq_frecuencia
+    ] == [("docker", 2), ("git", 1)]
+
+
+def test_old_style_output_without_faq_tema_still_validates():
+    # Payloads generated before `tema`/`faq_frecuencia` existed must keep
+    # loading: both fields are additive with sane defaults.
+    assets = DistributionAssets.model_validate(
+        {
+            "candidatos_faq": [
+                {
+                    "autor": "Ana",
+                    "canal": "#dudas",
+                    "texto_original": "¿Cómo conecto la base de datos?",
+                    "relevancia": 0.9,
+                }
+            ]
+        }
+    )
+
+    assert assets.candidatos_faq[0].tema == ""
+    assert assets.faq_frecuencia == []
 
 
 def test_negative_testimonial_is_not_published(tmp_path):
@@ -413,6 +507,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
         "candidatos_faq",
+        "faq_frecuencia",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 

@@ -214,12 +214,17 @@ class FAQCandidate(BaseModel):
 
     Mirrors `LinkedInCandidate` but cheaper: the FAQ suggestion the contract
     materializes is a single asset, so the candidates only expose the original
-    question and who asked it (no title/copy fields, no LLM call).
+    question and who asked it (no title/copy fields). The only generated field
+    is `tema`, obtained from the FAQ generator so the frequency ranking can
+    group repeated topics. Additive via default: old payloads lack it.
     """
     autor: str = ""
     canal: str = ""
     texto_original: str = ""
     relevancia: float = 0.0
+    # LLM-generated FAQ topic for this question; "" when the generator
+    # failed or the payload predates this field.
+    tema: str = ""
 
 
 class NewsletterHighlight(BaseModel):
@@ -245,10 +250,14 @@ class DistributionAssets(BaseModel):
     # offer a manual selector. Additive via default_factory: old outputs lack it.
     candidatos_post_linkedin: List[LinkedInCandidate] = Field(default_factory=list)
     # Every technical question routed by the FAQ rule (CREAR_FAQ), in batch
-    # order, listed WITHOUT generated copy (no extra LLM call). Additive via
+    # order, listed WITHOUT generated copy (no title/copy fields). Additive via
     # default_factory: old outputs lack it. The contract still materializes a
     # single `sugerencia_contenido_faq`.
     candidatos_faq: List[FAQCandidate] = Field(default_factory=list)
+    # FAQ topics ranked by frequency, grouping repeated `tema` values from
+    # `candidatos_faq` (frequency descending). Additive via default_factory:
+    # old outputs lack it.
+    faq_frecuencia: List[TopicFrequency] = Field(default_factory=list)
 
 
 class OCIStorage(BaseModel):

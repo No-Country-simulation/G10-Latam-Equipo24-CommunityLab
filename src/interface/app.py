@@ -350,6 +350,26 @@ def build_top_topics_df(temas_principales_conteo):
     return df
 
 
+def build_faq_frequency_df(assets):
+    """Construye un DataFrame para el ranking de preguntas frecuentes.
+
+    Reutiliza `build_top_topics_df` sobre `faq_frecuencia` (temas con su
+    conteo). Los lotes antiguos no traen esa clave: `assets.get(...)` con
+    `or []` los trata como una lista vacía y el DataFrame sale sin filas.
+
+    Parámetros
+    ----------
+    assets : dict
+        `activos_distribucion_generados` del contrato.
+
+    Retorna
+    -------
+    pandas.DataFrame
+        Columnas ["tema", "conteo"] ordenadas desc por conteo.
+    """
+    return build_top_topics_df(assets.get("faq_frecuencia") or [])
+
+
 def build_linkedin_candidate_options(candidatos):
     """Builds the selectbox labels for the LinkedIn candidates.
 
@@ -1026,18 +1046,19 @@ def main():
                 faq_estado = CURATION_STATUS_PENDING
 
             # List-only visibility of every question routed by the FAQ rule:
-            # the curator can SEE the candidates (text, author, relevance)
-            # without any extra generation and without a selector.
+            # the curator can SEE the candidates (text, author, relevance and
+            # its generated tema when available) without a selector.
             candidatos_faq = assets.get("candidatos_faq") or []
             if candidatos_faq:
                 st.caption(
                     f"{len(candidatos_faq)} preguntas detectadas en este lote "
-                    "(solo listado, sin generación adicional)."
+                    "(solo listado, con un tema generado por candidato)."
                 )
                 for numero, candidato in enumerate(candidatos_faq, start=1):
                     texto = str(candidato.get("texto_original") or "").strip()
                     autor = str(candidato.get("autor") or "").strip()
                     canal = str(candidato.get("canal") or "").strip()
+                    tema = str(candidato.get("tema") or "").strip()
                     try:
                         relevancia = f"{float(candidato.get('relevancia') or 0.0):.0%}"
                     except (TypeError, ValueError):
@@ -1046,10 +1067,27 @@ def main():
                     st.caption(
                         " · ".join(
                             parte
-                            for parte in (autor, canal, f"Relevancia: {relevancia}")
+                            for parte in (
+                                autor,
+                                canal,
+                                f"Relevancia: {relevancia}",
+                                f"Tema: {tema}" if tema else "",
+                            )
                             if parte
                         )
                     )
+
+            # Ranking de preguntas frecuentes por frecuencia: agrupa los
+            # `tema` de los candidatos y los ordena por conteo descendente.
+            # Los lotes antiguos no traen `faq_frecuencia` y quedan vacíos.
+            faq_df = build_faq_frequency_df(assets)
+            if not faq_df.empty:
+                st.markdown("**Preguntas frecuentes por frecuencia**")
+                st.altair_chart(build_top_topics_chart(faq_df), width="stretch")
+                st.caption(
+                    "Temas de los candidatos FAQ agrupados por cuántas "
+                    "preguntas los repiten, ordenados por frecuencia."
+                )
 
         # Un activo entra al paquete sólo si está Aprobado y su texto editado
         # no está vacío. Pendiente y Rechazado quedan afuera.

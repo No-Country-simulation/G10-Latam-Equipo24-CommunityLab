@@ -136,6 +136,51 @@ def test_build_top_topics_df_empty():
     assert len(df) == 0
 
 
+def test_build_faq_frequency_df_orders_by_count_desc():
+    assets = {
+        "faq_frecuencia": [
+            {"tema": "git", "conteo": 1},
+            {"tema": "docker", "conteo": 3},
+            {"tema": "langgraph", "conteo": 2},
+        ]
+    }
+
+    df = app.build_faq_frequency_df(assets)
+
+    assert list(df.columns) == ["tema", "conteo"]
+    # Sorted descending by conteo, regardless of the input order.
+    assert df["tema"].tolist() == ["docker", "langgraph", "git"]
+    assert df["conteo"].tolist() == [3, 2, 1]
+
+
+def test_build_faq_frequency_df_handles_old_assets_without_key():
+    # Old samples predate `faq_frecuencia`: the helper must return an empty
+    # DataFrame (never raise) so the FAQ tab renders without the ranking.
+    df = app.build_faq_frequency_df({})
+
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["tema", "conteo"]
+    assert df.empty
+
+
+def test_build_faq_frequency_df_accepts_model_objects():
+    # The helper handles both dicts and objects with tema/conteo attributes,
+    # same as build_top_topics_df.
+    from src.domain.models import TopicFrequency
+
+    assets = {
+        "faq_frecuencia": [
+            TopicFrequency(tema="docker", conteo=2),
+            TopicFrequency(tema="git", conteo=1),
+        ]
+    }
+
+    df = app.build_faq_frequency_df(assets)
+
+    assert df["tema"].tolist() == ["docker", "git"]
+    assert df["conteo"].tolist() == [2, 1]
+
+
 def test_load_sample_results_reads_valid_output(tmp_path):
     sample = tmp_path / "corrida.json"
     sample.write_text(
