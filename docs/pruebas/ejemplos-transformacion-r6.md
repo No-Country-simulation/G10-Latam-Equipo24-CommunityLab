@@ -23,11 +23,15 @@ con el mismo camino:
 PYTHONPATH=. ./venv/bin/python scripts/run_demo.py <lote.json>
 ```
 
-Los lotes de estos casos incluyen, además del mensaje en foco, los mensajes
-necesarios para que el resultado sea el del sistema en uso. El newsletter, por
-diseño, se arma con el **primer testimonio publicable del lote**; un lote de un
-solo mensaje técnico lo haría caer sobre ese mensaje y confundiría la lectura.
-Los lotes de este documento evitan ese artefacto.
+**Qué son los lotes.** Cada caso es un lote real enviado por el pipeline completo
+(`_run_with_batch`). Cada lote trae **una sola interacción** —el mensaje en foco—
+para que el caso se lea aislado. Por eso el resultado de cada archivo es el de
+ese mensaje solo, no el de la corrida completa de la muestra.
+
+**Sobre el newsletter.** El newsletter se arma, por diseño, con el **primer
+testimonio publicable del lote**. En C2 el lote tiene un único testimonio (el del
+caso), así que el destaque cae sobre él. En un lote con varios testimonios, el
+destaque iría al primero publicable, que puede no ser el mensaje en foco.
 
 ## Resumen
 
@@ -100,7 +104,8 @@ Semana"), porque el newsletter se arma con el primer testimonio publicable.
 **Entrada**
 
 > Acabo de aprobar la certificación Oracle Cloud Infrastructure Foundations. Los
-> apuntes y los simulacros que compartieron acá me salvaron.
+> apuntes y los simulacros que compartieron acá me salvaron. ¡Próxima parada: la
+> certificación de IA!
 > — Ana Rodríguez, `#logros-y-empleos`, tipo `testimonio`
 
 **Análisis**
@@ -139,7 +144,8 @@ se descartaba en silencio. El cambio entra con el PR #144.
 **Entrada**
 
 > ¿Alguien me puede explicar cómo se manejan los reintentos en LangGraph? No
-> entiendo bien cuándo reintentar y cuándo fallar.
+> entiendo bien cuándo usar nodos condicionales con un router para reintentar la
+> llamada al modelo.
 > — Sofía Lima, `#dudas-langgraph`, tipo `pregunta_tecnica`
 
 **Análisis**

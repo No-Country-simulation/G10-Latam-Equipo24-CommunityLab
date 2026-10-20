@@ -1,8 +1,9 @@
 # Lotes de los 5 casos de transformación — R6
 
 Un archivo por caso, en el formato `InputBatch` (`origen_comunidad`,
-`periodo_referencia`, `interacciones[]`). Son los lotes exactos con los que se
-obtuvieron los casos de [`../ejemplos-transformacion-r6.md`](../ejemplos-transformacion-r6.md).
+`periodo_referencia`, `interacciones[]`). Cada lote trae **una sola interacción**
+(el mensaje en foco), con la que se reprodujo el caso correspondiente de
+[`../ejemplos-transformacion-r6.md`](../ejemplos-transformacion-r6.md).
 
 | Archivo | Caso | Entrada | Decisión esperada |
 |---------|------|---------|-------------------|
@@ -35,8 +36,9 @@ python scripts/run_demo.py docs/pruebas/lotes-r6/C1.json --offline
 ## Origen de los lotes
 
 C1, C2, C3 y C5 están incluidos **textualmente** en `data/sample/demo_fixed.json`,
-la fuente curada de la muestra combinada (12 interacciones). Por eso la corrida
-completa y estos lotes coinciden en esos mensajes.
+la fuente curada de la muestra combinada (12 interacciones). Estos lotes extraen
+ese mensaje como única interacción; el texto coincide con el de la muestra, pero
+el lote no reproduce la corrida completa (que tiene 12).
 
 C4 es un lote propio con el mismo perfil que `Pedro Núñez` en las muestras: un
 `feedback` neutro que no debe generar activo.
