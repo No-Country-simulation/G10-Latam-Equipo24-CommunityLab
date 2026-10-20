@@ -1,11 +1,9 @@
 """Unit tests for centralized prompt templates."""
 
-import pytest
 from src.domain.models import InputMessage, InteractionType
 from src.prompts.templates import (
     CATEGORY_DEFINITIONS,
     build_analysis_prompt,
-    _sanitize,
 )
 
 

@@ -13,6 +13,8 @@ import pytest
 import requests
 
 from src.ingest import webhook as webhook_module
+from src.ingest.bot import WELCOME_TEXT
+from src.ingest.telegram import TelegramPermanentError, TelegramTransientError
 from src.ingest.webhook import IngestHandler
 
 _OCI_REQUIRED_ENV = (
@@ -49,8 +51,17 @@ BATCH_VALIDO = {
 }
 
 
-def update_telegram(update_id=100001, texto="Logré mi primer empleo como desarrolladora!"):
-    """Arma un Update realista de la Bot API (update_id + message)."""
+def update_telegram(
+    update_id=100001,
+    texto="Logré mi primer empleo como desarrolladora!",
+    chat_id=-1001234567890,
+    chat_type="supergroup",
+):
+    """Arma un Update realista de la Bot API (update_id + message).
+
+    Por defecto un supergroup (como el de la comunidad); `chat_type="private"`
+    simula el chat directo en el que el bot sí contesta.
+    """
     return {
         "update_id": update_id,
         "message": {
@@ -59,8 +70,8 @@ def update_telegram(update_id=100001, texto="Logré mi primer empleo como desarr
             "text": texto,
             "from": {"id": 111, "first_name": "Ana", "language_code": "es"},
             "chat": {
-                "id": -1001234567890,
-                "type": "supergroup",
+                "id": chat_id,
+                "type": chat_type,
                 "title": "Comunidad de prueba",
             },
         },
@@ -81,6 +92,9 @@ def webhook_env(monkeypatch, tmp_path):
     # tests para que cada caso parta de un estado conocido.
     monkeypatch.delenv("TELEGRAM_WEBHOOK_SECRET", raising=False)
     monkeypatch.delenv("TELEGRAM_WEBHOOK_ORIGEN", raising=False)
+    # El token del bot es opcional: sin él el webhook es ingesta pura y ningún
+    # test debe intentar salir a la red para responder en el chat.
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
     seen = getattr(webhook_module, "_seen_update_ids", None)
     if seen is not None:
         seen.clear()
@@ -339,3 +353,173 @@ def test_telegram_body_invalido_devuelve_400(server, monkeypatch):
     )
     assert respuesta.status_code == 400
     assert "error" in respuesta.json()
+
+
+# --- Respuesta al chat (Fase 2: el bot contesta por webhook) ----------------
+
+
+def _espia_envios(monkeypatch, fallo=None):
+    """Reemplaza send_message del webhook y devuelve la lista de envíos.
+
+    Con `fallo` (una excepción) el envío lanza en vez de registrar, para
+    simular caídas de la Bot API.
+    """
+    envios = []
+
+    def espia(token, chat_id, text):
+        if fallo is not None:
+            raise fallo
+        envios.append({"token": token, "chat_id": chat_id, "text": text})
+
+    monkeypatch.setattr(webhook_module, "send_message", espia)
+    return envios
+
+
+def test_telegram_responde_al_chat_en_privado(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+    envios = _espia_envios(monkeypatch)
+
+    update = update_telegram(update_id=600001, chat_id=7191785744, chat_type="private")
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert respuesta.status_code == 200
+
+    body = respuesta.json()
+    assert body["status"] == "exito"
+    assert body["respuesta"] == "enviada"
+
+    # El análisis llega al chat con el mismo texto que el bot de polling.
+    assert len(envios) == 1
+    assert envios[0]["chat_id"] == 7191785744
+    assert envios[0]["token"] == "token-de-prueba"
+    assert envios[0]["text"].startswith("Análisis de tu mensaje:")
+
+
+def test_telegram_en_grupo_no_responde(server, monkeypatch):
+    """El bot escucha en el grupo (se procesa) pero sólo contesta en privado."""
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+    envios = _espia_envios(monkeypatch)
+
+    llamadas = []
+    original = webhook_module._run_with_batch
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda b: llamadas.append(b) or original(b)
+    )
+
+    update = update_telegram(update_id=600002)  # supergroup, como el default
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["status"] == "exito"
+    assert respuesta.json()["respuesta"] == "omitida"
+    assert envios == []
+    assert len(llamadas) == 1
+
+
+def test_telegram_sin_token_es_ingesta_pura(server, monkeypatch):
+    """Sin TELEGRAM_BOT_TOKEN el endpoint sigue funcionando, sólo no responde."""
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    envios = _espia_envios(monkeypatch)
+
+    update = update_telegram(update_id=600003, chat_id=7191785744, chat_type="private")
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert respuesta.status_code == 200
+
+    body = respuesta.json()
+    assert body["status"] == "exito"
+    assert body["respuesta"] == "omitida"
+    assert envios == []
+
+
+def test_telegram_comando_start_recibe_la_bienvenida(server, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+    envios = _espia_envios(monkeypatch)
+
+    llamadas = []
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda batch: llamadas.append(batch)
+    )
+
+    update = update_telegram(
+        update_id=600004, texto="/start", chat_id=7191785744, chat_type="private"
+    )
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert respuesta.status_code == 200
+    # Sin pipeline (el comando no es contenido), pero con la bienvenida.
+    assert respuesta.json()["status"] == "ignorado"
+    assert respuesta.json()["respuesta"] == "enviada"
+    assert llamadas == []
+    assert [envio["text"] for envio in envios] == [WELCOME_TEXT]
+
+
+def test_telegram_reintento_no_reprocesa_pero_reenvia_la_respuesta(
+    server, monkeypatch
+):
+    """Si sendMessage falla de forma transitoria, el reintento de Telegram no
+    vuelve a correr el pipeline: sólo reenvía la respuesta pendiente."""
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+
+    llamadas = []
+    original = webhook_module._run_with_batch
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda b: llamadas.append(b) or original(b)
+    )
+    _espia_envios(monkeypatch, fallo=TelegramTransientError("red caída"))
+
+    update = update_telegram(update_id=600005, chat_id=7191785744, chat_type="private")
+    primera = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert primera.status_code == 500  # Telegram debe reentregar
+    assert len(llamadas) == 1
+
+    envios = _espia_envios(monkeypatch)
+    segunda = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert segunda.status_code == 200
+    body = segunda.json()
+    assert body["status"] == "procesado"  # el pipeline NO corrió de nuevo
+    assert body["respuesta"] == "enviada"
+    assert len(llamadas) == 1
+    assert len(envios) == 1
+    assert envios[0]["text"].startswith("Análisis de tu mensaje:")
+
+    # Una tercera entrega del mismo update ya se corta como duplicado.
+    tercera = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert tercera.status_code == 200
+    assert tercera.json()["status"] == "duplicado"
+    assert len(llamadas) == 1
+    assert len(envios) == 1
+
+
+def test_telegram_error_permanente_no_provoca_reintentos(server, monkeypatch):
+    """Un error permanente de la Bot API responde 200: pedirle a Telegram que
+    reintente no arreglaría nada y sólo generaría tormenta de reintentos."""
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+    _espia_envios(monkeypatch, fallo=TelegramPermanentError("chat inexistente"))
+
+    update = update_telegram(update_id=600006, chat_id=7191785744, chat_type="private")
+    respuesta = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["respuesta"] == "fallida"
+
+    segunda = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert segunda.json()["status"] == "duplicado"

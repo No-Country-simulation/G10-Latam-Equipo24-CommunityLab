@@ -26,14 +26,13 @@ import requests
 
 from src.domain.models import InputBatch, OutputBatch
 from src.ingest.normalizer import InputNormalizer
+from src.ingest.runtime import apply_backend
 from src.ingest.telegram import (
     TelegramAuthError,
     TelegramPermanentError,
     TelegramTransientError,
     fetch_updates,
 )
-
-from src.ingest.webhook import apply_backend
 from src.pipeline import _run_with_batch
 
 logger = logging.getLogger(__name__)
@@ -91,10 +90,8 @@ def build_reply(message_text: str) -> str:
       bucle no envía respuesta, como en el escalón 2).
     - Cualquier otro texto -> arma un InputBatch de 1 mensaje
       (InputNormalizer + envelope `Telegram-bot-<fecha>`), lo pasa a
-      `_run_with_batch` y aplana el OutputBatch en un texto corto en español:
-      sentimiento, hasta 3 temas principales y el estado del activo FAQ o la
-      decisión. Si el pipeline falla, devuelve un texto amable genérico, nunca
-      el traceback.
+      `_run_with_batch` y formatea el resultado con `format_reply`. Si el
+      pipeline falla, devuelve un texto amable genérico, nunca el traceback.
 
     Es determinista con backend rule_based (sin red). No hace I/O de Telegram;
     el único efecto colateral del pipeline es el snapshot local de
@@ -104,7 +101,7 @@ def build_reply(message_text: str) -> str:
     if not message_text or not message_text.strip():
         return EMPTY_REPLY
 
-    comando = _comando(message_text)
+    comando = comando_de_texto(message_text)
     if comando in ("/start", "/help"):
         return WELCOME_TEXT
     if comando is not None:
@@ -119,10 +116,10 @@ def build_reply(message_text: str) -> str:
             type(exc).__name__,
         )
         return GENERIC_ERROR_REPLY
-    return _formatear_respuesta(result)
+    return format_reply(result)
 
 
-def _comando(texto: str) -> Optional[str]:
+def comando_de_texto(texto: str) -> Optional[str]:
     """Primer token del texto si empieza con "/", sin el sufijo @botname."""
     token = texto.strip().split(maxsplit=1)[0] if texto.strip() else ""
     if not token.startswith("/"):
@@ -146,7 +143,7 @@ def _batch_de_un_mensaje(texto: str) -> InputBatch:
     )
 
 
-def _formatear_respuesta(result: OutputBatch) -> str:
+def format_reply(result: OutputBatch) -> str:
     """Aplana un OutputBatch a un texto corto en español.
 
     La decisión se deriva de los activos generados (el pipeline decide y los

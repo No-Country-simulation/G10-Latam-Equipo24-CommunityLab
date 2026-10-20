@@ -81,14 +81,13 @@ class _FakeRespuestaHTTPError:
         (429, "transient"),
     ],
 )
-
 def test_fetch_updates_clasifica_errores_http(
     monkeypatch, codigo, tipo_error
 ):
     from src.ingest.telegram import (
-    TelegramPermanentError,
-    TelegramTransientError,
-    fetch_updates,
+        TelegramPermanentError,
+        TelegramTransientError,
+        fetch_updates,
     )
 
     respuesta = _FakeRespuestaHTTPError(codigo)
