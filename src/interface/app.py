@@ -243,6 +243,39 @@ def build_sentiment_pie_chart(df):
     )
 
 
+def _build_count_chart(df, category_col, category_title):
+    """Builds a horizontal Altair bar chart of counts by category.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns [category_col, "conteo"].
+    category_col : str
+        Name of the nominal column plotted on the y axis.
+    category_title : str
+        Title shown on the y axis.
+
+    Returns
+    -------
+    alt.Chart | None
+        Horizontal bar chart sorted descending by count, with the numeric
+        axis pinned at zero and integer ticks, or None when the DataFrame
+        is empty.
+    """
+    if df is None or df.empty:
+        return None
+    return (
+        alt.Chart(df)
+        .mark_bar(color=BRAND_TEAL)
+        .encode(
+            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo", axis=alt.Axis(tickMinStep=1, format="d")),
+            y=alt.Y(f"{category_col}:N", sort="-x", title=category_title),
+            tooltip=[category_col, "conteo"],
+        )
+        .properties(height=max(180, 26 * len(df)))
+    )
+
+
 def build_top_topics_chart(df):
     """Builds a horizontal Altair bar chart for the top community topics.
 
@@ -258,18 +291,7 @@ def build_top_topics_chart(df):
         Horizontal bar chart sorted descending by count, with the numeric
         axis pinned at zero, or None when the DataFrame is empty.
     """
-    if df is None or df.empty:
-        return None
-    return (
-        alt.Chart(df)
-        .mark_bar(color=BRAND_TEAL)
-        .encode(
-            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
-            y=alt.Y("tema:N", sort="-x", title="Tema"),
-            tooltip=["tema", "conteo"],
-        )
-        .properties(height=max(180, 26 * len(df)))
-    )
+    return _build_count_chart(df, "tema", "Tema")
 
 
 def build_assets_chart(df):
@@ -287,18 +309,7 @@ def build_assets_chart(df):
         Horizontal bar chart sorted descending by count, with the numeric
         axis pinned at zero, or None when the DataFrame is empty.
     """
-    if df is None or df.empty:
-        return None
-    return (
-        alt.Chart(df)
-        .mark_bar(color=BRAND_TEAL)
-        .encode(
-            x=alt.X("conteo:Q", scale=alt.Scale(domainMin=0), title="Conteo"),
-            y=alt.Y("activo:N", sort="-x", title="Activo"),
-            tooltip=["activo", "conteo"],
-        )
-        .properties(height=max(180, 26 * len(df)))
-    )
+    return _build_count_chart(df, "activo", "Activo")
 
 
 def build_top_topics_df(temas_principales_conteo):
