@@ -20,11 +20,13 @@ y el webhook se despliegan por separado porque tienen necesidades distintas.
 | Local | Pipeline, panel y pruebas | Tu máquina | Este documento |
 | Streamlit Community Cloud | Dashboard de curaduría | Nube administrada | [deploy-streamlit-cloud.md](deploy-streamlit-cloud.md) |
 | Render | Webhook de Telegram (`POST /telegram`) | Nube administrada | [deploy-render-webhook.md](deploy-render-webhook.md) |
-| OCI (VM) | Reemplazo del despliegue anterior | Oracle Cloud | [oci-setup.md](oci-setup.md) |
+| OCI Object Storage | Persistencia de los activos generados | Oracle Cloud | [oci-setup.md](oci-setup.md) |
 
 > La instancia Always Free de OCI puede no estar disponible (error de capacidad
 > al crearla). Las guías de Community Cloud y Render existen justamente como
-> alternativa sin VM propia, y son las que usa la demo actual.
+> alternativa sin VM propia, y son las que usa la demo actual. **Object Storage
+> es independiente del despliegue**: solo guarda los activos, y si no hay
+> credenciales el sistema degrada a un snapshot local sin fallar.
 
 ---
 
@@ -55,8 +57,12 @@ cd G10-Latam-Equipo24-CommunityLab
 
 ```bash
 python3.11 -m venv venv
-source venv/bin/activate
+source venv/bin/activate          # Linux / macOS
+venv\Scripts\activate             # Windows (PowerShell o CMD)
 ```
+
+> En PowerShell, si `activate` da error de permisos de ejecución, corré antes
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
 ### 3.3. Instalar dependencias
 
@@ -114,7 +120,8 @@ La suite completa pasa en verde sin necesidad de credenciales ni red.
 
 ### 4.1. Pipeline sobre un archivo (camino principal)
 
-El camino por archivo siempre funciona, con o sin LLM remoto:
+El camino por archivo corre con los dos backends, pero **no da el mismo
+resultado**:
 
 ```bash
 # Con el backend configurado en .env
@@ -126,6 +133,22 @@ python scripts/run_demo.py data/sample/demo_fixed.json --offline
 # Varios archivos a la vez
 python scripts/run_demo.py dataset.json dataset2.csv
 ```
+
+**El backend determinista (`rule_based`, el que usa `--offline`) no detecta
+sentimiento negativo.** Un mensaje con carga negativa se clasifica como neutro,
+así que no se deriva a atención humana. Testimonios, logros, dudas técnicas y
+feedback neutro sí se clasifican igual que con el LLM remoto; lo que cambia es
+la derivación por negatividad.
+
+| Entrada | `--offline` | LLM remoto |
+|---------|-------------|------------|
+| Testimonio o logro positivo | Publica | Publica |
+| Duda técnica | Sugerencia de FAQ | Sugerencia de FAQ |
+| Feedback neutro | Descarta | Descarta |
+| **Mensaje con carga negativa** | **No deriva** | **Deriva a humano** |
+
+Para la demo completa, usá el backend de `.env`; `--offline` sirve como plan B
+sin red ni credenciales (y es el que corre el CI).
 
 Opciones útiles: `--backend <rule_based|ollama|openai|gemini>` y
 `--model <nombre>`. El snapshot queda en
@@ -139,6 +162,18 @@ make run      # cierra instancias previas y abre el panel
 make status   # indica si está arriba y en qué puerto
 make stop     # cierra las instancias del panel
 ```
+
+> `make` viene instalado en Linux y macOS, pero **en Windows no**: hay que
+> instalarlo aparte (por ejemplo `winget install GnuWin32.Make`, o vía WSL).
+> Sin `make`, el panel se levanta a mano con el puerto explícito:
+>
+> ```bash
+> PYTHONPATH=. streamlit run src/interface/app.py --server.port 8502
+> ```
+>
+> `PYTHONPATH` es obligatorio: sin él, `streamlit run` agrega solo
+> `src/interface/` al `sys.path` y la app falla con
+> `ModuleNotFoundError: No module named 'src'`.
 
 El panel corre en `http://localhost:8502`. El puerto lo pasa `make run` por
 línea de comandos (`PORT` en el `Makefile`), no `.streamlit/config.toml`: el
