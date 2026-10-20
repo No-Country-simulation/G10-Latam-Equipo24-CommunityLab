@@ -98,6 +98,10 @@ def pipeline_env(monkeypatch, tmp_path):
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: FakeLLMClient())
+    # A real .env must not leak into the tests: run_pipeline() calls
+    # load_dotenv() again, which would re-populate the credentials that the
+    # delenv below just removed. Neutralize it so the isolation holds.
+    monkeypatch.setattr("src.pipeline.load_dotenv", lambda: None)
     for var in (
         "OCI_USER_ID",
         "OCI_PRIVATE_KEY_PATH",
