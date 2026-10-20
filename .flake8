@@ -1,3 +1,4 @@
 [flake8]
 max-line-length = 100
-ignore = E501, E303, W291, W293
+exclude = .git, venv, .venv, build, dist
+extend-ignore = E501, E303, W291, W293

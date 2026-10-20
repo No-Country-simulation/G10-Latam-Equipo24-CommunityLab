@@ -1,0 +1,41 @@
+# Mantiene despierto el servicio free de Render (duerme a los 15 minutos sin
+# tráfico; cada ping lo reinicia y evita el cold start de ~1 min).
+#
+# Notas:
+# - Los cron sólo se ejecutan desde la rama por defecto del repositorio.
+# - GitHub desactiva los workflows programados tras 60 días sin actividad en
+#   el repositorio; hay que tocar el repo para que vuelvan a correr.
+# - Un servicio siempre despierto consume 744 h/mes, casi todo el allowance de
+#   750 instance-hours/mes por workspace de Render (compartido): cualquier otro
+#   servicio free del mismo workspace puede quedar suspendido.
+name: Keep-warm del webhook (Render)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keep-warm:
+    runs-on: ubuntu-latest
+    # 3 intentos de 90 s + 2 esperas de 20 s = ~5,2 min en el peor caso (servicio caído).
+    timeout-minutes: 10
+    steps:
+      - name: Ping al health check
+        shell: bash
+        env:
+          URL: ${{ vars.WEBHOOK_HEALTH_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::notice::Keep-warm omitido: la variable de repositorio WEBHOOK_HEALTH_URL no está definida (Settings -> Secrets and variables -> Actions -> Variables)."
+            exit 0
+          fi
+          TARGET="${URL%/}/health"
+          rc=0
+          salida=$(curl -fsS -m 90 --retry 2 --retry-delay 20 \
+            -o /dev/null -w '%{http_code} %{time_total}' "$TARGET") || rc=$?
+          echo "GET $TARGET -> status/time (s): $salida | curl exit: $rc"
+          exit "$rc"
