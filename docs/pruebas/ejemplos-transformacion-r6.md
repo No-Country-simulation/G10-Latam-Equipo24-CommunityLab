@@ -261,36 +261,27 @@ candidatos de LinkedIn y sin sugerencia de FAQ.
 
 ---
 
-## Contraste con la muestra completa
+## Pendiente: contraste con la muestra completa
 
-Los 5 casos son lotes chicos y controlados. La corrida completa de la demo (232
-interacciones, `data/sample/corrida-completa-gemma.json`) confirma que el
-comportamiento escala:
+Los 5 casos son lotes chicos y controlados. El contraste con la corrida completa
+de la demo (232 interacciones, `data/sample/corrida-completa-gemma.json`) se
+documenta en un PR aparte, junto con la regeneración de esa muestra.
 
-| Métrica | Valor |
-|---------|-------|
-| Interacciones procesadas | 232 |
-| Sentimiento negativo (mensajes) | 39 |
-| Derivados a humano | 22 |
-| Preguntas frecuentes detectadas | 78 |
-| Candidatos a post de LinkedIn | 32 |
-| Sugerencia de FAQ materializada | 1 |
+**Por qué no está acá.** La muestra que hoy vive en el repo se midió sobre un
+`main` **anterior** a D-I: reporta 22 derivados a humano, cuando con el orden
+`R1 → R4 → R2 → R3` (D-I, ya en `main`) el derivado esperado es ~39, porque los
+mensajes negativos que además son preguntas técnicas pasan a derivarse. Esa
+muestra tampoco incluye los `candidatos_faq` ni el ranking de frecuencia.
 
-Se regenera con el pipeline real (backend de `.env`, `gemma4:31b`):
+Regenerarla con el pipeline real (backend de `.env`, `gemma4:31b`):
 
 ```bash
 python scripts/generar_muestra.py
 ```
 
-La diferencia entre 22 derivados y 39 negativos se explica por los 17 mensajes
-con carga negativa que además son preguntas técnicas: sin D-I van a FAQ, y con
-D-I pasan a derivarse a humano. El detalle está en `docs/DECISIONS.md` (D-F y
-D-I) y en `docs/pruebas/analisis-decisiones.md`.
-
-> **Números medidos sobre el head que incorpora D-I.** Sobre `main` anterior al
-> merge del PR #146, el derivado por regla era 22; con el orden `R1 → R4 → R2 →
-> R3` los mensajes negativos se derivan todos. La tabla de arriba corresponde a
-> la corrida sobre el head que ya incluye D-I.
+Los números definitivos irán al PR de la muestra regenerada, medidos sobre el
+head que ya incluye D-I. El detalle de las reglas está en `docs/DECISIONS.md`
+(D-F y D-I) y en `docs/pruebas/analisis-decisiones.md`.
 
 ---
 
