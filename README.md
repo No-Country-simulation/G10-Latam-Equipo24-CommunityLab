@@ -96,9 +96,7 @@ El repositorio cuenta con dos workflows de integración continua:
 - **[`ci.yml`](.github/workflows/ci.yml)** (en cada push y pull request, en cualquier rama): ejecuta `pytest tests/ -v` y `flake8` sobre `src`, `tests` y `scripts`. La configuración de flake8 (`max-line-length`, `extend-ignore`) vive en [`.flake8`](.flake8).
 - **[`pr-validation.yml`](.github/workflows/pr-validation.yml)** (en cada pull request): exige **exactamente un** label `type:*` de la lista `type:bug`, `type:feature`, `type:docs`, `type:refactor`, `type:chore`.
 
-**Nota**: la configuración de flake8 en `.flake8` y el alcance de lint en `ci.yml` los amplía el PR #155 (follow-up de #150). Si leés este README antes de que ese PR entre, `ci.yml` todavía linta sólo `src/`.
-
-**Diagrama de flujo y detalles del pipeline de tests y linting**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
+- **Diagrama de flujo y detalles del pipeline**: [docs/pipeline-ci.md](docs/pipeline-ci.md)
 
 ---
 
