@@ -828,10 +828,23 @@ def main():
                 st.metric(label="Análisis degradados", value=analisis_degradados)
 
         if feedback_negativo > 0:
-            st.warning(
-                f"⚠️ {feedback_negativo} interacciones con feedback negativo "
-                "se derivaron a revisión humana."
-            )
+            # The negative count and the derived count are different
+            # populations: only the messages that pass the R4 confidence
+            # threshold (> 0.8) are routed to a human.
+            total_derivados = len(assets.get("mensajes_derivados") or [])
+            if total_derivados:
+                st.warning(
+                    f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
+                    f"{total_derivados} "
+                    f"{'se derivó' if total_derivados == 1 else 'se derivaron'} "
+                    "a revisión humana (confianza > 0.8)."
+                )
+            else:
+                st.warning(
+                    f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
+                    "ninguna superó el umbral de confianza (0.8) para derivarse "
+                    "a revisión humana."
+                )
         else:
             st.info(
                 "No hubo interacciones con feedback negativo que requieran "
