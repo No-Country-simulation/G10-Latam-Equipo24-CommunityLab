@@ -78,6 +78,11 @@ _MAX_TOPICS = 5
 # `temas_principales_conteo`. The single place to change the cap.
 _TOP_TOPICS_COUNTED = 10
 
+# LinkedIn curation: minimum relevance to become a publishable candidate, and
+# the maximum number of candidates kept after sorting by relevance descending.
+LINKEDIN_RELEVANCE_FLOOR = 0.60
+LINKEDIN_MAX_CANDIDATES = 25
+
 # Presentation phrase for `sentimiento_predominante` (decision B, issue #87):
 # the PDF example shows a phrase, not the raw enum value. The single place to
 # change how a sentiment is presented; `SentimentType` itself is untouched.
@@ -160,28 +165,34 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         for msg, analysis, decision in results
         if _is_linkedin_decision(decision)
     ]
-    linkedin_target = all_linkedin_targets[0] if all_linkedin_targets else None
+
+    # Frente D: keep only candidates above the relevance floor, sort by
+    # descending relevance, and cap the shortlist before choosing the published
+    # target. This makes `linkedin_target` the first SURVIVOR, not the first raw
+    # publishable message.
+    curated_linkedin_targets = _curate_linkedin_targets(all_linkedin_targets)
+    linkedin_target = curated_linkedin_targets[0] if curated_linkedin_targets else None
     newsletter_target = linkedin_target or _first_target(
         results,
         lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
 
     # Published post and weekly highlight stay single assets (backward
-    # compatible): the published post is the FIRST target, and the newsletter
-    # comes from that same testimonio (falling back to the first interaction
-    # that is neither discarded nor derived to a human).
+    # compatible): the published post is the FIRST surviving target, and the
+    # newsletter comes from that same testimonio (falling back to the first
+    # interaction that is neither discarded nor derived to a human).
     post_linkedin = _run(linkedin_gen, linkedin_target)
     destaque_newsletter = _run(newsletter_gen, newsletter_target)
 
-    # Option A: one candidate per publishable testimonio, in batch order, so the
-    # UI can offer a manual selector. "Grande": each candidate carries its FULL
-    # post and its own newsletter highlight, so the selector swaps every field.
-    # The FIRST target reuses the published post/highlight generated above, so
-    # the first candidate can never diverge from the published copy (a
-    # non-deterministic LLM would otherwise answer differently on a second
-    # call).
+    # Option A: one candidate per publishable testimonio, sorted by relevance, so
+    # the UI can offer a manual selector. "Grande": each candidate carries its
+    # FULL post and its own newsletter highlight, so the selector swaps every
+    # field. The FIRST surviving target reuses the published post/highlight
+    # generated above, so the first candidate can never diverge from the
+    # published copy (a non-deterministic LLM would otherwise answer differently
+    # on a second call).
     candidatos = []
-    for index, (msg, analysis) in enumerate(all_linkedin_targets):
+    for index, (msg, analysis) in enumerate(curated_linkedin_targets):
         if index == 0:
             post = post_linkedin
             newsletter = destaque_newsletter
@@ -190,9 +201,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             newsletter = _run(newsletter_gen, (msg, analysis))
         if post is None:
             continue
-        relevancia = (
-            analysis.relevance.score if analysis.relevance is not None else 0.0
-        )
+        relevancia = _relevance_score(analysis)
         candidatos.append(
             LinkedInCandidate(
                 autor=msg.autor,
@@ -272,6 +281,27 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
 def _is_linkedin_decision(decision: DecisionResult) -> bool:
     """True for the decision that calls for a LinkedIn post."""
     return decision.action == ActionType.PUBLISH and decision.asset_type == AssetType.LINKEDIN
+
+
+def _relevance_score(analysis: AnalysisComplete) -> float:
+    """Marketing relevance score, defaulting to 0.0 when absent."""
+    return analysis.relevance.score if analysis.relevance is not None else 0.0
+
+
+def _curate_linkedin_targets(targets: List[_Target]) -> List[_Target]:
+    """Apply the LinkedIn relevance floor, sort descending, and cap.
+
+    The returned shortlist contains at most `LINKEDIN_MAX_CANDIDATES` targets,
+    each with relevance >= `LINKEDIN_RELEVANCE_FLOOR`, ordered from highest to
+    lowest relevance. The first element is the published-post target.
+    """
+    eligible = [
+        (msg, analysis)
+        for msg, analysis in targets
+        if _relevance_score(analysis) >= LINKEDIN_RELEVANCE_FLOOR
+    ]
+    eligible.sort(key=lambda pair: _relevance_score(pair[1]), reverse=True)
+    return eligible[:LINKEDIN_MAX_CANDIDATES]
 
 
 def _disagrees_with_llm_category(

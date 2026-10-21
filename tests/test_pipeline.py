@@ -19,6 +19,7 @@ import pytest
 from src.domain.models import (
     ActionType,
     AnalysisComplete,
+    AssetType,
     CategorizationResult,
     DecisionResult,
     InputBatch,
@@ -1192,3 +1193,110 @@ def test_generate_orders_mensajes_derivados_by_batch():
     assets = _generate(results, FakeLLMClient())
 
     assert [dm.autor for dm in assets.mensajes_derivados] == ["Autor 0", "Autor 1"]
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn relevance floor and cap (PR 4, Frente D)
+# ---------------------------------------------------------------------------
+
+
+def _linkedin_result(idx, relevancia, action=ActionType.PUBLISH):
+    """Builds a (message, analysis, decision) triple for LinkedIn tests."""
+    mid = f"l{idx}"
+    msg = InputMessage(
+        autor=f"Autor {idx}",
+        canal=f"#logros-{idx}",
+        tipo="testimonio",
+        texto=f"texto {idx}",
+        id=mid,
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid,
+            sentiment=SentimentType.POSITIVO,
+            score=0.9,
+            reasoning="test",
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="testimonio", topics=["logro"], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=relevancia, is_marketing_worthy=relevancia >= 0.6
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=action,
+        asset_type=AssetType.LINKEDIN,
+        reason="Testimonio positivo relevante",
+    )
+    return msg, analysis, decision
+
+
+def test_linkedin_floor_excludes_below_060():
+    """Candidates with relevance < 0.60 never reach the LinkedIn shortlist."""
+    results = [
+        _linkedin_result(0, 0.59),
+        _linkedin_result(1, 0.61),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.candidatos_post_linkedin) == 1
+    assert assets.candidatos_post_linkedin[0].relevancia == 0.61
+
+
+def test_linkedin_cap_keeps_top_25_sorted_desc():
+    """Only the top 25 by descending relevance survive; order is enforced."""
+    results = [_linkedin_result(i, round(0.60 + i * 0.01, 2)) for i in range(30)]
+    assets = _generate(results, FakeLLMClient())
+
+    candidatos = assets.candidatos_post_linkedin
+    assert len(candidatos) == 25
+    assert [c.relevancia for c in candidatos] == sorted(
+        [c.relevancia for c in candidatos], reverse=True
+    )
+    assert candidatos[0].relevancia == 0.89
+    assert candidatos[-1].relevancia == 0.65
+
+
+def test_linkedin_small_batch_kept_intact():
+    """Fewer than 25 surviving candidates are kept without capping."""
+    results = [_linkedin_result(i, 0.60 + i * 0.01) for i in range(10)]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.candidatos_post_linkedin) == 10
+
+
+def test_linkedin_realignment_uses_first_survivor_and_reuses_generation():
+    """When the first raw target is below floor, the published post realigns to
+    the first survivor and reuses that generation (no duplicate LLM call)."""
+    results = [
+        _linkedin_result(0, 0.55),
+        _linkedin_result(1, 0.80),
+    ]
+    client = DivergentLinkedInClient()
+    assets = _generate(results, client)
+
+    assert assets.post_linkedin is not None
+    assert assets.candidatos_post_linkedin[0].relevancia == 0.80
+    assert assets.candidatos_post_linkedin[0].copy == assets.post_linkedin.copy
+    # One generation for the survivor; the 0.55 target is filtered out before
+    # any generator call, so no extra LinkedIn call is wasted.
+    assert client.linkedin_calls == 1
+
+
+def test_linkedin_all_below_floor_yields_no_post():
+    """If no candidate clears the floor there is no LinkedIn post or candidate."""
+    results = [
+        _linkedin_result(0, 0.55),
+        _linkedin_result(1, 0.59),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert assets.post_linkedin is None
+    assert assets.candidatos_post_linkedin == []
+    # Newsletter falls back to the first non-discarded/non-derived interaction,
+    # which here is the first LinkedIn-decided message even though it did not
+    # clear the relevance floor.
+    assert assets.destaque_newsletter_semanal is not None
