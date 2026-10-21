@@ -1767,3 +1767,127 @@ def test_publish_button_requires_approval_and_unsent_signature(monkeypatch):
     at.run()
     assert not at.exception
     assert _publish_button(at).disabled is True
+
+
+# ---------------------------------------------------------------------------
+# FAQ semantic consolidation rendering (issue #116)
+# ---------------------------------------------------------------------------
+
+
+def test_faq_tab_renders_grouped_themes_with_questions_and_answer():
+    """La pestaña FAQ muestra los temas agrupados con sus preguntas y respuesta."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "dudas_frecuentes": 3,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": None,
+            "destaque_newsletter_semanal": None,
+            "sugerencia_contenido_faq": {
+                "tema": "Configurar retry",
+                "origen": "#dudas",
+                "status": "generado",
+                "respuesta": "Desde el panel de administración.",
+                "preguntas_relacionadas": [
+                    "¿Cómo configuro el retry?",
+                    "¿Dónde cambio el límite?",
+                ],
+            },
+            "temas_faq": [
+                {
+                    "tema": "Configurar retry",
+                    "origen": "#dudas",
+                    "status": "generado",
+                    "respuesta": "Desde el panel de administración.",
+                    "preguntas_relacionadas": [
+                        "¿Cómo configuro el retry?",
+                        "¿Dónde cambio el límite?",
+                    ],
+                },
+            ],
+            "candidatos_faq": [
+                {"autor": "Dev 1", "canal": "#dudas", "texto_original": "¿Cómo configuro el retry?", "relevancia": 0.9},
+                {"autor": "Dev 2", "canal": "#dudas", "texto_original": "¿Dónde cambio el límite?", "relevancia": 0.85},
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Configurar retry" in markdown
+    assert "¿Cómo configuro el retry?" in markdown
+    assert "Desde el panel de administración." in markdown
+
+    # The editor for the published suggestion uses the generated answer.
+    faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
+    assert faq_editor.value == "Desde el panel de administración."
+
+
+def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
+    """Temas sin respuesta generada usan el tema como valor del editor."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 1,
+            "sentimiento_predominante": "neutral",
+            "temas_principales": [],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": None,
+            "destaque_newsletter_semanal": None,
+            "sugerencia_contenido_faq": {
+                "tema": "Tema sin respuesta",
+                "origen": "#dudas",
+                "status": "generado",
+                "respuesta": "",
+            },
+            "temas_faq": [
+                {
+                    "tema": "Tema sin respuesta",
+                    "origen": "#dudas",
+                    "status": "generado",
+                    "respuesta": "",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
+    assert faq_editor.value == "Tema sin respuesta"
