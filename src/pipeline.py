@@ -45,7 +45,7 @@ from src.domain.models import (
     TopicFrequency,
 )
 from src.generators.base import BaseGenerator
-from src.generators.faq import FAQGenerator
+from src.generators.faq import FAQThemeGenerator, cluster_faq_targets
 from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
 from src.ingest.loader import load_batch
@@ -153,7 +153,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     """
     linkedin_gen = LinkedInGenerator(client=llm)
     newsletter_gen = NewsletterGenerator(client=llm)
-    faq_gen = FAQGenerator(client=llm)
+    faq_gen = FAQThemeGenerator(client=llm)
 
     all_linkedin_targets = [
         (msg, analysis)
@@ -165,7 +165,6 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         results,
         lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
-    faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
     # Published post and weekly highlight stay single assets (backward
     # compatible): the published post is the FIRST target, and the newsletter
@@ -211,9 +210,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         )
 
     # FAQ candidates: every CREAR_FAQ decision in batch order, listed with the
-    # original question only. NO generator call here: `sugerencia_contenido_faq`
-    # above stays the single materialized asset, so listing candidates never
-    # adds an LLM request.
+    # original question only. Topics are preserved for semantic clustering.
     candidatos_faq = [
         FAQCandidate(
             autor=msg.autor,
@@ -222,10 +219,26 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             relevancia=(
                 analysis.relevance.score if analysis.relevance is not None else 0.0
             ),
+            topics=(
+                analysis.categorization.topics
+                if analysis.categorization is not None
+                else []
+            ),
         )
         for msg, analysis, decision in results
         if decision.action == ActionType.CREAR_FAQ
     ]
+
+    # FAQ semantic consolidation: group candidates into <=10 themes and generate
+    # one tema+respuesta per cluster. The first theme stays the single published
+    # suggestion (`sugerencia_contenido_faq`) for backward compatibility.
+    faq_clusters = cluster_faq_targets(candidatos_faq)
+    temas_faq = [
+        theme
+        for cluster in faq_clusters
+        if (theme := faq_gen.generate_theme(cluster)) is not None
+    ]
+    sugerencia_contenido_faq = temas_faq[0] if temas_faq else None
 
     # Operator inbox: every DERIVAR decision becomes a DerivedMessage. The UI
     # cannot reconstruct this from the summary, so the pipeline materialises the
@@ -248,9 +261,10 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     return DistributionAssets(
         post_linkedin=post_linkedin,
         destaque_newsletter_semanal=destaque_newsletter,
-        sugerencia_contenido_faq=_run(faq_gen, faq_target),
+        sugerencia_contenido_faq=sugerencia_contenido_faq,
         candidatos_post_linkedin=candidatos,
         candidatos_faq=candidatos_faq,
+        temas_faq=temas_faq,
         mensajes_derivados=mensajes_derivados,
     )
 

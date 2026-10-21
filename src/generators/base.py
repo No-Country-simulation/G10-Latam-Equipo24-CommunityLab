@@ -59,8 +59,21 @@ class BaseGenerator(ABC, Generic[T]):
         self, message: InputMessage, analysis: AnalysisComplete
     ) -> Optional[T]:
         """Generate one asset. Never raises: returns None on any failure."""
+        prompt = self.build_prompt(message, analysis)
+        return self._generate_from_prompt(prompt, message, analysis)
+
+    def _generate_from_prompt(
+        self,
+        prompt: str,
+        message: InputMessage,
+        analysis: AnalysisComplete,
+    ) -> Optional[T]:
+        """Shared LLM call + parse + validate + enrich; returns None on failure.
+
+        FAQThemeGenerator reuses this path with a prompt it builds directly
+        from a cluster of questions, instead of the per-message `build_prompt`.
+        """
         try:
-            prompt = self.build_prompt(message, analysis)
             raw = self.client.generate(prompt)
             data = self._parse_json(raw)
             data = self.enrich(data, message, analysis)

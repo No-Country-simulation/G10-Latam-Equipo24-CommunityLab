@@ -131,6 +131,7 @@ analítica.
 | Campo | Forma | Origen | PR |
 |---|---|---|---|
 | `mensajes_derivados` | lista de `DerivedMessage` (`message_id`, `autor`, `canal`, `texto_original`, `razon`, `confianza`, `menciones`) | decisiones `DERIVAR` del pipeline, consolidadas y deduplicadas | #162 |
+| `temas_faq` | lista de `FAQSuggestion` (`tema`, `pregunta_representativa`, `total_preguntas`, `respuesta`, `origen`, `status`) | consolidación semántica de temas del pipeline | #163 |
 
 **Invariantes.**
 
@@ -142,8 +143,8 @@ analítica.
    `docs/DECISIONS.md`): el primero cuenta todo mensaje con sentimiento negativo; el segundo solo
    los que superaron el umbral de confianza de R4 (`> 0.8`).
 
-**Archivos:** `src/domain/models.py` (`DerivedMessage`, `DistributionAssets`),
-`src/pipeline.py` (`_consolidate_derived`).
+**Archivos:** `src/domain/models.py` (`DerivedMessage`, `FAQSuggestion`, `DistributionAssets`),
+`src/pipeline.py` (`_consolidate_derived`, clustering de temas).
 
 
 ---

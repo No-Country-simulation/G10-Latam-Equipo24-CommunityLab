@@ -54,7 +54,7 @@ _NEWSLETTER_PAYLOAD = {
     "titular": "Titular generado",
     "resumen": "Resumen generado",
 }
-_FAQ_PAYLOAD = {"tema": "Tema generado"}
+_FAQ_PAYLOAD = {"tema": "Tema generado", "respuesta": "Respuesta generada"}
 
 
 class FakeLLMClient(LLMClient):
@@ -83,7 +83,7 @@ class FakeLLMClient(LLMClient):
             return json.dumps(_LINKEDIN_PAYLOAD)
         if "destaque de newsletter semanal" in prompt:
             return json.dumps(_NEWSLETTER_PAYLOAD)
-        if "TEMA de una FAQ" in prompt:
+        if "preguntas técnicas delimitadas" in prompt:
             return json.dumps(_FAQ_PAYLOAD)
         raise AssertionError(f"FakeLLMClient got an unexpected prompt: {prompt[:120]!r}")
 
@@ -288,27 +288,28 @@ def test_technical_question_generates_faq_from_decision():
 
     assert faq is not None
     assert faq.tema == "Tema generado"
+    assert faq.respuesta == "Respuesta generada"
     # Code-owned metadata: origen from the first pregunta_tecnica channel.
     assert faq.origen == "#dudas-langgraph"
-    assert faq.status == "derivado_a_mentoria"
+    assert faq.status == "generado"
 
 
 class CountingFAQClient(FakeLLMClient):
-    """Counts FAQ generator calls to prove candidates add no LLM request."""
+    """Counts FAQ theme generator calls to prove one call per cluster."""
 
     def __init__(self):
         self.faq_calls = 0
 
     def generate(self, prompt: str, **kwargs) -> str:
-        if "TEMA de una FAQ" in prompt:
+        if "preguntas técnicas delimitadas" in prompt:
             self.faq_calls += 1
         return super().generate(prompt, **kwargs)
 
 
 def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, tmp_path):
-    # N technical questions -> len(candidatos_faq) == N, and the FAQ generator
-    # runs EXACTLY ONCE (the single `sugerencia_contenido_faq`): listing the
-    # candidates must not add an LLM call.
+    # N technical questions -> len(candidatos_faq) == N, and the FAQ theme
+    # generator runs ONCE per cluster (all share the same fake topic), so one
+    # LLM call produces both the single suggestion and the themes list.
     client = CountingFAQClient()
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
 
@@ -334,9 +335,51 @@ def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, t
 
     # The single materialized suggestion still works, generated only once.
     assert assets.sugerencia_contenido_faq is not None
+    assert assets.sugerencia_contenido_faq == assets.temas_faq[0]
     assert client.faq_calls == 1
     # `dudas_frecuentes` stays the count of CREAR_FAQ decisions.
     assert output.resumen_comunidad.dudas_frecuentes == 3
+
+
+def test_faq_semantic_consolidation_groups_same_topic_questions(monkeypatch, tmp_path):
+    # Three technical questions with the same fake topic collapse into one
+    # FAQ theme; the published suggestion equals the first (and only) theme.
+    client = CountingFAQClient()
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Dev 1",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo configuro el retry?",
+            },
+            {
+                "autor": "Dev 2",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Dónde cambio el límite de reintentos?",
+            },
+            {
+                "autor": "Dev 3",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Por qué falla el reintento?",
+            },
+        ],
+    )
+    output = run_pipeline(source)
+    assets = output.activos_distribucion_generados
+
+    assert len(assets.temas_faq) == 1
+    theme = assets.temas_faq[0]
+    assert theme.tema == "Tema generado"
+    assert theme.respuesta == "Respuesta generada"
+    assert len(theme.preguntas_relacionadas) == 3
+    assert assets.sugerencia_contenido_faq is assets.temas_faq[0]
+    assert client.faq_calls == 1
 
 
 def test_negative_testimonial_is_not_published(tmp_path):
@@ -413,6 +456,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
         "candidatos_faq",
+        "temas_faq",
         "mensajes_derivados",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"

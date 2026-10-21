@@ -1054,12 +1054,46 @@ def main():
                 newsletter_estado = CURATION_STATUS_PENDING
 
         with tab3:
-            faq = assets["sugerencia_contenido_faq"]
-            if faq:
-                st.write(f"**Origen:** {faq['origen']}")
-                st.write(f"**Estado:** {faq['status']}")
+            temas_faq = assets.get("temas_faq") or []
+            sugerencia = assets.get("sugerencia_contenido_faq")
+
+            # Render consolidated themes when available; fall back to the legacy
+            # single suggestion for old outputs that lack `temas_faq`.
+            if temas_faq:
+                st.write(f"**{len(temas_faq)} tema(s) de FAQ detectado(s).**")
+                for numero, tema in enumerate(temas_faq, start=1):
+                    titulo = str(tema.get("tema") or "")
+                    respuesta = str(tema.get("respuesta") or titulo)
+                    preguntas = tema.get("preguntas_relacionadas") or []
+                    with st.container(border=True):
+                        st.write(f"**{numero}. {titulo}**")
+                        if preguntas:
+                            st.caption("Preguntas relacionadas:")
+                            for pregunta in preguntas:
+                                st.write(f"- {pregunta}")
+                        st.info("Respuesta sugerida:")
+                        st.write(respuesta)
+                        st.caption(
+                            f"Origen: {tema.get('origen', '')} · "
+                            f"Estado: {tema.get('status', '')}"
+                        )
+            elif sugerencia:
+                st.write(f"**Origen:** {sugerencia['origen']}")
+                st.write(f"**Estado:** {sugerencia['status']}")
                 st.info("Pregunta frecuente detectada automáticamente para la base de conocimiento.")
-                faq_edited = st.text_area("Entrada FAQ:", value=faq["tema"], height=200, key="faq_edit", width="stretch")
+
+            # The approval editor always follows the published single suggestion.
+            # If the pipeline produced themes but no explicit suggestion, the first
+            # theme is the suggestion; this keeps the package backward compatible.
+            sugerencia = sugerencia or (temas_faq[0] if temas_faq else None)
+            if sugerencia:
+                faq_edited = st.text_area(
+                    "Entrada FAQ:",
+                    value=sugerencia.get("respuesta") or sugerencia["tema"],
+                    height=200,
+                    key="faq_edit",
+                    width="stretch",
+                )
                 faq_estado = st.radio(
                     "Estado de curaduría:",
                     options=CURATION_STATUSES,
