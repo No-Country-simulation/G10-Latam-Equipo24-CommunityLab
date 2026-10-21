@@ -288,6 +288,23 @@ técnica**: si decide R2 (`crear_faq`) o R4 (`derivar`).
 R1 → R4 (negativo → DERIVAR) → R2 (pregunta_tecnica → CREAR_FAQ) → R3
 ```
 
+**Actualización (2026-10-21) — R4 tiene umbral de confianza.** R4 **no deriva todo negativo**:
+deriva solo los negativos con `negative_confidence > 0.8` (`CONFIDENCE_THRESHOLD` en
+`src/decisions/engine.py`). La regla completa queda:
+
+```
+R1 → R4 (negativo con confianza > 0.8 → DERIVAR) → R2 (pregunta_tecnica → CREAR_FAQ) → R3
+```
+
+Un negativo que no supera el umbral **no se deriva**: sigue por las reglas siguientes (una
+pregunta técnica negativa de baja confianza termina como FAQ, cubierto por
+`test_low_confidence_negative_technical_question_goes_to_faq`).
+
+El **orden** decidido arriba no cambia con este ajuste, y el contrato tampoco:
+`feedback_negativo` sigue contando **todos** los mensajes con sentimiento negativo (41 en la
+muestra de #164), mientras `mensajes_derivados` lista solo los que superaron el umbral (4 en esa
+misma muestra). Son **dos poblaciones distintas**, no dos versiones del mismo número.
+
 Esta entrada **reemplaza la nota de orden de D-F** ("Orden: R1 → R2 → R4 → R3" y "la condición
 `!= pregunta_tecnica` del borrador original es redundante: R2 ya captura las preguntas técnicas
 y retorna antes"). Ese argumento es exactamente el que deja de ser cierto: hoy R2 no retorna
@@ -317,7 +334,9 @@ contrato no cambian.
 
 **Dónde vive.**
 
-- `src/decisions/engine.py` — orden R1 → R4 → R2 → R3
-- `tests/test_decisions.py` — `test_dec_22_negative_technical_question_is_derived`
+- `src/decisions/engine.py` — orden R1 → R4 → R2 → R3, con `CONFIDENCE_THRESHOLD = 0.8` en R4
+- `tests/test_decisions.py` — `test_dec_22_negative_technical_question_is_derived`,
+  `test_high_confidence_negative_message_is_derived`,
+  `test_low_confidence_negative_message_is_not_derived`
 - `docs/pruebas/analisis-decisiones.md` — DEC-22 (nueva) y DEC-09 (actualizada)
 - `docs/DECISIONS.md` — esta entrada (reemplaza la nota de orden de D-F)
