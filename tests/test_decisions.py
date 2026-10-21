@@ -103,6 +103,43 @@ def test_positive_logro_below_relevance_threshold_is_discarded():
     assert result.asset_type is None
 
 
+def test_explicit_non_publishable_type_wins_over_logro_category():
+    """Precedencia D-B: `message.tipo` explícito pesa más que la categoría del
+    LLM. Un `feedback` reconocido con `category="logro"` no debe publicarse,
+    porque el tipo declarado manda sobre lo que infirió el analizador.
+    """
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="logro",
+        sentiment=SentimentType.POSITIVO,
+        relevance=0.9,
+    )
+
+    message = build_message(tipo="feedback")
+    result = engine.decide(message, analysis)
+
+    assert result.action != ActionType.PUBLISH
+    assert result.asset_type != AssetType.LINKEDIN
+
+
+def test_logro_with_non_positive_sentiment_is_not_published():
+    """R1 exige sentimiento positivo: un `logro` relevante pero neutro o
+    negativo no debe publicarse, aunque el tipo y la relevancia alcancen.
+    """
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="logro",
+        sentiment=SentimentType.NEUTRO,
+        relevance=0.9,
+    )
+
+    message = build_message(tipo="otro")
+    result = engine.decide(message, analysis)
+
+    assert result.action != ActionType.PUBLISH
+    assert result.asset_type != AssetType.LINKEDIN
+
+
 def test_positive_testimonial_below_relevance_threshold_is_discarded():
     engine = RuleBasedDecisionEngine()
     analysis = build_analysis(
