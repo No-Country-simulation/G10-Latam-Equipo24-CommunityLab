@@ -19,7 +19,10 @@ Outside a Streamlit runtime (CLI scripts, tests) the import is a no-op.
 
 from __future__ import annotations
 
+import atexit
 import os
+import stat
+import tempfile
 
 
 def export_secrets_to_environ() -> int:
@@ -51,4 +54,52 @@ def export_secrets_to_environ() -> int:
     return exported
 
 
+def _try_remove(path: str) -> None:
+    """Best-effort cleanup of a temporary file; never raises."""
+    try:
+        os.remove(path)
+    except Exception:  # pragma: no cover - defensive cleanup
+        pass
+
+
+def bootstrap_oci_private_key() -> str | None:
+    """Materialize an inline PEM secret to a temporary file for OCI SDK.
+
+    Streamlit Cloud exposes secrets as strings, but the OCI SDK requires a
+    filesystem path. When ``OCI_PRIVATE_KEY`` is present and
+    ``OCI_PRIVATE_KEY_PATH`` does not point to an existing file, this function
+    writes the PEM content to a temp file with owner-only permissions (0600),
+    points ``OCI_PRIVATE_KEY_PATH`` at it, and registers best-effort cleanup at
+    process exit. If the path already exists, it is left untouched.
+
+    Returns the resolved path, or ``None`` when no secret is available or the
+    write fails.
+    """
+    pem_content = os.environ.get("OCI_PRIVATE_KEY")
+    if not pem_content:
+        return None
+
+    existing_path = os.environ.get("OCI_PRIVATE_KEY_PATH")
+    if existing_path and os.path.isfile(existing_path):
+        return existing_path
+
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=".pem", prefix="oci_private_key_")
+    except Exception:  # pragma: no cover - defensive: filesystem unavailable
+        return None
+
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(pem_content)
+        os.chmod(temp_path, stat.S_IRUSR | stat.S_IWUSR)
+    except Exception:  # pragma: no cover - defensive: filesystem unavailable
+        _try_remove(temp_path)
+        return None
+
+    os.environ["OCI_PRIVATE_KEY_PATH"] = temp_path
+    atexit.register(_try_remove, temp_path)
+    return temp_path
+
+
 export_secrets_to_environ()
+bootstrap_oci_private_key()
