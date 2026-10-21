@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import sys
 import tempfile
 from datetime import date, datetime
@@ -440,18 +441,55 @@ def build_assets_summary_df(resumen, assets):
     return pd.DataFrame(data)
 
 
-def is_atendido(session_state, message_id):
-    """Returns whether a derived message is marked as attended in session_state.
+ATTENDED_PATH = Path(
+    os.environ.get(
+        "COMMUNITYLAB_ATTENDED_PATH",
+        str(REPO_ROOT / "storage" / "derivados-atendidos.json"),
+    )
+)
 
-    Falls back to ``False`` when the dict or key is missing, so a fresh render
-    shows every derivation as pending.
+
+def _load_attended() -> dict:
+    """Load the persisted attended-state dict, or ``{}`` if absent/corrupt."""
+    if not ATTENDED_PATH.exists():
+        return {}
+    try:
+        data = json.loads(ATTENDED_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_attended(attended: dict) -> None:
+    """Persist the attended-state dict to storage (best-effort)."""
+    try:
+        ATTENDED_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ATTENDED_PATH.write_text(
+            json.dumps(attended, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
+def is_atendido(session_state, message_id):
+    """Returns whether a derived message is marked as attended.
+
+    Falls back to the persisted file when the key is not yet in session_state,
+    so a reload restores prior attendance decisions.
     """
-    return bool((session_state or {}).get("derivados_atendidos", {}).get(message_id))
+    attended = (session_state or {}).get("derivados_atendidos")
+    if attended is None:
+        attended = _load_attended()
+        if session_state is not None:
+            session_state["derivados_atendidos"] = attended
+    return bool(attended.get(message_id))
 
 
 def set_atendido(session_state, message_id, value):
-    """Marks a derived message as attended (or not) in session_state."""
-    session_state.setdefault("derivados_atendidos", {})[message_id] = bool(value)
+    """Marks a derived message as attended (or not) and persists it."""
+    attended = session_state.setdefault("derivados_atendidos", _load_attended())
+    attended[message_id] = bool(value)
+    _save_attended(attended)
 
 
 def build_derivados_entries(mensajes, session_state):
@@ -475,6 +513,7 @@ def build_derivados_entries(mensajes, session_state):
                 "texto_original": mensaje.get("texto_original", ""),
                 "razon": mensaje.get("razon", ""),
                 "confianza": mensaje.get("confianza", 0.0),
+                "menciones": mensaje.get("menciones", 1),
                 "atendido": bool(attended.get(key)),
             }
         )
@@ -1064,13 +1103,16 @@ def main():
                 for numero, tema in enumerate(temas_faq, start=1):
                     titulo = str(tema.get("tema") or "")
                     respuesta = str(tema.get("respuesta") or titulo)
-                    preguntas = tema.get("preguntas_relacionadas") or []
+                    representativa = str(tema.get("pregunta_representativa") or "")
+                    total = int(tema.get("total_preguntas") or 0)
                     with st.container(border=True):
                         st.write(f"**{numero}. {titulo}**")
-                        if preguntas:
-                            st.caption("Preguntas relacionadas:")
-                            for pregunta in preguntas:
-                                st.write(f"- {pregunta}")
+                        if representativa:
+                            st.write(f"- {representativa}")
+                        if total > 0:
+                            st.caption(
+                                f"{total} pregunta(s) relacionada(s) con este tema."
+                            )
                         st.info("Respuesta sugerida:")
                         st.write(respuesta)
                         st.caption(
@@ -1112,14 +1154,14 @@ def main():
                 faq_edited = ""
                 faq_estado = CURATION_STATUS_PENDING
 
-            # List-only visibility of every question routed by the FAQ rule:
-            # the curator can SEE the candidates (text, author, relevance)
-            # without any extra generation and without a selector.
+            # List-only visibility of the questions that did NOT map to a FAQ
+            # theme (orphaned). The themed questions already appear inside each
+            # theme above, so this list avoids repeating them.
             candidatos_faq = assets.get("candidatos_faq") or []
             if candidatos_faq:
                 st.caption(
-                    f"{len(candidatos_faq)} preguntas detectadas en este lote "
-                    "(solo listado, sin generación adicional)."
+                    f"{len(candidatos_faq)} preguntas detectadas sin tema claro "
+                    "(no mapeadas a ningún tema FAQ)."
                 )
                 for numero, candidato in enumerate(candidatos_faq, start=1):
                     texto = str(candidato.get("texto_original") or "").strip()
@@ -1143,7 +1185,7 @@ def main():
             if mensajes_derivados:
                 st.write(
                     f"{len(mensajes_derivados)} mensaje(s) derivado(s) a revisión humana. "
-                    "El estado 'atendido' es solo para esta sesión."
+                    "El estado 'atendido' se guarda localmente entre sesiones."
                 )
                 for entry in build_derivados_entries(mensajes_derivados, st.session_state):
                     key = entry["key"]
@@ -1152,10 +1194,14 @@ def main():
                     with col_text:
                         st.write(f"**{entry['autor']}** · {entry['canal']}")
                         st.write(entry["texto_original"])
-                        st.caption(
+                        menciones = int(entry.get("menciones") or 1)
+                        caption = (
                             f"Motivo: {entry['razon']} · "
                             f"Confianza: {entry['confianza']:.0%}"
                         )
+                        if menciones > 1:
+                            caption += f" · Mencionado {menciones} veces"
+                        st.caption(caption)
                     with col_toggle:
                         atendido = st.checkbox(
                             "Atendido",

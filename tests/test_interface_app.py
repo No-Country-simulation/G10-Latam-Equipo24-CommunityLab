@@ -8,6 +8,12 @@ from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
 from src.interface import app
 
 
+@pytest.fixture(autouse=True)
+def _isolate_attended_path(tmp_path, monkeypatch):
+    """Isolate the persisted attended-state file so tests never touch the repo."""
+    monkeypatch.setattr(app, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+
+
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
     output = OutputBatch(
         status="exito",
@@ -221,8 +227,11 @@ def test_derivados_tab_renders_without_exceptions():
     assert any("Derivados" in label for label in tab_labels)
 
 
-def test_derivados_tab_toggle_updates_session_state():
+def test_derivados_tab_toggle_updates_session_state(monkeypatch, tmp_path):
     """Marcar un mensaje como atendido actualiza st.session_state."""
+    monkeypatch.setenv(
+        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "attended.json")
+    )
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
