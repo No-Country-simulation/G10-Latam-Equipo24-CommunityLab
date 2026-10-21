@@ -1,0 +1,12 @@
+{
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacciones": [
+    {
+      "autor": "Sofía Lima",
+      "canal": "#dudas-langgraph",
+      "tipo": "pregunta_tecnica",
+      "texto": "¿Alguien me puede explicar cómo se manejan los reintentos en LangGraph? No entiendo bien cuándo usar nodos condicionales con un router para reintentar la llamada al modelo."
+    }
+  ]
+}
