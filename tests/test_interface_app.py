@@ -39,6 +39,10 @@ def _isolate_persisted_state(tmp_path, monkeypatch):
     monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
     monkeypatch.setattr(state, "OCIStorageClient", _FakeOCIStorage)
     monkeypatch.setattr(state, "DEFAULT_BUCKET", "test-bucket")
+    # The real .env is loaded into the process env by ``load_dotenv()`` (see
+    # ``src/oci/client.py``): without this, the bucket of a developer's machine
+    # would leak into the tests and point them at production.
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -2018,3 +2022,26 @@ def test_fresh_session_state_restores_persisted_attended_marks():
 
     fresh_session_state = {}
     assert app.is_atendido(fresh_session_state, "m-1") is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: remediación de la auditoría del panel
+# ---------------------------------------------------------------------------
+
+
+def test_state_layer_targets_the_bucket_configured_by_env(monkeypatch):
+    """OCI_BUCKET_NAME manda sobre el bucket por defecto (design D2)."""
+    monkeypatch.setenv("OCI_BUCKET_NAME", "otro-bucket")
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("otro-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
+    """Sin OCI_BUCKET_NAME se usa el bucket por defecto."""
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("test-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
