@@ -44,7 +44,7 @@ Estado del código al 30/9: en `main` ya está `RecurringTopicsDetector` (PR #64
 | Fallback de categoría | `comentario_general` y cualquier valor no reconocido se mapean a `otro` |
 | `tipo` en la entrada | **Decidido el 28/9:** `comentario_general` se mapea a `otro`. La ingesta ya emite `otro` y `pregunta_tecnica` (PR #63) |
 | Precedencia entre `tipo` y `category` (D-B) | **Decidido por Rox el 29/9 (O-05):** si el `tipo` es explícito y reconocido (`testimonio`, `pregunta_tecnica`, `feedback`, `logro`, `discusion`), prevalece el `tipo`. Si es `otro`, `comentario_general` o vacío, prevalece la `category` del análisis |
-| Regla R1 | Testimonio o logro positivo con relevancia ≥ 0.6 → `action="publicar"`, `asset_type="linkedin"` (coincide con la Regla 1 de `docs/arquitectura-tecnica/analisis-arquitectura.md`; corregido en R1 porque antes sólo aceptaba `testimonio` y descartaba todo `logro`) |
+| Regla R1 | Testimonio o logro positivo con relevancia ≥ 0.6 → `action="publicar"`, `asset_type="linkedin"` (coincide con la Regla 1 de `docs/arquitectura-tecnica/analisis-arquitectura.md`) |
 | Regla R2 | Pregunta técnica (duda técnica / pregunta frecuente) → `action="crear_faq"`, `asset_type="faq"` |
 | Regla R3 | Mensaje neutral o de relevancia < 0.6 → `action="descartar"` |
 | Respuesta por defecto del analizador | Sentimiento `neutral`/0.5, categoría `otro`, sin topics ni entities, relevancia 0.0 y no publicable. Implementada así en la rama de Rox |
