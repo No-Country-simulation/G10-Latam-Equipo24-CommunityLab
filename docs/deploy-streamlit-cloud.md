@@ -51,22 +51,54 @@ OCI_TENANCY_ID = ""
 OCI_REGION = "sa-valparaiso-1"
 OCI_NAMESPACE = "axcyr94oehmi"
 OCI_BUCKET_NAME = "communitylab-activos-marketing"
+
+# Clave privada. En la nube no hay archivo .pem: se pega el CONTENIDO del PEM.
+# Es multilínea, así que se abre y se cierra con tres comillas.
+OCI_PRIVATE_KEY = """
+-----BEGIN PRIVATE KEY-----
+<contenido de ~/.oci/oci_api_key.pem, sin la última línea "OCI_API_KEY">
+-----END PRIVATE KEY-----
+"""
 ```
 
 `src/interface/cloud_secrets.py` copia cada entrada de `secrets.toml` a
 `os.environ` al arrancar la app (sin pisar variables ya definidas), así el
 mismo código que lee un `.env` local funciona en la nube.
 
+#### Checklist de 7 variables (readiness)
+
+El pipeline sube a OCI solo cuando las 7 variables están presentes y con valor
+(`src/oci/storage.py` → `OCI_REQUIRED_ENV` y `oci_credentials_complete()`).
+Si falta alguna, degrada a snapshot local con status `pendiente`: no falla,
+pero tampoco sube nada.
+
+- [ ] `OCI_USER_ID` — `ocid1.user.oc1..<unique-id>`
+- [ ] `OCI_FINGERPRINT` — huella SHA-1 de la clave pública
+- [ ] `OCI_TENANCY_ID` — `ocid1.tenancy.oc1..<unique-id>`
+- [ ] `OCI_REGION` — `sa-valparaiso-1`
+- [ ] `OCI_NAMESPACE` — `axcyr94oehmi`
+- [ ] `OCI_BUCKET_NAME` — `communitylab-activos-marketing`
+- [ ] La clave privada: `OCI_PRIVATE_KEY` (nube, contenido inline) **o**
+      `OCI_PRIVATE_KEY_PATH` (local, ruta al `.pem`)
+
+#### Cómo llega la clave privada a la nube
+
+El SDK de OCI exige una **ruta a un archivo `.pem`**, y en Community Cloud no
+hay sistema de archivos. La app lo resuelve sola: `cloud_secrets.py` toma el
+secret inline `OCI_PRIVATE_KEY`, lo escribe en un temporal con permisos `0600`
+(`bootstrap_oci_private_key()`) y define `OCI_PRIVATE_KEY_PATH` apuntando ahí.
+Ese módulo se importa **antes** de `src.pipeline` y `src.oci` (línea 27 de
+`src/interface/app.py`), así que el cliente OCI ya nace con la ruta resuelta.
+Si `OCI_PRIVATE_KEY_PATH` apunta a un archivo que existe, ese archivo manda y
+el bootstrap no hace nada (es el camino normal en local).
+
+> Al copiar el PEM desde `~/.oci/oci_api_key.pem`, **quitá la última línea**
+> (`OCI_API_KEY`): es el fingerprint que la CLI de OCI escribe al final del
+> archivo y no forma parte de la clave.
+
 > ⚠️ **Nunca** subas `.streamlit/secrets.toml` al repositorio: contiene
 > credenciales reales. El archivo ya está excluido en `.gitignore`; verificá
 > igualmente antes de commitear.
->
-> **Nota sobre `OCI_PRIVATE_KEY_PATH`:** la app espera una **ruta a un archivo
-> `.pem`**, que no existe en Community Cloud. Para subir a OCI desde la nube
-> hay que montar la clave dentro del contenedor de la app, por ejemplo
-> escribiendo el contenido PEM desde un secret a un archivo temporal en un
-> arranque previo. Si no se hace, el pipeline degrada a snapshot local con
-> status `pendiente` (nada falla).
 
 ### 2. Crear la app
 
@@ -105,6 +137,9 @@ PR → CI (lint + tests) → code owner review → merge a main → redeploy en 
 - [ ] Los charts renderizan con la paleta de marca.
 - [ ] Si se cargaron credenciales OCI, el estado de almacenamiento es
       `guardado_con_exito`; si no, es `pendiente` (degradación esperada).
+- [ ] El log del deploy no muestra errores de autenticación de OCI (con las
+      7 variables cargadas, el estado debe ser `guardado_con_exito` y no
+      `pendiente`).
 
 ---
 
@@ -112,7 +147,9 @@ PR → CI (lint + tests) → code owner review → merge a main → redeploy en 
 
 - **Repo público.** Todo el código queda visible (el repo ya es público).
   Los secrets no se exponen, pero el contenido de `data/` sí.
-- **Sin credenciales PEM** no se puede subir a OCI desde la nube.
+- **Sin clave privada** (`OCI_PRIVATE_KEY` en la nube, `OCI_PRIVATE_KEY_PATH`
+  en local) el pipeline no sube a OCI: degrada a snapshot local con status
+  `pendiente`.
 - **El webhook de Telegram no corre acá** (ver tabla inicial).
 - **Recursos compartidos:** las apps gratuitas pueden dormirse por inactividad.
 
@@ -146,6 +183,28 @@ Streamlit agrega al `sys.path` únicamente el directorio del archivo principal
 la raíz. Por eso `src/interface/app.py` inserta la raíz del repo en `sys.path`
 antes de importar `src.*`. Si se mueve ese bloque, el panel funciona en local
 con `make run` (que exporta `PYTHONPATH`) pero rompe en la nube.
+
+### 3. El PEM pegado con los saltos de línea escapados
+
+En los logs:
+
+```
+oci.exceptions.ClientException: Could not parse private key
+```
+
+El SDK de OCI no entiende un `\n` literal: el contenido del secret tiene que
+llegar con saltos de línea reales. En el editor de secrets eso se logra con una
+cadena multilínea de TOML (`OCI_PRIVATE_KEY = """…"""`), no con
+`"-----BEGIN…\nMIIE…\n-----END…"` en una sola línea. Revisá que el bloque
+arranque con `-----BEGIN PRIVATE KEY-----` y termine con
+`-----END PRIVATE KEY-----` en su propia línea.
+
+### 4. La clave pegada con la línea `OCI_API_KEY` al final
+
+El archivo que genera la CLI (`~/.oci/oci_api_key.pem`) termina con una línea
+`OCI_API_KEY` que es el fingerprint, no parte de la clave. Si se pega tal cual,
+el parseo del PEM falla igual que en el caso anterior. Se borra esa línea: el
+fingerprint ya viaja aparte, en `OCI_FINGERPRINT`.
 
 ---
 
