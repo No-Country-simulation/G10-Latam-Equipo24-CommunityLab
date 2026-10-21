@@ -263,6 +263,7 @@ class DerivedMessage(BaseModel):
     texto_original: str = ""
     razon: str = ""
     confianza: float = 0.0
+    menciones: int = 1
 
 
 class DistributionAssets(BaseModel):

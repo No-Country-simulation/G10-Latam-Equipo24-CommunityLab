@@ -14,6 +14,7 @@ Wiring:
       are available; on any OCI failure it degrades to a local JSON snapshot
       under `storage/activos/` (working-directory relative).
 """
+import hashlib
 import logging
 import os
 import re
@@ -257,21 +258,25 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
 
     # Operator inbox: every DERIVAR decision becomes a DerivedMessage. The UI
     # cannot reconstruct this from the summary, so the pipeline materialises the
-    # list explicitly (additive: old outputs default to an empty list).
-    mensajes_derivados = [
-        DerivedMessage(
-            message_id=msg.id or decision.message_id,
-            autor=msg.autor,
-            canal=msg.canal,
-            texto_original=msg.texto,
-            razon=decision.reason,
-            confianza=(
-                analysis.sentiment.score if analysis.sentiment is not None else 0.0
-            ),
-        )
-        for msg, analysis, decision in results
-        if decision.action == ActionType.DERIVAR
-    ]
+    # list explicitly. Near-duplicate complaints (synthetic data, but also real
+    # repeated reports) are consolidated into one entry with a `menciones` count
+    # and a stable id derived from the normalized text.
+    mensajes_derivados = _consolidate_derived(
+        [
+            DerivedMessage(
+                message_id=msg.id or decision.message_id,
+                autor=msg.autor,
+                canal=msg.canal,
+                texto_original=msg.texto,
+                razon=decision.reason,
+                confianza=(
+                    analysis.sentiment.score if analysis.sentiment is not None else 0.0
+                ),
+            )
+            for msg, analysis, decision in results
+            if decision.action == ActionType.DERIVAR
+        ]
+    )
 
     return DistributionAssets(
         post_linkedin=post_linkedin,
@@ -308,6 +313,47 @@ def _curate_linkedin_targets(targets: List[_Target]) -> List[_Target]:
     ]
     eligible.sort(key=lambda pair: _relevance_score(pair[1]), reverse=True)
     return eligible[:LINKEDIN_MAX_CANDIDATES]
+
+
+def _normalize_derived_text(texto: str) -> str:
+    """Lowercase, strip punctuation and collapse whitespace for dedup grouping."""
+    texto = re.sub(r"[^a-záéíóúüñ0-9 ]", " ", texto.lower())
+    return " ".join(texto.split())
+
+
+def _consolidate_derived(
+    messages: List[DerivedMessage],
+) -> List[DerivedMessage]:
+    """Consolidate near-duplicate derived messages into one entry each.
+
+    Groups by a normalized text key (lowercase, punctuation-stripped) and keeps
+    the shortest representative text, counting how many messages were grouped
+    and assigning a stable ``message_id`` derived from the normalized key so the
+    UI can persist the attended state across reloads.
+    """
+    groups: dict[str, list[DerivedMessage]] = {}
+    order: list[str] = []
+    for message in messages:
+        key = _normalize_derived_text(message.texto_original)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(message)
+
+    consolidated: list[DerivedMessage] = []
+    for key in order:
+        group = groups[key]
+        representative = min(
+            group,
+            key=lambda m: (len(m.texto_original), m.autor),
+        )
+        representative.menciones = len(group)
+        representative.message_id = (
+            representative.message_id
+            or hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
+        )
+        consolidated.append(representative)
+    return consolidated
 
 
 def _disagrees_with_llm_category(

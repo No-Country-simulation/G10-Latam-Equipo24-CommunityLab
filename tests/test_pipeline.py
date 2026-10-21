@@ -1202,6 +1202,53 @@ def test_generate_orders_mensajes_derivados_by_batch():
     assert [dm.autor for dm in assets.mensajes_derivados] == ["Autor 0", "Autor 1"]
 
 
+def test_generate_consolidates_duplicate_derived_messages():
+    """Near-duplicate complaints collapse into one entry with a menciones count."""
+    def make(idx, texto):
+        mid = f"d{idx}"
+        msg = InputMessage(
+            autor=f"Autor {idx}",
+            canal="#canal",
+            tipo="feedback",
+            texto=texto,
+            id=mid,
+        )
+        analysis = AnalysisComplete(
+            message_id=mid,
+            sentiment=SentimentResult(
+                message_id=mid,
+                sentiment=SentimentType.NEGATIVO,
+                score=0.9,
+                reasoning="test",
+            ),
+            categorization=CategorizationResult(
+                message_id=mid, category="feedback", topics=[], entities=[]
+            ),
+            relevance=RelevanceResult(
+                message_id=mid, score=0.5, is_marketing_worthy=False
+            ),
+        )
+        decision = DecisionResult(
+            message_id=mid, action=ActionType.DERIVAR, reason="negativo"
+        )
+        return msg, analysis, decision
+
+    results = [
+        make(0, "El canal de ayuda quedó sin respuestas"),
+        make(1, "el canal de ayuda quedó sin respuestas!!!"),
+        make(2, "Otro problema distinto"),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.mensajes_derivados) == 2
+    first, second = assets.mensajes_derivados
+    assert first.menciones == 2
+    assert second.menciones == 1
+    # A stable id is assigned for persistence across reloads.
+    assert first.message_id
+    assert second.message_id
+
+
 # ---------------------------------------------------------------------------
 # LinkedIn relevance floor and cap (PR 4, Frente D)
 # ---------------------------------------------------------------------------
