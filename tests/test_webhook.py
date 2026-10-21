@@ -454,6 +454,61 @@ def test_telegram_comando_start_recibe_la_bienvenida(server, monkeypatch):
     assert [envio["text"] for envio in envios] == [WELCOME_TEXT]
 
 
+def test_telegram_reintento_de_start_no_afirma_que_corrio_el_pipeline(
+    server, monkeypatch
+):
+    """Un reintento de /start tras una falla transitoria NO debe decir que el
+    pipeline corrió: en un comando el pipeline nunca se ejecutó."""
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", _TELEGRAM_SECRET)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-de-prueba")
+
+    llamadas = []
+    monkeypatch.setattr(
+        webhook_module, "_run_with_batch", lambda batch: llamadas.append(batch)
+    )
+
+    envios = []
+    fallos = {"restantes": 1}
+
+    def espia(token, chat_id, text):
+        if fallos["restantes"] > 0:
+            fallos["restantes"] -= 1
+            raise TelegramTransientError("red caída")
+        envios.append({"token": token, "chat_id": chat_id, "text": text})
+
+    monkeypatch.setattr(webhook_module, "send_message", espia)
+
+    update = update_telegram(
+        update_id=600006, texto="/start", chat_id=7191785744, chat_type="private"
+    )
+    primera = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert primera.status_code == 500  # Telegram debe reentregar
+
+    segunda = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=30
+    )
+    assert segunda.status_code == 200
+    body = segunda.json()
+    # El pipeline nunca corrió: el reintento conserva "ignorado" y no afirma
+    # lo contrario en la nota.
+    assert body["status"] == "ignorado"
+    assert body["respuesta"] == "enviada"
+    assert body.get("nota") != (
+        "pipeline ejecutado en una entrega anterior de Telegram"
+    )
+    assert llamadas == []
+    assert [envio["text"] for envio in envios] == [WELCOME_TEXT]
+
+    # Una tercera entrega ya se corta como duplicado.
+    tercera = requests.post(
+        f"{server}/telegram", json=update, headers=headers_telegram(), timeout=10
+    )
+    assert tercera.status_code == 200
+    assert tercera.json()["status"] == "duplicado"
+
+
 def test_telegram_reintento_no_reprocesa_pero_reenvia_la_respuesta(
     server, monkeypatch
 ):
@@ -482,7 +537,9 @@ def test_telegram_reintento_no_reprocesa_pero_reenvia_la_respuesta(
     )
     assert segunda.status_code == 200
     body = segunda.json()
-    assert body["status"] == "procesado"  # el pipeline NO corrió de nuevo
+    # El pipeline NO corrió de nuevo y el reintento refleja su status real.
+    assert body["status"] == "exito"
+    assert body["nota"] == "pipeline ejecutado en una entrega anterior de Telegram"
     assert body["respuesta"] == "enviada"
     assert len(llamadas) == 1
     assert len(envios) == 1
