@@ -1,0 +1,12 @@
+{
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "interacciones": [
+    {
+      "autor": "Pedro Núñez",
+      "canal": "#general",
+      "tipo": "feedback",
+      "texto": "La comunidad necesita un taller presencial de OCI. Hay voluntarios dispuestos a coordinar el espacio."
+    }
+  ]
+}
