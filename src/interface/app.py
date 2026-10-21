@@ -906,8 +906,8 @@ def main():
                 else:
                     st.altair_chart(chart, width="stretch")
                 st.caption(
-                    "Los candidatos de LinkedIn son los publicables; el feedback "
-                    "negativo se lista en la pestaña Derivados."
+                    "Los candidatos de LinkedIn son los publicables; los mensajes "
+                    "que superan el umbral de confianza se listan en la pestaña Derivados."
                 )
 
         st.subheader("📝 Edición de Activos de Marketing")
