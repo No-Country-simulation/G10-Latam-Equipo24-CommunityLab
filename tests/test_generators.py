@@ -1,6 +1,8 @@
 """Tests for the concrete generators (LinkedIn, Newsletter, FAQ)."""
 import json
 
+import pytest
+
 from src.domain.models import (
     AnalysisComplete,
     FAQCandidate,
@@ -9,6 +11,7 @@ from src.domain.models import (
     LinkedInPost,
     NewsletterHighlight,
 )
+from src.generators.base import BaseGenerator
 from src.generators.faq import FAQThemeGenerator, cluster_faq_targets
 from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
@@ -155,3 +158,18 @@ def test_cluster_faq_targets_buckets_untopiced_into_otros():
 def test_generators_degrade_to_none_on_bad_json():
     gen = LinkedInGenerator(client=FakeClient("no es json"))
     assert gen.generate(_msg(), _analysis()) is None
+
+
+def test_parse_json_keeps_plain_object():
+    assert BaseGenerator._parse_json('{"a": 1}') == {"a": 1}
+
+
+def test_parse_json_unwraps_single_element_list():
+    assert BaseGenerator._parse_json('[{"a": 1}]') == {"a": 1}
+
+
+def test_parse_json_rejects_non_object():
+    with pytest.raises(ValueError):
+        BaseGenerator._parse_json('["a", "b"]')
+    with pytest.raises(ValueError):
+        BaseGenerator._parse_json('"solo un string"')
