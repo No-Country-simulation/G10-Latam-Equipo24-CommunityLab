@@ -225,11 +225,24 @@ class RuleBasedClient(LLMClient):
                 ensure_ascii=False,
             )
 
-        # FAQ generator prompt
+        # FAQ generator prompt (legacy single-question path)
         if "tema de una faq" in prompt_lower:
             return json.dumps(
                 {
                     "tema": "Consulta técnica sobre desarrollo",
+                },
+                ensure_ascii=False,
+            )
+
+        # FAQ theme generator prompt (semantic consolidation)
+        if "preguntas técnicas delimitadas" in prompt_lower:
+            return json.dumps(
+                {
+                    "tema": "Consulta técnica sobre desarrollo",
+                    "respuesta": (
+                        "Revisá la documentación oficial y verificá que los "
+                        "parámetros de configuración sean los correctos."
+                    ),
                 },
                 ensure_ascii=False,
             )
