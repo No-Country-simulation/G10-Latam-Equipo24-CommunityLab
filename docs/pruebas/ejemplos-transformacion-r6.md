@@ -240,7 +240,7 @@ FAQ ni descartarlo por ser "no relevante" para marketing.
 |-------|-------|
 | `action` | `derivar` |
 | `asset_type` | `None` |
-| Razón | "Feedback negativo: requiere atención personalizada por el community manager" |
+| Razón | "Feedback negativo: feedback negativo" |
 
 **Activo generado: ninguno — el mensaje va a atención humana.**
 

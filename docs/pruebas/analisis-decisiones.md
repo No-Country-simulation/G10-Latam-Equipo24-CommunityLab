@@ -41,19 +41,21 @@ Estado del código al 30/9: en `main` ya está `RecurringTopicsDetector` (PR #64
 | Categorías de análisis (6) | Las del enum `InteractionType`: `testimonio`, `pregunta_tecnica`, `feedback`, `logro`, `discusion`, `otro` (**D-C, decidido en código el 29/9**) |
 | Alias de categoría | `duda_tecnica` → `pregunta_tecnica`; `pregunta_general` y `comentario_general` → `otro`; cualquier otro valor no reconocido → `otro` |
 | Relevancia | `score` en [0, 1], recortado a ese rango; `is_marketing_worthy` se deriva del score: verdadero si `score >= 0.6` |
+| Umbral de confianza R4 (`CONFIDENCE_THRESHOLD`) | `0.8` — solo negativos con `negative_confidence > 0.8` disparan R4 (derivar) |
 | Fallback de categoría | `comentario_general` y cualquier valor no reconocido se mapean a `otro` |
 | `tipo` en la entrada | **Decidido el 28/9:** `comentario_general` se mapea a `otro`. La ingesta ya emite `otro` y `pregunta_tecnica` (PR #63) |
 | Precedencia entre `tipo` y `category` (D-B) | **Decidido por Rox el 29/9 (O-05):** si el `tipo` es explícito y reconocido (`testimonio`, `pregunta_tecnica`, `feedback`, `logro`, `discusion`), prevalece el `tipo`. Si es `otro`, `comentario_general` o vacío, prevalece la `category` del análisis |
 | Regla R1 | Testimonio o logro positivo con relevancia ≥ 0.6 → `action="publicar"`, `asset_type="linkedin"` (coincide con la Regla 1 de `docs/arquitectura-tecnica/analisis-arquitectura.md`) |
 | Regla R2 | Pregunta técnica (duda técnica / pregunta frecuente) → `action="crear_faq"`, `asset_type="faq"` |
 | Regla R3 | Mensaje neutral o de relevancia < 0.6 → `action="descartar"` |
+| Regla R4 | Feedback negativo con confianza > 0.8 → `action="derivar"`, `asset_type=None`, `reason="Feedback negativo: feedback negativo"` |
 | Respuesta por defecto del analizador | Sentimiento `neutral`/0.5, categoría `otro`, sin topics ni entities, relevancia 0.0 y no publicable. Implementada así en la rama de Rox |
 
 **🟡 Propuesto (pendiente de las decisiones D-A, D-D y D-E de la sección 2):**
 
 | Tema | Propuesta |
 |---|---|
-| Orden de reglas (D-A) | Se evalúan en orden R1 → R2 → R3; gana la primera que aplica |
+| Orden de reglas (D-A) | Se evalúan en orden R1 → R4 → R2 → R3; gana la primera que aplica |
 
 ## 2. Decisiones de contrato pendientes
 
@@ -172,7 +174,7 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-06 | pregunta_tecnica · pregunta_tecnica · neutral · 0.70 · sí | R2 | `crear_faq` / `faq` | — | `test_dec_06_…` · ⏳ |
 | DEC-07 | otro · otro · neutral · 0.50 · sí | La recurrencia por sí sola no genera FAQ si no es pregunta técnica | `descartar` | 🟡 Depende de D-A y D-D | `test_dec_07_…` · 🟡 |
 | DEC-08 | otro · otro · neutral · 0.50 · no | R3 | `descartar` | — | `test_dec_08_…` · ⏳ |
-| DEC-09 | feedback · feedback · negativo · 0.80 · no | R4 | `derivar` con `reason` "Feedback negativo: requiere atención personalizada por el community manager" | Hasta el PR #98 caía en R3 (hueco O-03); hoy R4 deriva el caso a un humano (equivalente: `test_negative_feedback_is_derived_to_human`) | `test_dec_09_…` · ⏳ |
+| DEC-09 | feedback · feedback · negativo · 0.80 · no | R4 | `derivar` con `reason` "Feedback negativo: feedback negativo" | Hasta el PR #98 caía en R3 (hueco O-03); hoy R4 deriva el caso a un humano (equivalente: `test_negative_feedback_is_derived_to_human`) | `test_dec_09_…` · ⏳ |
 | DEC-10 | feedback · feedback · positivo · 0.75 · no | Ninguna regla aplica (R1 es solo para testimonios) | `descartar` con `reason` "sin regla aplicable" | 🟡 El generador de newsletter salió del MVP (S3-002), así que descartar es coherente; ver O-14 | `test_dec_10_…` · 🟡 |
 | DEC-11 | discusion · discusion · neutral · 0.20 · no | R3 | `descartar` | — | `test_dec_11_…` · ⏳ |
 | DEC-12 | testimonio · pregunta_tecnica · positivo · 0.90 · no | Prevalece el `tipo` explícito y reconocido (D-B) | `crear_faq` / `faq` | La acción está decidida; mencionar la discrepancia en `reason` es una propuesta | `test_dec_12_…` · ⏳ |
@@ -186,6 +188,10 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-20 | testimonio · comentario_general · positivo · 0.85 · no | `comentario_general` se trata como "sin tipo": manda `category` | `publicar` / `linkedin` | Es el `tipo` que la ingesta de Mastodon emitía para casi todos los mensajes | `test_dec_20_…` · ⏳ |
 | DEC-21 | otro · testimonio · positivo · 0.90 · no | El `tipo` explícito y reconocido prevalece sobre el análisis | `publicar` / `linkedin` | Consecuencia de la regla: si la ingesta etiqueta mal un `tipo`, el error llega al motor (O-16) | `test_dec_21_…` · ⏳ |
 | DEC-22 | pregunta_tecnica · pregunta_tecnica · negativo · 0.80 · no | R4 se evalúa antes que R2 | `derivar` | Por eso R4 ahora precede a R2: la regla de FAQ ya no traga una queja negativa (D-I) | `test_dec_22_…` · ✅ |
+| DEC-23 | feedback · feedback · negativo · 0.81 · no | R4, umbral inclusivo (> 0.8) | `derivar` | `negative_confidence = 0.81` supera el threshold | `test_high_confidence_negative_message_is_derived` · ✅ |
+| DEC-24 | feedback · feedback · negativo · 0.79 · no | R3, umbral exclusivo (≤ 0.8) | `descartar` | `negative_confidence = 0.79` no supera el threshold; R4 no se activa | `test_low_confidence_negative_message_is_not_derived` · ✅ |
+| DEC-25 | pregunta_tecnica · pregunta_tecnica · negativo · 0.80 · no | R4 (antes que R2) con confianza límite | `derivar` | Pregunta técnica negativa con confianza = 0.80 (exacto) no supera > 0.8 | `test_low_confidence_negative_technical_question_goes_to_faq` · ✅ |
+| DEC-26 | logro · logro · negativo · 0.85 · no | R4, relevancia alta + sentimiento negativo | `derivar` | `is_relevant = true` pero R4 captura antes por `is_negative = true` + confianza | `test_high_confidence_negative_high_relevance_derived` · ✅ |
 
 ## C. Dudas recurrentes — Yis-ai-eng (HU-S2-007, PR #64 mergeado; follow-up #75)
 
@@ -264,6 +270,7 @@ Pedida por Elias: la matriz cubre análisis y decisiones; esta sección indica d
 | PIP-04 | Lote vacío | Resumen vacío | 0 interacciones; `Neutro`; sin temas | — | `test_pip_04_…` · ✅ |
 | PIP-05 | `data/sample/demo_fixed.json` (PR #77): 12 interacciones | 3 ejemplos de transformación (requisito R6 del jurado) | Mariana Souza (testimonio) → `publicar` / `linkedin`; Lucas Albuquerque (pregunta técnica) → `crear_faq` / `faq`; Pedro Núñez (otro) → `descartar`. Salida con 12 interacciones, `post_linkedin` y `sugerencia_contenido_faq` no nulos | El contrato tiene **un solo** `post_linkedin` y **una sola** FAQ por salida: los 3 ejemplos son 3 transformaciones distintas, no 3 posts a la vez. El archivo se referencia y no se copia aquí | `test_pip_05_…` · ✅ con el stub |
 | PIP-06 | Lote con 2 mensajes y fallo del LLM en 1 (issue #87); además mensajes vacíos | Exponer los fallbacks silenciosos | El lote sigue en `exito`; `resumen_comunidad.analisis_degradados = 1` y warning agregado `1/2 interacciones degradadas al default` | Un mensaje vacío corta **antes** de llamar al LLM: no es un fallo y no cuenta como degradado. El campo es aditivo dentro de `resumen_comunidad`; `OutputBatch` no agrega claves top-level (contrato PDF intacto) | `test_pip_06_…` · ✅ |
+| PIP-07 | Lote con 3 negativos: 2 confianza > 0.8, 1 confianza ≤ 0.8 | `feedback_negativo` cuenta **todos**; `mensajes_derivados` solo los de alta confianza | `resumen_comunidad.feedback_negativo = 3`; `mensajes_derivados` con 2 items | `feedback_negativo` y `mensajes_derivados` son poblaciones distintas (ver D-I, D-F) | `test_pip_07_feedback_negativo_vs_mensajes_derivados` · ✅ |
 
 **Cobertura fuera de esta matriz**
 
@@ -282,7 +289,7 @@ Pedida por Elias: la matriz cubre análisis y decisiones; esta sección indica d
 |---|---|---|---|
 | O-01 | **Orden de reglas.** R3 ("neutral → descartar") absorbe casi todas las dudas técnicas, porque el sentimiento típico de una pregunta es neutral. Pasa a la decisión D-A | Alto | Yis (#69) |
 | O-02 | "Duda técnica / pregunta frecuente": ¿toda duda técnica genera FAQ, o solo las recurrentes? Pasa a las decisiones D-A y D-D | Alto | Yis / Rox |
-| O-03 | Huecos en las reglas: negativo con alta relevancia, feedback positivo y newsletter no tienen regla. Propuesta: `descartar` con `reason` "sin regla aplicable" y valorar una alerta para el caso negativo | Medio | Yis |
+| O-03 | ✅ **Resuelta (PR #161 / #162):** R4 deriva feedback negativo con confianza > 0.8; `feedback_negativo` cuenta todos los negativos en `resumen_comunidad`; negativos de baja confianza siguen a R2/R3. Newsletter fuera del MVP (O-14). | Medio | Yis |
 | O-04 | ✅ Resuelto en el PR #73: `DecisionResult` (`message_id`, `action`, `asset_type`, `reason`) y la firma `decide(List[AnalysisComplete]) -> List[DecisionResult]`. Falta el motor | — | — |
 | O-05 | ✅ Decidido por Rox (D-B). Pendiente de datos: la muestra de `main` (100 mensajes: 81 `otro`, 19 `pregunta_tecnica`) no tiene ningún testimonio; el dataset de demo con testimonios (PR #77) aún no está en `main` | Medio | Rox / Elias |
 | O-06 | ✅ Resuelto con D-C: el analizador usa el vocabulario de `InteractionType` y mapea los alias. Aparte: el normalizador de entrada no convierte un `tipo` desconocido en `otro` (`xyz` se conserva) | Bajo | Rox |
@@ -378,3 +385,4 @@ CASOS = [
 | v1.1 | 29/9 | Alineada con la reestructuración del 28/9: sección D fuera de alcance, `comentario_general` → `otro` y dueña del motor de decisiones confirmada. Atiende la review de Ema: redacción "casos especificados", documentación de los alias del fixture y nueva sección de decisiones pendientes D-A a D-D. Sección C re-ejecutada sobre `021b586` |
 | v1.2 | 30/9 | Incorpora el analizador de Rox (`feat/unified-analyzer`): 18 de 19 casos ANL verificados. D-C decidida en código, así que las secciones A y B usan el vocabulario de `InteractionType`, con los alias ANL-18 y ANL-19. Nuevos CAT-08, DEC-18, D-E y O-15 (frontera `logro`/`testimonio`). Resueltas O-06, O-08, O-11 y O-13; O-04 a medias. Sección C re-ejecutada sobre `main` tras el merge del PR #64 |
 | v1.3 | 30/9 | Incorpora las decisiones de Rox (D-B: precedencia entre `tipo` y `category`) y la review de Elias y Ema. El PR #73 pasa de 18 a 20 casos ANL verificados (ANL-17 con `analyze_batch`, nuevo ANL-20). Nuevos CAT-09, DEC-19 a DEC-21, RSK-13 y RSK-14, REC-15 y la sección F (pipeline y cobertura cruzada, PIP-01 a PIP-05). Esperados medibles en ANL-03, ANL-06, ANL-07, ANL-17, RSK-07, RSK-11 y REC-13; convención de tema en la sección C; marcas `skip`/`xfail` por estado. Nuevas O-16, O-17 y O-18; resueltas O-04, O-05 y O-07 |
+| v1.4 | 21/10 | Incorpora la review de #162: R4 con umbral de confianza 0.8, orden R1→R4→R2→R3 (D-I), nuevos DEC-23 a DEC-26, PIP-07 para `feedback_negativo` vs `mensajes_derivados`, razón R4 actualizada a "feedback negativo", O-03 resuelta. Alinea `SentimentType` enum en engine.py. |

@@ -7,6 +7,7 @@ from src.domain.models import (
     AssetType,
     DecisionResult,
     InputMessage,
+    SentimentType,
 )
 
 # Explicit `tipo` values that take precedence over the LLM category (decision
@@ -58,8 +59,8 @@ class RuleBasedDecisionEngine(DecisionEngine):
         is_negative = False
         negative_confidence = 0.0
         if analysis.sentiment is not None:
-            is_positive = analysis.sentiment.sentiment.value == "positivo"
-            is_negative = analysis.sentiment.sentiment.value == "negativo"
+            is_positive = analysis.sentiment.sentiment == SentimentType.POSITIVO
+            is_negative = analysis.sentiment.sentiment == SentimentType.NEGATIVO
             negative_confidence = analysis.sentiment.score
 
         is_relevant = False
@@ -84,7 +85,7 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 message_id=message_id,
                 action=ActionType.DERIVAR,
                 asset_type=None,
-                reason="Feedback negativo: requiere atención personalizada por el community manager",
+                reason="Feedback negativo: feedback negativo",
             )
 
         # Rule 2: technical question -> FAQ. Every non-negative technical

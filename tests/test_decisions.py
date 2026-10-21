@@ -169,7 +169,7 @@ def test_negative_testimonial_is_derived_to_human():
     assert result.action == ActionType.DERIVAR
     assert result.asset_type is None
     assert result.reason == (
-        "Feedback negativo: requiere atención personalizada por el community manager"
+        "Feedback negativo: feedback negativo"
     )
 
 
@@ -187,7 +187,7 @@ def test_negative_feedback_is_derived_to_human():
     assert result.action == ActionType.DERIVAR
     assert result.asset_type is None
     assert result.reason == (
-        "Feedback negativo: requiere atención personalizada por el community manager"
+        "Feedback negativo: feedback negativo"
     )
 
 
@@ -240,7 +240,7 @@ def test_high_confidence_negative_message_is_derived():
     assert result.action == ActionType.DERIVAR
     assert result.asset_type is None
     assert result.reason == (
-        "Feedback negativo: requiere atención personalizada por el community manager"
+        "Feedback negativo: feedback negativo"
     )
 
 
