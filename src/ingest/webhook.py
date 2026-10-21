@@ -72,7 +72,16 @@ _ALLOWED_METHODS = {
 _ESTADO_PROCESADO = "procesado"
 _ESTADO_RESPONDIDO = "respondido"
 
-# update_id ya vistos: {"estado": _ESTADO_*, "texto": respuesta pendiente}.
+# Estado de la respuesta al chat devuelto por _responder_chat. Se usa una
+# constante propia en lugar de mezclar None con strings: "reintentar" es un
+# estado más, no la ausencia de valor.
+RESPUESTA_ENVIADA = "enviada"
+RESPUESTA_OMITIDA = "omitida"
+RESPUESTA_FALLIDA = "fallida"
+RESPUESTA_REINTENTAR = "reintentar"
+
+# update_id ya vistos: {"estado": _ESTADO_*, "texto": respuesta pendiente,
+# "status": status terminal del update ("exito" o "ignorado")}.
 # Acotado a _DEDUPE_LIMIT (el más viejo se descarta) y protegido por
 # _dedupe_lock porque el server usa un hilo por request. Vive en memoria: un
 # reinicio del server lo vacía y Telegram reentregaría ese update (mismo
@@ -167,14 +176,24 @@ def _registro_update(update_id: Any) -> Optional[Dict[str, Any]]:
 
 
 def _remember_update(
-    update_id: Any, estado: str, texto: Optional[str] = None
+    update_id: Any,
+    estado: str,
+    texto: Optional[str] = None,
+    status: Optional[str] = None,
 ) -> None:
-    """Memoriza el estado (y la respuesta pendiente) de un update_id.
+    """Memoriza el estado, la respuesta pendiente y el status de un update_id.
 
-    FIFO con tope _DEDUPE_LIMIT, el más viejo se descarta.
+    FIFO con tope _DEDUPE_LIMIT, el más viejo se descarta. `status` guarda el
+    status terminal del update ("exito" si corrió el pipeline, "ignorado" si no
+    tenía contenido) para que un reintento de Telegram responda lo mismo sin
+    afirmar que el pipeline corrió cuando en realidad no lo hizo.
     """
     with _dedupe_lock:
-        _seen_update_ids[update_id] = {"estado": estado, "texto": texto}
+        _seen_update_ids[update_id] = {
+            "estado": estado,
+            "texto": texto,
+            "status": status,
+        }
         _seen_update_ids.move_to_end(update_id)
         while len(_seen_update_ids) > _DEDUPE_LIMIT:
             _seen_update_ids.popitem(last=False)
@@ -229,14 +248,16 @@ def _texto_de_respuesta(
     return format_reply(result) if result is not None else None
 
 
-def _responder_chat(update: Dict[str, Any], texto: str) -> Optional[str]:
-    """Estado de la respuesta al chat; None significa "reintentar" (500).
+def _responder_chat(update: Dict[str, Any], texto: str) -> str:
+    """Estado de la respuesta al chat (ver las constantes RESPUESTA_*).
 
-    Devuelve "enviada", "omitida" (no hay token, no hay chat o chat de grupo)
-    o "fallida" (error permanente de la Bot API, al que los reintentos de
-    Telegram no le agregan nada). Sin `TELEGRAM_BOT_TOKEN` el webhook sigue
-    siendo ingesta pura: el mensaje se procesa y no se responde, con un warning
-    en el log para que no pase inadvertido.
+    Devuelve RESPUESTA_ENVIADA, RESPUESTA_OMITIDA (no hay token, no hay chat o
+    chat de grupo), RESPUESTA_FALLIDA (error permanente de la Bot API, al que
+    los reintentos de Telegram no le agregan nada) o RESPUESTA_REINTENTAR
+    (error transitorio: el caller responde 500 para que Telegram reentregue).
+    Sin `TELEGRAM_BOT_TOKEN` el webhook sigue siendo ingesta pura: el mensaje
+    se procesa y no se responde, con un warning en el log para que no pase
+    inadvertido.
     """
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
@@ -244,27 +265,27 @@ def _responder_chat(update: Dict[str, Any], texto: str) -> Optional[str]:
             "TELEGRAM_BOT_TOKEN sin configurar: el mensaje se procesó, "
             "pero no se respondió en el chat."
         )
-        return "omitida"
+        return RESPUESTA_OMITIDA
 
     chat_id = _chat_id_de_update(update)
     if chat_id is None:
         # Sin chat identificable o chat de grupo: no hay a quién responderle.
-        return "omitida"
+        return RESPUESTA_OMITIDA
 
     try:
         send_message(token, chat_id, texto)
     except TelegramAuthError as exc:
         logger.error("No se pudo responder en el chat (token inválido): %s", exc)
-        return "fallida"
+        return RESPUESTA_FALLIDA
     except TelegramPermanentError as exc:
         logger.error("No se pudo responder en el chat (error permanente): %s", exc)
-        return "fallida"
+        return RESPUESTA_FALLIDA
     except TelegramTransientError as exc:
         logger.warning("Respuesta al chat pendiente (error transitorio): %s", exc)
-        return None
+        return RESPUESTA_REINTENTAR
 
     logger.info("Webhook /telegram respondió en el chat de %s.", chat_id)
-    return "enviada"
+    return RESPUESTA_ENVIADA
 
 
 def _result_payload(result: OutputBatch) -> Dict[str, Any]:
@@ -462,31 +483,58 @@ class IngestHandler(BaseHTTPRequestHandler):
 
             # Se memoriza recién cuando el resultado es terminal: si el
             # pipeline falla (500) NO se marca, para que Telegram reintente y
-            # no se pierda. En "procesado" queda guardada la respuesta
-            # pendiente por si el envío al chat necesita otro intento.
+            # no se pierda. Se guarda si el pipeline realmente corrió (y con
+            # qué status) para que el reintento no afirme que corrió cuando en
+            # realidad fue un update sin contenido (p. ej. /start).
             if update_id is not None:
-                _remember_update(update_id, _ESTADO_PROCESADO, texto)
+                _remember_update(
+                    update_id,
+                    _ESTADO_PROCESADO,
+                    texto,
+                    status=body.get("status"),
+                )
 
         if body is None:
-            # Reintento: el pipeline ya corrió en una entrega anterior.
-            body = {
-                "status": "procesado",
-                "update_id": update_id,
-                "nota": "pipeline ejecutado en una entrega anterior de Telegram",
-            }
+            # Reintento: el pipeline ya corrió (o el update se ignoró) en una
+            # entrega anterior. Se reconstruye la nota según lo que pasó de
+            # verdad, sin afirmar que el pipeline corrió cuando no lo hizo.
+            # `status_previo` nunca es None para un registro creado por esta
+            # versión; se defaultea por robustez ante un registro sin status.
+            status_previo = registro.get("status") or "procesado"
+            body = {"status": status_previo, "update_id": update_id}
+            if status_previo == "ignorado":
+                body["nota"] = (
+                    "update sin contenido procesable, "
+                    "ya atendido en una entrega anterior"
+                )
+            else:
+                body["nota"] = (
+                    "pipeline ejecutado en una entrega anterior de Telegram"
+                )
 
-        estado_respuesta = "omitida"
+        estado_respuesta = RESPUESTA_OMITIDA
         if texto is not None:
             estado_respuesta = _responder_chat(update, texto)
-            if estado_respuesta is None:
+            if estado_respuesta == RESPUESTA_REINTENTAR:
                 # Falla transitoria de la Bot API: 500 para que Telegram
                 # reentregue. El estado queda "procesado" y el reintento sólo
                 # reenvía el chat, sin volver a correr el pipeline.
                 self._send_error(500, "No se pudo enviar la respuesta a Telegram.")
                 return
 
+        # Nota de concurrencia: entre el _registro_update de arriba y este
+        # _remember_update hay una llamada de red (sendMessage). Si Telegram
+        # reentrega el update por timeout antes de que esto termine, dos hilos
+        # pueden enviar el mismo mensaje una vez cada uno. No se serializa
+        # porque el costo (bloquear el handler durante la red) supera el
+        # beneficio: el peor caso es un mensaje duplicado, no una pérdida.
         if update_id is not None:
-            _remember_update(update_id, _ESTADO_RESPONDIDO, texto)
+            _remember_update(
+                update_id,
+                _ESTADO_RESPONDIDO,
+                texto,
+                status=body.get("status"),
+            )
 
         body["ruta"] = "/telegram"
         body["update_id"] = update_id
