@@ -16,14 +16,7 @@ from src.ingest import webhook as webhook_module
 from src.ingest.bot import WELCOME_TEXT
 from src.ingest.telegram import TelegramPermanentError, TelegramTransientError
 from src.ingest.webhook import IngestHandler
-
-_OCI_REQUIRED_ENV = (
-    "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
-    "OCI_FINGERPRINT",
-    "OCI_TENANCY_ID",
-    "OCI_REGION",
-)
+from src.oci.storage import OCI_REQUIRED_ENV
 
 # Header con el que Telegram firma cada entrega del webhook.
 _TELEGRAM_SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
@@ -98,7 +91,7 @@ def webhook_env(monkeypatch, tmp_path):
     seen = getattr(webhook_module, "_seen_update_ids", None)
     if seen is not None:
         seen.clear()
-    for var in _OCI_REQUIRED_ENV:
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.delenv(var, raising=False)
 
 

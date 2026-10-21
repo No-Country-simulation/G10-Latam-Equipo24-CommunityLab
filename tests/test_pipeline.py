@@ -29,6 +29,7 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
 )
+from src.oci.storage import OCI_REQUIRED_ENV
 from src.pipeline import _generate, _summarize, run_pipeline
 from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
@@ -99,14 +100,8 @@ def pipeline_env(monkeypatch, tmp_path):
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: FakeLLMClient())
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
     return tmp_path
 
 
@@ -476,14 +471,8 @@ def test_pipeline_with_rule_based_backend_offline_end_to_end(
     """End-to-end offline test with real RuleBasedClient backend."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     interacciones = [
         {
@@ -532,14 +521,9 @@ def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
     period-scoped object key from the contract example, using a simulated
     Object Storage client (no `oci` SDK required)."""
     monkeypatch.chdir(tmp_path)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.setenv(var, "fake")
+    monkeypatch.setenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
 
     calls = {}
 
@@ -1050,14 +1034,8 @@ def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
     # The autouse fixture fakes the LLM client; re-point it at the real factory
     # so this test genuinely exercises the rule_based backend end-to-end.
     monkeypatch.setattr("src.pipeline.get_llm_client", real_get_llm_client)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     source = _write_batch(
         tmp_path,

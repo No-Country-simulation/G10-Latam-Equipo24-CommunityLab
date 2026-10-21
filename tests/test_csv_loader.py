@@ -15,20 +15,13 @@ import pytest
 from src.domain.models import InputBatch, InputMessage
 from src.ingest.csv_loader import CSVInputLoader
 from src.ingest.loader import load_batch
+from src.oci.storage import OCI_REQUIRED_ENV
 from src.pipeline import run_pipeline
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 MUESTRA = FIXTURES / "muestra.csv"
 MUESTRA_EN = FIXTURES / "muestra_en.csv"
 REPO_ROOT = Path(__file__).resolve().parent.parent
-
-_OCI_REQUIRED_ENV = (
-    "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
-    "OCI_FINGERPRINT",
-    "OCI_TENANCY_ID",
-    "OCI_REGION",
-)
 
 
 def test_load_csv_happy_path():
@@ -290,7 +283,7 @@ def test_dataset_generado_y_pipeline_offline(tmp_path, monkeypatch):
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in _OCI_REQUIRED_ENV:
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.delenv(var, raising=False)
 
     output = run_pipeline(str(salida))
