@@ -85,10 +85,21 @@ def _write_json_dict(path, data: dict) -> bool:
     return True
 
 
+def _bucket() -> str:
+    """Target bucket of the state objects, resolved at call time.
+
+    ``OCI_BUCKET_NAME`` is the canonical bucket configuration — the pipeline
+    resolves it the same way (``src/pipeline.py``) — and ``DEFAULT_BUCKET`` is
+    the fallback when the variable is absent. Both are read at call time so
+    the seams stay patchable.
+    """
+    return os.environ.get("OCI_BUCKET_NAME") or DEFAULT_BUCKET
+
+
 def _oci_get_dict(key: str) -> dict:
     """Read a JSON object from OCI. Never raises; ``{}`` when unavailable."""
     try:
-        value = OCIStorageClient().get_json(DEFAULT_BUCKET, key, None)
+        value = OCIStorageClient().get_json(_bucket(), key, None)
     except Exception:
         return {}
     return value if isinstance(value, dict) else {}
@@ -97,7 +108,7 @@ def _oci_get_dict(key: str) -> dict:
 def _oci_put_dict(key: str, data: dict) -> bool:
     """Write a JSON object to OCI. Never raises; False when unavailable."""
     try:
-        return bool(OCIStorageClient().put_json(DEFAULT_BUCKET, key, data))
+        return bool(OCIStorageClient().put_json(_bucket(), key, data))
     except Exception:
         return False
 
