@@ -18,6 +18,7 @@ def build_analysis(
     category: str,
     sentiment: SentimentType = SentimentType.POSITIVO,
     relevance: float = 0.8,
+    score: float = 0.9,
 ) -> AnalysisComplete:
     """Build a complete analysis for decision-engine tests."""
     return AnalysisComplete(
@@ -25,7 +26,7 @@ def build_analysis(
         sentiment=SentimentResult(
             message_id="msg-test",
             sentiment=sentiment,
-            score=0.9,
+            score=score,
             reasoning="test",
         ),
         categorization=CategorizationResult(
@@ -220,6 +221,96 @@ def test_negative_message_without_relevance_is_still_derived():
     result = engine.decide(message, analysis)
 
     assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
+
+
+def test_high_confidence_negative_message_is_derived():
+    # R4 confidence gate: sentiment.score > CONFIDENCE_THRESHOLD (0.8).
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="feedback",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.3,
+        score=0.81,
+    )
+
+    message = build_message(tipo="feedback")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
+    assert result.reason == (
+        "Feedback negativo: requiere atención personalizada por el community manager"
+    )
+
+
+def test_low_confidence_negative_message_is_not_derived():
+    # R4 confidence gate: 0.79 is below the 0.8 threshold, so R4 does not fire.
+    # A non-technical negative message falls through to R3 (DESCARTAR).
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="feedback",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.3,
+        score=0.79,
+    )
+
+    message = build_message(tipo="feedback")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DESCARTAR
+    assert result.asset_type is None
+
+
+def test_low_confidence_negative_technical_question_goes_to_faq():
+    # R4 confidence gate: 0.79 does not derive, so the technical question
+    # reaches R2 and becomes an FAQ candidate.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="pregunta_tecnica",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.3,
+        score=0.79,
+    )
+
+    message = build_message(tipo="pregunta_tecnica")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.CREAR_FAQ
+    assert result.asset_type == AssetType.FAQ
+
+
+def test_exact_threshold_negative_message_is_not_derived():
+    # R4 uses a strict > comparison: 0.80 must NOT derive.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="feedback",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.3,
+        score=0.80,
+    )
+
+    message = build_message(tipo="feedback")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DESCARTAR
+    assert result.asset_type is None
+
+
+def test_high_relevance_low_confidence_negative_not_derived():
+    # Relevance is ignored for the R4 derivation decision.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="testimonio",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.9,
+        score=0.5,
+    )
+
+    message = build_message(tipo="testimonio")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DESCARTAR
     assert result.asset_type is None
 
 
