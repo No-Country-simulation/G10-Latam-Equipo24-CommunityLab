@@ -236,6 +236,20 @@ class FAQSuggestion(BaseModel):
     status: str = ""
 
 
+class DerivedMessage(BaseModel):
+    """A message routed to a human operator (decision DERIVAR).
+
+    Additive output field: the operator inbox needs the original text, author,
+    channel, reason and confidence so the UI can list and prioritise them.
+    """
+    message_id: str = ""
+    autor: str = ""
+    canal: str = ""
+    texto_original: str = ""
+    razon: str = ""
+    confianza: float = 0.0
+
+
 class DistributionAssets(BaseModel):
     """Generated assets. Each is optional: not every batch produces all three."""
     post_linkedin: Optional[LinkedInPost] = None
@@ -249,6 +263,9 @@ class DistributionAssets(BaseModel):
     # default_factory: old outputs lack it. The contract still materializes a
     # single `sugerencia_contenido_faq`.
     candidatos_faq: List[FAQCandidate] = Field(default_factory=list)
+    # Messages routed to a human by DERIVAR decisions, surfaced in the operator
+    # inbox. Additive via default_factory: old outputs lack it.
+    mensajes_derivados: List[DerivedMessage] = Field(default_factory=list)
 
 
 class OCIStorage(BaseModel):

@@ -1,6 +1,8 @@
 """Tests for domain models (contract)."""
 from src.domain.models import (
     CommunitySummary,
+    DerivedMessage,
+    DistributionAssets,
     InputMessage,
     InputBatch,
     SentimentResult,
@@ -193,3 +195,58 @@ def test_community_summary_without_option_a_keys_still_deserializes():
 
     assert summary.distribucion_sentimiento == {}
     assert summary.temas_principales_conteo == []
+
+
+# ---------------------------------------------------------------------------
+# Derivación a humano (B): DerivedMessage + DistributionAssets.mensajes_derivados
+# ---------------------------------------------------------------------------
+
+
+def test_derived_message_carries_author_channel_text_reason_confidence():
+    """DerivedMessage exposes the fields the operator inbox needs."""
+    dm = DerivedMessage(
+        message_id="m-1",
+        autor="Nora",
+        canal="#general",
+        texto_original="No me gustó el taller.",
+        razon="Feedback negativo: requiere atención personalizada",
+        confianza=0.85,
+    )
+    assert dm.autor == "Nora"
+    assert dm.canal == "#general"
+    assert dm.texto_original == "No me gustó el taller."
+    assert dm.razon == "Feedback negativo: requiere atención personalizada"
+    assert dm.confianza == 0.85
+
+
+def test_distribution_assets_mensajes_derivados_defaults_empty():
+    """mensajes_derivados is additive: old outputs deserialize as empty."""
+    assets = DistributionAssets()
+    assert assets.mensajes_derivados == []
+
+
+def test_distribution_assets_mensajes_derivados_accepts_list():
+    dm = DerivedMessage(
+        message_id="m-1",
+        autor="Nora",
+        canal="#general",
+        texto_original="No me gustó el taller.",
+        razon="Feedback negativo",
+        confianza=0.85,
+    )
+    assets = DistributionAssets(mensajes_derivados=[dm])
+    assert len(assets.mensajes_derivados) == 1
+    assert assets.mensajes_derivados[0].autor == "Nora"
+
+
+def test_distribution_assets_legacy_payload_without_derivados_deserializes():
+    """A DistributionAssets payload without mensajes_derivados still loads."""
+    legacy = {
+        "post_linkedin": None,
+        "destaque_newsletter_semanal": None,
+        "sugerencia_contenido_faq": None,
+        "candidatos_post_linkedin": [],
+        "candidatos_faq": [],
+    }
+    assets = DistributionAssets.model_validate(legacy)
+    assert assets.mensajes_derivados == []

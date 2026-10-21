@@ -44,6 +44,10 @@ EDIT_WIDGET_KEYS = (
     "faq_estado",
 )
 
+# Prefix for the per-derived-message toggle keys in session_state. These are
+# cleared on every new batch so attended states do not leak across runs.
+DERIVED_WIDGET_KEY_PREFIX = "derivado_atendido_"
+
 BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
     "assets", "branding", "communitylab-logo-principal.png"
 )
@@ -431,9 +435,50 @@ def build_assets_summary_df(resumen, assets):
         {"activo": "Post LinkedIn", "conteo": linkedin_count},
         {"activo": "Newsletter", "conteo": newsletter_count},
         {"activo": "Dudas frecuentes (FAQ)", "conteo": int((resumen or {}).get("dudas_frecuentes", 0))},
-        {"activo": "Derivados a humano", "conteo": int((resumen or {}).get("feedback_negativo", 0))},
+        {"activo": "Feedback negativo", "conteo": int((resumen or {}).get("feedback_negativo", 0))},
     ]
     return pd.DataFrame(data)
+
+
+def is_atendido(session_state, message_id):
+    """Returns whether a derived message is marked as attended in session_state.
+
+    Falls back to ``False`` when the dict or key is missing, so a fresh render
+    shows every derivation as pending.
+    """
+    return bool((session_state or {}).get("derivados_atendidos", {}).get(message_id))
+
+
+def set_atendido(session_state, message_id, value):
+    """Marks a derived message as attended (or not) in session_state."""
+    session_state.setdefault("derivados_atendidos", {})[message_id] = bool(value)
+
+
+def build_derivados_entries(mensajes, session_state):
+    """Builds the list rendered by the "Derivados" tab.
+
+    Each entry carries the original message fields plus an ``atendido`` flag
+    and a stable ``key`` for the toggle widget. When a message lacks an id,
+    the key falls back to ``idx-<position>`` so the UI can still track state.
+    """
+    attended = (session_state or {}).get("derivados_atendidos", {})
+    entries = []
+    for position, mensaje in enumerate(mensajes):
+        message_id = str(mensaje.get("message_id") or "").strip()
+        key = message_id if message_id else f"idx-{position}"
+        entries.append(
+            {
+                "key": key,
+                "message_id": message_id,
+                "autor": mensaje.get("autor", ""),
+                "canal": mensaje.get("canal", ""),
+                "texto_original": mensaje.get("texto_original", ""),
+                "razon": mensaje.get("razon", ""),
+                "confianza": mensaje.get("confianza", 0.0),
+                "atendido": bool(attended.get(key)),
+            }
+        )
+    return entries
 
 
 def reset_batch_state(session_state):
@@ -446,6 +491,12 @@ def reset_batch_state(session_state):
             session_state.pop(key, None)
     for key in EDIT_WIDGET_KEYS:
         session_state.pop(key, None)
+    # Derived-message attended state is session-only and must not survive a new
+    # batch; clear both the dictionary and the per-message toggle widget keys.
+    session_state.pop("derivados_atendidos", None)
+    for key in list(session_state.keys()):
+        if key.startswith(DERIVED_WIDGET_KEY_PREFIX):
+            session_state.pop(key, None)
     # A new batch must not inherit which signatures were already published:
     # otherwise a fresh lot's candidate could be blocked as "already sent".
     session_state.pop("telegram_published_times", None)
@@ -744,13 +795,13 @@ def main():
                 st.markdown("**Temas Principales**")
                 st.write(", ".join(summary["temas_principales"]))
 
-        st.subheader("🚨 Derivación a humano")
+        st.subheader("🚨 Feedback negativo")
         deriv_col1, deriv_col2 = st.columns(2)
         feedback_negativo = summary.get("feedback_negativo", 0)
         analisis_degradados = summary.get("analisis_degradados", 0)
         with deriv_col1:
             with st.container(border=True):
-                st.metric(label="Derivados a humano", value=feedback_negativo)
+                st.metric(label="Feedback negativo", value=feedback_negativo)
         with deriv_col2:
             with st.container(border=True):
                 st.metric(label="Análisis degradados", value=analisis_degradados)
@@ -816,8 +867,8 @@ def main():
                 else:
                     st.altair_chart(chart, width="stretch")
                 st.caption(
-                    "Los candidatos de LinkedIn son los publicables; los derivados "
-                    "a humano salen del feedback negativo."
+                    "Los candidatos de LinkedIn son los publicables; el feedback "
+                    "negativo se lista en la pestaña Derivados."
                 )
 
         st.subheader("📝 Edición de Activos de Marketing")
@@ -825,7 +876,9 @@ def main():
         # its own newsletter highlight (tab 2).
         seleccionado = None
         selected_index = 0
-        tab1, tab2, tab3 = st.tabs(["💼 Post LinkedIn", "📰 Newsletter", "❓ Sugerencia FAQ"])
+        tab1, tab2, tab3, tab4 = st.tabs(
+            ["💼 Post LinkedIn", "📰 Newsletter", "❓ Sugerencia FAQ", "🚨 Derivados"]
+        )
 
         with tab1:
             linkedin = assets["post_linkedin"]
@@ -1050,6 +1103,35 @@ def main():
                             if parte
                         )
                     )
+
+        with tab4:
+            mensajes_derivados = assets.get("mensajes_derivados") or []
+            if mensajes_derivados:
+                st.write(
+                    f"{len(mensajes_derivados)} mensaje(s) derivado(s) a revisión humana. "
+                    "El estado 'atendido' es solo para esta sesión."
+                )
+                for entry in build_derivados_entries(mensajes_derivados, st.session_state):
+                    key = entry["key"]
+                    widget_key = f"{DERIVED_WIDGET_KEY_PREFIX}{key}"
+                    col_text, col_toggle = st.columns([3, 1], gap="large")
+                    with col_text:
+                        st.write(f"**{entry['autor']}** · {entry['canal']}")
+                        st.write(entry["texto_original"])
+                        st.caption(
+                            f"Motivo: {entry['razon']} · "
+                            f"Confianza: {entry['confianza']:.0%}"
+                        )
+                    with col_toggle:
+                        atendido = st.checkbox(
+                            "Atendido",
+                            value=entry["atendido"],
+                            key=widget_key,
+                        )
+                        if atendido != entry["atendido"]:
+                            set_atendido(st.session_state, key, atendido)
+            else:
+                st.info("No hay mensajes derivados a revisión humana en este lote.")
 
         # Un activo entra al paquete sólo si está Aprobado y su texto editado
         # no está vacío. Pendiente y Rechazado quedan afuera.
