@@ -2045,3 +2045,90 @@ def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
     app.set_atendido({}, "m-1", True)
 
     assert ("test-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def _derived_message(message_id):
+    """One derived message, as the pipeline materializes it."""
+    return {
+        "message_id": message_id,
+        "autor": "Mariana Souza",
+        "canal": "#logros-y-empleos",
+        "texto_original": "Consegui mi primer empleo",
+        "razon": "Feedback negativo con alta confianza",
+        "confianza": 0.95,
+    }
+
+
+def _run_app_with_negative_feedback(feedback_negativo, mensajes_derivados):
+    """Render the dashboard with a batch that carries negative feedback."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+    at.run()
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": feedback_negativo,
+            "sentimiento_predominante": "negativo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": feedback_negativo,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"negativo": feedback_negativo},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 1}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {"origen": "o", "status": "s", "tema": "q"},
+            "candidatos_post_linkedin": [],
+            "mensajes_derivados": mensajes_derivados,
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "activos/2026-semana-43/paquete-distribucion.json",
+            "status": "guardado_con_exito",
+        },
+    }
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _negative_feedback_notice(at):
+    """The notice rendered under the "Feedback negativo" subheader."""
+    notices = [warning.value for warning in at.warning if "feedback negativo" in warning.value]
+    assert notices, f"no negative-feedback notice rendered: {[w.value for w in at.warning]}"
+    return notices[0]
+
+
+def test_negative_feedback_notice_reports_the_real_derived_count():
+    """El aviso distingue cuántas fueron negativas de cuántas se derivaron."""
+    at = _run_app_with_negative_feedback(41, [_derived_message("m-1")])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "1 se derivó a revisión humana" in notice
+    assert "41 interacciones con feedback negativo se derivaron" not in notice
+
+
+def test_negative_feedback_notice_says_when_none_was_derived():
+    """Sin derivadas, el aviso lo dice en vez de insinuar que todas lo hicieron."""
+    at = _run_app_with_negative_feedback(41, [])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "ninguna" in notice.lower()
