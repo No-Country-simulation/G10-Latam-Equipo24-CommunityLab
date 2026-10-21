@@ -1,5 +1,7 @@
 import base64
+import hmac
 import json
+import os
 import sys
 import tempfile
 from datetime import date, datetime
@@ -776,6 +778,51 @@ def render_brand_header():
     )
 
 
+def _expected_panel_password() -> str:
+    """Return the expected panel password from secrets or the environment.
+
+    In the cloud it arrives as a Streamlit secret (``st.secrets``); locally it
+    comes from the environment. When neither is set the panel stays closed: a
+    public deployment must not open itself because a secret was forgotten.
+    """
+    try:
+        secret = st.secrets.get("PANEL_PASSWORD", "")
+    except Exception:  # no secrets file at all (local run without secrets.toml)
+        secret = ""
+    if secret:
+        return str(secret).strip()
+    return os.environ.get("PANEL_PASSWORD", "").strip()
+
+
+def require_panel_access() -> None:
+    """Stop the render until the shared panel password is entered.
+
+    The panel curates assets and writes state to the OCI bucket, so on a
+    public deployment the URL alone must not grant access. The comparison is
+    constant-time and the granted flag lives in the session, so the password
+    is asked once per session instead of on every Streamlit rerun.
+    """
+    expected = _expected_panel_password()
+    if not expected:
+        st.error(
+            "El panel no está configurado: falta la contraseña `PANEL_PASSWORD`. "
+            "Cargala como secret en la nube o como variable de entorno en local."
+        )
+        st.stop()
+    if st.session_state.get("panel_access_granted"):
+        return
+    entered = st.text_input(
+        "Contraseña del panel", type="password", key="panel_password"
+    )
+    if not entered:
+        st.info("Ingresá la contraseña para ver el panel.")
+        st.stop()
+    if not hmac.compare_digest(entered.encode(), expected.encode()):
+        st.error("Contraseña incorrecta.")
+        st.stop()
+    st.session_state["panel_access_granted"] = True
+
+
 def main():
     st.set_page_config(
         page_title="CommunityLab - Panel de Curaduría",
@@ -783,6 +830,7 @@ def main():
         layout="wide",
         initial_sidebar_state="collapsed",
     )
+    require_panel_access()
     init_session_state()
     apply_dashboard_styles()
 

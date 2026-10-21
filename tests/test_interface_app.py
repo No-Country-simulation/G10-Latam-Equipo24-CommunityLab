@@ -44,6 +44,75 @@ def _isolate_persisted_state(tmp_path, monkeypatch):
     # ``src/oci/client.py``): without this, the bucket of a developer's machine
     # would leak into the tests and point them at production.
     monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
+    # The panel gate reads the shared password from the environment, exactly
+    # like a local run does. Every test that renders the dashboard goes
+    # through the gate, so the password has to be configured for them.
+    monkeypatch.setenv("PANEL_PASSWORD", PANEL_PASSWORD)
+
+
+# Password used by the panel access gate in the tests.
+PANEL_PASSWORD = "clave-de-prueba"
+
+
+def _raw_app_test():
+    """Build an AppTest over the panel script, without entering the gate."""
+    from streamlit.testing.v1 import AppTest
+
+    return AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+
+
+def _app_test():
+    """Build an AppTest that already entered the panel access gate.
+
+    The panel asks for the shared password before rendering anything, so a
+    test that renders the dashboard has to enter it first, like a real
+    session does.
+    """
+    at = _raw_app_test()
+    at.run()
+    at.text_input[0].set_value(PANEL_PASSWORD).run()
+    return at
+
+
+def test_panel_stays_closed_when_no_password_is_configured(monkeypatch):
+    """Sin PANEL_PASSWORD el panel no se abre y avisa que falta configurarla."""
+    monkeypatch.delenv("PANEL_PASSWORD", raising=False)
+
+    at = _raw_app_test()
+    at.run()
+
+    assert not at.exception
+    assert any("PANEL_PASSWORD" in error.value for error in at.error)
+    # The dashboard never rendered: no tabs, no data.
+    assert not at.tabs
+
+
+def test_panel_stays_closed_with_the_wrong_password():
+    """Una contraseña incorrecta deja el panel cerrado."""
+    at = _raw_app_test()
+    at.run()
+    assert not at.exception
+    assert at.text_input[0].label == "Contraseña del panel"
+
+    at.text_input[0].set_value("no-es-la-clave").run()
+
+    assert not at.exception
+    assert any("incorrecta" in error.value for error in at.error)
+    assert not at.tabs
+
+
+def test_panel_opens_with_the_right_password():
+    """Con la contraseña correcta el panel se renderiza."""
+    at = _raw_app_test()
+    at.run()
+    at.text_input[0].set_value(PANEL_PASSWORD).run()
+
+    assert not at.exception
+    # The dashboard rendered: the password gate let the script through.
+    assert any("Cargar Lote" in header.value for header in at.header)
+    assert not at.error
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -200,10 +269,7 @@ def test_build_derivados_entries_uses_index_fallback_when_message_id_missing():
 
 def test_derivados_tab_renders_without_exceptions():
     """La pestaña Derivados se renderiza sin excepciones con mensajes."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
-    at.run()
+    at = _app_test()
     assert not at.exception
 
     at.session_state["processing_done"] = True
@@ -264,10 +330,8 @@ def test_derivados_tab_toggle_updates_session_state(monkeypatch, tmp_path):
     monkeypatch.setenv(
         "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "attended.json")
     )
-    from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
-    at.run()
+    at = _app_test()
     assert not at.exception
 
     at.session_state["processing_done"] = True
@@ -434,10 +498,7 @@ def test_sample_button_renders_dashboard_without_exceptions():
     'orientation'`: el render real (AppTest) con resultados de Option A debe
     quedar sin excepciones.
     """
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
-    at.run()
+    at = _app_test()
     assert not at.exception
 
     at.session_state["processing_done"] = True
@@ -486,9 +547,7 @@ def test_render_with_derivadas_metrics():
     Ejercita la rama de advertencias: feedback_negativo > 0 y
     analisis_degradados > 0 renderizan ambos mensajes sin excepciones.
     """
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -931,9 +990,7 @@ def test_process_combined_sample_limits_trim_each_source(tmp_path, monkeypatch):
 
 def test_render_shows_combined_demo_button():
     """El botón y el selector de tamaño de demo combinada se renderizan."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -951,9 +1008,7 @@ def test_render_shows_combined_demo_button():
 
 def test_render_with_linkedin_candidates():
     """El selector de testimonio a publicar se renderiza con candidatos."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -1026,9 +1081,7 @@ def test_render_selector_swaps_post_and_newsletter():
     Option A "grande": el selector ya no solo cambia el copy; el título, el
     canal, el engagement y el destaque de newsletter siguen al testimonio.
     """
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -1195,9 +1248,7 @@ def test_render_selector_swaps_post_and_newsletter():
 
 def test_render_with_assets_summary_chart():
     """La sección de activos por tipo se renderiza sin errores."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -1330,11 +1381,7 @@ def _llm_results_with_candidates():
 
 
 def _run_app_with_candidates(linkedin_estado=None):
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(
-        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
-    )
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -1817,9 +1864,7 @@ def test_publish_button_requires_approval_and_unsent_signature(monkeypatch):
 
 def test_faq_tab_renders_grouped_themes_with_questions_and_answer():
     """La pestaña FAQ muestra los temas agrupados con sus preguntas y respuesta."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -1887,9 +1932,7 @@ def test_faq_tab_renders_grouped_themes_with_questions_and_answer():
 
 def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
     """Temas sin respuesta generada usan el tema como valor del editor."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at = _app_test()
     at.run()
     assert not at.exception
 
@@ -2151,17 +2194,15 @@ def test_load_curation_merges_oci_and_local_keeping_both_decisions():
 
 def test_curation_radio_ignores_unknown_persisted_status():
     """A hand-edited status must not break the radio: it falls back to Pendiente."""
-    from streamlit.testing.v1 import AppTest
-
     periodo = "Semana_04"
     key = app._candidate_key(
         "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
     )
     app.set_curation({}, periodo, "linkedin", key, "Aprobado por alguien")
 
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
-    at.run()
+    at = _app_test()
     assert not at.exception
+
 
     at.session_state["processing_done"] = True
     at.session_state["periodo_referencia"] = periodo
@@ -2175,17 +2216,15 @@ def test_curation_radio_ignores_unknown_persisted_status():
 
 def test_curation_radio_seeded_from_persisted_state():
     """A persisted Aprobado decision seeds the LinkedIn radio before first render."""
-    from streamlit.testing.v1 import AppTest
-
     periodo = "Semana_04"
     key = app._candidate_key(
         "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
     )
     app.set_curation({}, periodo, "linkedin", key, app.CURATION_STATUS_APPROVED)
 
-    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
-    at.run()
+    at = _app_test()
     assert not at.exception
+
 
     at.session_state["processing_done"] = True
     at.session_state["periodo_referencia"] = periodo
@@ -2233,11 +2272,7 @@ def _derived_message(message_id):
 
 def _run_app_with_negative_feedback(feedback_negativo, mensajes_derivados):
     """Render the dashboard with a batch that carries negative feedback."""
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(
-        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
-    )
+    at = _app_test()
     at.run()
     at.session_state["processing_done"] = True
     at.session_state["llm_results"] = {

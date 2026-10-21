@@ -30,6 +30,10 @@ En la consola de Community Cloud: **App → Settings → Secrets**. Pegar el
 siguiente bloque completando solo las claves que se usen:
 
 ```toml
+# Contraseña de acceso al panel (obligatoria si la app es pública).
+# Sin este secret el panel NO abre: se queda en la pantalla de acceso.
+PANEL_PASSWORD = ""
+
 # Backend de análisis: "rule_based" (sin LLM) | "ollama" | "gemini" | "openai"
 COMMUNITYLAB_LLM_BACKEND = "ollama"
 
@@ -112,6 +116,28 @@ el bootstrap no hace nada (es el camino normal en local).
 4. **Deploy**. La primera construcción instala `requirements.txt` y tarda
    unos minutos.
 
+### 3. Acceso al panel (quién puede entrar)
+
+El panel curadea activos y escribe estado en el bucket de OCI, así que el
+acceso se controla en **dos capas** y las dos hay que configurarlas:
+
+1. **Visibilidad de la app** — App → Settings → **Viewer access** → *Public*.
+   Con la opción por defecto ("Only you") el link redirige a
+   `share.streamlit.io/-/auth/app` y nadie del equipo puede abrirlo: la
+   respuesta es un **HTTP 303** con un `Location` a la pantalla de login.
+2. **Contraseña del panel** — el secret `PANEL_PASSWORD` (ver arriba). El
+   panel pide la contraseña antes de renderizar cualquier dato y, si el
+   secret no está cargado, **se queda cerrado** y muestra el aviso
+   "falta la contraseña `PANEL_PASSWORD`". No hay modo abierto: la URL sola
+   no da acceso al contenido ni a las acciones que escriben en OCI.
+
+La contraseña se pide una vez por sesión: después de ingresarla, el panel
+queda navegable sin volver a tipearla.
+
+> En local, la misma contraseña se lee de la variable de entorno
+> `PANEL_PASSWORD` (ver `.env.example`). Para probar el gate en la máquina:
+> `PANEL_PASSWORD=algo venv/bin/streamlit run src/interface/app.py`.
+
 ---
 
 ## Flujo de entrega (la parte "CD")
@@ -133,6 +159,10 @@ PR → CI (lint + tests) → code owner review → merge a main → redeploy en 
 ## Verificación
 
 - [ ] La app abre en la URL `https://<nombre>.streamlit.app`.
+- [ ] La URL **no** redirige al login de Streamlit (si redirige, *Viewer
+      access* sigue en "Only you").
+- [ ] El panel pide la contraseña y, con la correcta, renderiza la muestra
+      del demo sin errores.
 - [ ] El panel de curaduría muestra la muestra del demo sin errores.
 - [ ] Los charts renderizan con la paleta de marca.
 - [ ] Si se cargaron credenciales OCI, el estado de almacenamiento es
@@ -205,6 +235,21 @@ El archivo que genera la CLI (`~/.oci/oci_api_key.pem`) termina con una línea
 `OCI_API_KEY` que es el fingerprint, no parte de la clave. Si se pega tal cual,
 el parseo del PEM falla igual que en el caso anterior. Se borra esa línea: el
 fingerprint ya viaja aparte, en `OCI_FINGERPRINT`.
+
+### 5. El link redirige al login de Streamlit (HTTP 303)
+
+`curl -I https://<nombre>.streamlit.app` devuelve `303` con
+`Location: https://share.streamlit.io/-/auth/app` cuando la app es privada.
+No es un error de deploy: es *Viewer access* en "Only you". Hay que pasarlo a
+**Public** en App → Settings → *Viewer access*. Mientras siga en "Only you",
+el equipo no puede abrir el panel (ni con la contraseña correcta).
+
+### 6. El panel no abre y avisa que falta `PANEL_PASSWORD`
+
+Es el comportamiento esperado cuando el secret no está cargado: el gate es
+*fail-closed* y no hay modo abierto. Cargar `PANEL_PASSWORD` en App → Settings
+→ Secrets y redeployar. Si el secret está cargado y el aviso sigue, revisar
+los logs del deploy: el nombre de la variable es case-sensitive.
 
 ---
 
