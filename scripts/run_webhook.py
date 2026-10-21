@@ -9,9 +9,11 @@ Uso:
 El backend se resuelve: `--backend` > COMMUNITYLAB_LLM_BACKEND (.env) >
 rule_based. `--model` setea OLLAMA_MODEL en el entorno. `--secret` setea
 TELEGRAM_WEBHOOK_SECRET, el secret que Telegram manda en el header
-`X-Telegram-Bot-Api-Secret-Token` al `POST /telegram` (Fase 1 del webhook de
-Telegram); sin él esa ruta responde 503. Ctrl-C apaga el server y sale con
-código 0.
+`X-Telegram-Bot-Api-Secret-Token` al `POST /telegram` (Fase 2 del webhook de
+Telegram); sin él esa ruta responde 503. Con TELEGRAM_BOT_TOKEN configurado, la
+respuesta del análisis se envía de vuelta al chat que originó el update; sin ese
+token el análisis se procesa igual pero la respuesta al chat queda omitida.
+Ctrl-C apaga el server y sale con código 0.
 """
 
 from __future__ import annotations
@@ -105,14 +107,15 @@ def main() -> int:
         "\"texto\":\"Logré mi primer empleo como desarrolladora!\"}]'"
     )
     print(f"  curl http://{host}:{port}/health")
-    print("  # POST /telegram (Fase 1): requiere --secret / TELEGRAM_WEBHOOK_SECRET")
+    print("  # POST /telegram (Fase 2): requiere --secret / TELEGRAM_WEBHOOK_SECRET;")
+    print("  # con TELEGRAM_BOT_TOKEN la respuesta se envía al chat del update")
     print(f"  curl -X POST http://{host}:{port}/telegram \\")
     print("       -H 'Content-Type: application/json' \\")
     print("       -H 'X-Telegram-Bot-Api-Secret-Token: <secret>' \\")
     print(
         "       -d '{\"update_id\":1,\"message\":{\"message_id\":1,"
         "\"date\":1730000000,\"text\":\"Hola comunidad\","
-        "\"from\":{\"first_name\":\"Ana\"},\"chat\":{\"id\":-1001234567890}}}'"
+        "\"from\":{\"first_name\":\"Ana\"},\"chat\":{\"id\":123456789,\"type\":\"private\"}}}'"
     )
     print("=" * 68)
     print("Ctrl-C para apagar el server.")
