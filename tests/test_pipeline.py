@@ -537,7 +537,9 @@ def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
 # ---------------------------------------------------------------------------
 
 
-def _summary_result(idx, sentiment, topics, action=ActionType.DESCARTAR):
+def _summary_result(
+    idx, sentiment, topics, action=ActionType.DESCARTAR, score=0.5
+):
     """Builds a (message, analysis, decision) triple for `_summarize` tests."""
     mid = f"m{idx}"
     msg = InputMessage(
@@ -546,7 +548,7 @@ def _summary_result(idx, sentiment, topics, action=ActionType.DESCARTAR):
     analysis = AnalysisComplete(
         message_id=mid,
         sentiment=SentimentResult(
-            message_id=mid, sentiment=sentiment, score=0.5, reasoning="test"
+            message_id=mid, sentiment=sentiment, score=score, reasoning="test"
         ),
         categorization=CategorizationResult(
             message_id=mid, category="otro", topics=list(topics), entities=[]
@@ -833,6 +835,36 @@ def test_feedback_negativo_counted_end_to_end(tmp_path):
     assert output.status == "exito"
     assert output.resumen_comunidad.feedback_negativo == 1
     assert output.resumen_comunidad.total_interacciones_procesadas == 2
+
+
+def test_summary_feedback_negativo_counts_all_negative_sentiments():
+    # R4 confidence gate: low-confidence negatives (score <= 0.8) no longer
+    # produce DERIVAR decisions, but they must still count as feedback_negativo.
+    results = [
+        _summary_result(
+            0, SentimentType.NEGATIVO, [], action=ActionType.DERIVAR, score=0.81
+        ),
+        _summary_result(
+            1, SentimentType.NEGATIVO, [], action=ActionType.DESCARTAR, score=0.79
+        ),
+        _summary_result(2, SentimentType.POSITIVO, []),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.feedback_negativo == 2
+
+
+def test_summary_feedback_negativo_ignores_neutral_and_positive():
+    results = [
+        _summary_result(0, SentimentType.NEUTRO, [], action=ActionType.DESCARTAR),
+        _summary_result(1, SentimentType.POSITIVO, [], action=ActionType.DESCARTAR),
+        _summary_result(
+            2, SentimentType.NEGATIVO, [], action=ActionType.CREAR_FAQ, score=0.79
+        ),
+    ]
+    summary = _summarize_results(results)
+
+    assert summary.feedback_negativo == 1
 
 
 # ---------------------------------------------------------------------------

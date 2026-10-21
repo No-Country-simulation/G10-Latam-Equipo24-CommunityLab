@@ -345,10 +345,15 @@ def _summarize(batch: InputBatch, results: List[_Result]) -> CommunitySummary:
             len(results),
         )
 
-    # Negative feedback routed to a human by rule R4 (decision D-F, #97):
-    # expose how many messages need personal attention.
+    # Negative feedback detected by sentiment analysis (decision D-F, #97):
+    # expose how many messages expressed negative sentiment. This counts every
+    # negative message, including low-confidence ones that fall through R4 and
+    # are not routed to a human.
     feedback_negativo = sum(
-        1 for _, _, decision in results if decision.action == ActionType.DERIVAR
+        1
+        for _, analysis, _ in results
+        if analysis.sentiment is not None
+        and analysis.sentiment.sentiment == SentimentType.NEGATIVO
     )
 
     # Technical questions routed to the FAQ rule (R2, CREAR_FAQ): the contract
