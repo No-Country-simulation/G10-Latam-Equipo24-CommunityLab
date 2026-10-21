@@ -33,6 +33,7 @@ from src.domain.models import (
     AssetType,
     CommunitySummary,
     DecisionResult,
+    DerivedMessage,
     DistributionAssets,
     FAQCandidate,
     InputBatch,
@@ -226,12 +227,31 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         if decision.action == ActionType.CREAR_FAQ
     ]
 
+    # Operator inbox: every DERIVAR decision becomes a DerivedMessage. The UI
+    # cannot reconstruct this from the summary, so the pipeline materialises the
+    # list explicitly (additive: old outputs default to an empty list).
+    mensajes_derivados = [
+        DerivedMessage(
+            message_id=msg.id or decision.message_id,
+            autor=msg.autor,
+            canal=msg.canal,
+            texto_original=msg.texto,
+            razon=decision.reason,
+            confianza=(
+                analysis.sentiment.score if analysis.sentiment is not None else 0.0
+            ),
+        )
+        for msg, analysis, decision in results
+        if decision.action == ActionType.DERIVAR
+    ]
+
     return DistributionAssets(
         post_linkedin=post_linkedin,
         destaque_newsletter_semanal=destaque_newsletter,
         sugerencia_contenido_faq=_run(faq_gen, faq_target),
         candidatos_post_linkedin=candidatos,
         candidatos_faq=candidatos_faq,
+        mensajes_derivados=mensajes_derivados,
     )
 
 

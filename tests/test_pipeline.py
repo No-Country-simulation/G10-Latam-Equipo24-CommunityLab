@@ -28,7 +28,7 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
 )
-from src.pipeline import _summarize, run_pipeline
+from src.pipeline import _generate, _summarize, run_pipeline
 from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "pipeline_sample.json"
@@ -413,6 +413,7 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
         "candidatos_faq",
+        "mensajes_derivados",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 
@@ -1042,3 +1043,108 @@ def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
         "logro",
     ]
     assert [tf.conteo for tf in summary.temas_principales_conteo] == [1, 1, 1]
+
+
+# ---------------------------------------------------------------------------
+# Buzón de derivación: mensajes_derivados en DistributionAssets (PR 2)
+# ---------------------------------------------------------------------------
+
+
+def _derivation_result(idx, action, score):
+    """Builds a (message, analysis, decision) triple for derivation tests."""
+    mid = f"d{idx}"
+    msg = InputMessage(
+        autor=f"Autor {idx}",
+        canal=f"#canal{idx}",
+        tipo="feedback",
+        texto=f"texto {idx}",
+        id=mid,
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid,
+            sentiment=SentimentType.NEGATIVO,
+            score=score,
+            reasoning="test",
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="feedback", topics=[], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=0.5, is_marketing_worthy=False
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=action,
+        reason="Feedback negativo: requiere atención personalizada",
+    )
+    return msg, analysis, decision
+
+
+def test_generate_populates_mensajes_derivados_for_derivar_decisions():
+    """DERIVAR decisions become DerivedMessage entries in DistributionAssets."""
+    results = [
+        _derivation_result(0, ActionType.DERIVAR, 0.81),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.mensajes_derivados) == 1
+    dm = assets.mensajes_derivados[0]
+    assert dm.message_id == "d0"
+    assert dm.autor == "Autor 0"
+    assert dm.canal == "#canal0"
+    assert dm.texto_original == "texto 0"
+    assert dm.razon == "Feedback negativo: requiere atención personalizada"
+    assert dm.confianza == 0.81
+
+
+def test_generate_keeps_mensajes_derivados_empty_for_low_confidence_negative():
+    """A negative message below the confidence gate does NOT populate the inbox."""
+    results = [
+        _derivation_result(0, ActionType.DESCARTAR, 0.79),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert assets.mensajes_derivados == []
+
+
+def test_generate_keeps_mensajes_derivados_empty_for_positive():
+    """Positive messages never populate the human-derivation inbox."""
+    mid = "p0"
+    msg = InputMessage(
+        autor="Ana", canal="#general", tipo="testimonio", texto="texto", id=mid
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid, sentiment=SentimentType.POSITIVO, score=0.95, reasoning="test"
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="testimonio", topics=[], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=0.9, is_marketing_worthy=True
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=ActionType.PUBLISH,
+        asset_type="linkedin",
+        reason="Testimonio positivo relevante",
+    )
+    assets = _generate([(msg, analysis, decision)], FakeLLMClient())
+
+    assert assets.mensajes_derivados == []
+
+
+def test_generate_orders_mensajes_derivados_by_batch():
+    """Multiple DERIVAR messages preserve batch order in the inbox."""
+    results = [
+        _derivation_result(0, ActionType.DERIVAR, 0.85),
+        _derivation_result(1, ActionType.DERIVAR, 0.95),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert [dm.autor for dm in assets.mensajes_derivados] == ["Autor 0", "Autor 1"]
