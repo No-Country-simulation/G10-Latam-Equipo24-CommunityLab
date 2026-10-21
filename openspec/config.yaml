@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  project: G10-Latam-Equipo24-CommunityLab (Hackathon ONE G10 — Oracle Next Education & Alura)
+  language: Python 3.11 (render.yaml: PYTHON_VERSION 3.11.9)
+  ui: Streamlit >= 1.51.0 (operator inbox, curation panel, dashboard)
+  storage: OCI Object Storage (bucket communitylab-activos-marketing) with local filesystem fallback
+  testing: pytest >= 7.4.0; runner `venv/bin/python -m pytest tests/ -q` (venv/ exists in the repo; the system python3 has no pytest)
+  style: snake_case functions, module constants in CAPS, docstrings and code comments in English
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns
+      - OCI failures must never raise to the UI; degrade to the local fallback
+    tdd: true
+    test_command: "venv/bin/python -m pytest tests/ -q"
+  verify:
+    test_command: "venv/bin/python -m pytest tests/ -q"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
