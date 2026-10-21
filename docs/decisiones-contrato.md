@@ -119,6 +119,33 @@ Verifiqué qué produce cada fuente hoy:
 
 **No toca:** la precedencia de `tipo` sobre la categoría del LLM (D-B), ni el vocabulario de categorías (D-C).
 
+### D-K — Activos de distribución: los campos nuevos son aditivos (D-J aplicado a `DistributionAssets`)
+
+**Qué decide:** cómo entran los campos nuevos de `DistributionAssets`
+(`activos_distribucion_generados`) sin romper a quien ya consume el contrato: **aditivos con
+`default_factory`**, igual que D-J hizo con `resumen_comunidad`. No se abre una segunda capa de
+analítica.
+
+**Estado:** ✅ implementada (campo a campo, en el PR que lo introduce).
+
+| Campo | Forma | Origen | PR |
+|---|---|---|---|
+| `mensajes_derivados` | lista de `DerivedMessage` (`message_id`, `autor`, `canal`, `texto_original`, `razon`, `confianza`, `menciones`) | decisiones `DERIVAR` del pipeline, consolidadas y deduplicadas | #162 |
+
+**Invariantes.**
+
+1. **No se quita ni se renombra ningún campo existente.** El contrato crece; lo que se consumía
+   antes sigue igual.
+2. **Los campos nuevos son aditivos con `default_factory`**: un payload anterior valida sin
+   cambios y devuelve `[]`, nunca `None` ni un error.
+3. **`feedback_negativo` y `mensajes_derivados` son poblaciones distintas** (ver D-I en
+   `docs/DECISIONS.md`): el primero cuenta todo mensaje con sentimiento negativo; el segundo solo
+   los que superaron el umbral de confianza de R4 (`> 0.8`).
+
+**Archivos:** `src/domain/models.py` (`DerivedMessage`, `DistributionAssets`),
+`src/pipeline.py` (`_consolidate_derived`).
+
+
 ---
 
 ## 3. Qué decidir en el equipo (resumen accionable)
@@ -131,6 +158,7 @@ Verifiqué qué produce cada fuente hoy:
 | **D-D** | Ratificar `count >= 2`, pero **no como gate** | El detector es nice-to-have; la FAQ sale de D-A |
 | **D-E** | `logro` se publica como testimonio — ✅ **ya resuelta** | Sin esto, el sistema no publica nada con la muestra actual |
 | **D-J** | Opción A: campos aditivos en `resumen_comunidad` — ✅ **ya implementada** | Dos campos cuestan menos que un segundo contrato que hay que versionar por separado |
+| **D-K** | Campos aditivos en `DistributionAssets` (`mensajes_derivados`, `temas_faq`) — ✅ **ya implementada** | El contrato crece; no se abre una segunda capa de analítica |
 
 **La decisión-meta:** el equipo debe aceptar que **la señal rica (`logro`, y en gran medida `testimonio`) no viene de Mastodon en la práctica — viene del LLM**. Por lo tanto, la calidad del producto depende de (a) cerrar D-E, y (b) confiar en la clasificación del analizador. El detector de temas recurrentes es un agregador opcional que, con los datos actuales, no va a aportar — y no debe ser lo que desbloquea la FAQ.
 
