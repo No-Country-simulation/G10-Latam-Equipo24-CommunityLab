@@ -27,6 +27,7 @@ class RuleBasedDecisionEngine(DecisionEngine):
     """Decides the action for a message using business rules."""
 
     RELEVANCE_THRESHOLD = 0.6
+    CONFIDENCE_THRESHOLD = 0.8
 
     def decide(
         self, message: InputMessage, analysis: AnalysisComplete
@@ -55,9 +56,11 @@ class RuleBasedDecisionEngine(DecisionEngine):
 
         is_positive = False
         is_negative = False
+        negative_confidence = 0.0
         if analysis.sentiment is not None:
             is_positive = analysis.sentiment.sentiment.value == "positivo"
             is_negative = analysis.sentiment.sentiment.value == "negativo"
+            negative_confidence = analysis.sentiment.score
 
         is_relevant = False
         if analysis.relevance is not None:
@@ -71,11 +74,12 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 reason="Testimonio o logro positivo relevante",
             )
 
-        # Rule 4: negative feedback -> derive to a human (community manager).
-        # Evaluated BEFORE R2 (decision D-I): a negative message needs personal
-        # attention even when its type is a technical question, so R2 no longer
-        # swallows it. No relevance threshold: every negative message is routed.
-        if is_negative:
+        # Rule 4: high-confidence negative feedback -> derive to a human
+        # (community manager). Evaluated BEFORE R2 (decision D-I): a negative
+        # message needs personal attention even when its type is a technical
+        # question, so R2 no longer swallows it. No relevance threshold; only
+        # sentiment confidence above the threshold triggers derivation.
+        if is_negative and negative_confidence > self.CONFIDENCE_THRESHOLD:
             return DecisionResult(
                 message_id=message_id,
                 action=ActionType.DERIVAR,
