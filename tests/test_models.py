@@ -3,6 +3,8 @@ from src.domain.models import (
     CommunitySummary,
     DerivedMessage,
     DistributionAssets,
+    FAQCandidate,
+    FAQSuggestion,
     InputMessage,
     InputBatch,
     SentimentResult,
@@ -250,3 +252,74 @@ def test_distribution_assets_legacy_payload_without_derivados_deserializes():
     }
     assets = DistributionAssets.model_validate(legacy)
     assert assets.mensajes_derivados == []
+
+
+# ---------------------------------------------------------------------------
+# FAQ semantic consolidation (C): FAQSuggestion extension + DistributionAssets.temas_faq
+# ---------------------------------------------------------------------------
+
+
+def test_faq_suggestion_carries_respuesta_and_preguntas_relacionadas():
+    """Extended FAQSuggestion exposes a generated answer and related questions."""
+    suggestion = FAQSuggestion(
+        tema="Configurar retry en Mastodon",
+        origen="#dudas",
+        status="generado",
+        respuesta="Se configura desde el panel de administración.",
+        preguntas_relacionadas=["¿Cómo configuro el retry?"],
+    )
+    assert suggestion.tema == "Configurar retry en Mastodon"
+    assert suggestion.respuesta == "Se configura desde el panel de administración."
+    assert suggestion.preguntas_relacionadas == ["¿Cómo configuro el retry?"]
+    assert suggestion.status == "generado"
+
+
+def test_faq_suggestion_respuesta_and_preguntas_default_empty():
+    """Additive extension: old suggestions without the new fields still validate."""
+    legacy = {"tema": "Tema viejo", "origen": "#general", "status": "derivado_a_mentoria"}
+    suggestion = FAQSuggestion.model_validate(legacy)
+    assert suggestion.respuesta == ""
+    assert suggestion.preguntas_relacionadas == []
+
+
+def test_distribution_assets_temas_faq_defaults_empty():
+    """temas_faq is additive: old outputs deserialize as empty."""
+    assets = DistributionAssets()
+    assert assets.temas_faq == []
+
+
+def test_distribution_assets_temas_faq_accepts_list():
+    theme = FAQSuggestion(
+        tema="Retry en Mastodon",
+        respuesta="Desde el panel.",
+        preguntas_relacionadas=["¿Cómo?"],
+    )
+    assets = DistributionAssets(temas_faq=[theme])
+    assert len(assets.temas_faq) == 1
+    assert assets.temas_faq[0].respuesta == "Desde el panel."
+
+
+def test_distribution_assets_legacy_payload_without_temas_faq_deserializes():
+    """A DistributionAssets payload without temas_faq still loads."""
+    legacy = {
+        "post_linkedin": None,
+        "destaque_newsletter_semanal": None,
+        "sugerencia_contenido_faq": None,
+        "candidatos_post_linkedin": [],
+        "candidatos_faq": [],
+        "mensajes_derivados": [],
+    }
+    assets = DistributionAssets.model_validate(legacy)
+    assert assets.temas_faq == []
+
+
+def test_faq_candidate_carries_topics_for_clustering():
+    """FAQCandidate now carries topics so clustering can group by theme."""
+    candidate = FAQCandidate(
+        autor="Ana",
+        canal="#dudas",
+        texto_original="¿Cómo configuro el retry?",
+        relevancia=0.9,
+        topics=["configuración", "mastodon"],
+    )
+    assert candidate.topics == ["configuración", "mastodon"]
