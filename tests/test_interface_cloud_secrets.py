@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import sys
 import types
 
@@ -52,3 +53,65 @@ def test_export_is_noop_without_streamlit_secrets(monkeypatch):
     _install_fake_streamlit(monkeypatch, None)
 
     assert cloud_secrets.export_secrets_to_environ() == 0
+
+
+PEM_CONTENT = "-----BEGIN PRIVATE KEY-----\nFAKE\n-----END PRIVATE KEY-----\n"
+
+
+def test_bootstrap_writes_pem_to_temp_file_and_sets_path(monkeypatch, tmp_path):
+    monkeypatch.delenv("OCI_PRIVATE_KEY", raising=False)
+    monkeypatch.delenv("OCI_PRIVATE_KEY_PATH", raising=False)
+    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+
+    path = cloud_secrets.bootstrap_oci_private_key()
+
+    assert path is not None
+    assert os.environ["OCI_PRIVATE_KEY_PATH"] == path
+    with open(path, "r", encoding="utf-8") as f:
+        assert f.read() == PEM_CONTENT
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
+
+
+def test_bootstrap_preserves_existing_private_key_path(monkeypatch, tmp_path):
+    existing = tmp_path / "existing.pem"
+    existing.write_text("existing-key", encoding="utf-8")
+    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+    monkeypatch.setenv("OCI_PRIVATE_KEY_PATH", str(existing))
+
+    path = cloud_secrets.bootstrap_oci_private_key()
+
+    assert path == str(existing)
+    assert os.environ["OCI_PRIVATE_KEY_PATH"] == str(existing)
+    assert existing.read_text(encoding="utf-8") == "existing-key"
+
+
+def test_bootstrap_skips_when_secret_is_missing(monkeypatch):
+    monkeypatch.delenv("OCI_PRIVATE_KEY", raising=False)
+    monkeypatch.delenv("OCI_PRIVATE_KEY_PATH", raising=False)
+
+    assert cloud_secrets.bootstrap_oci_private_key() is None
+
+
+def test_bootstrap_creates_temp_file_when_path_points_to_directory(monkeypatch, tmp_path):
+    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+    monkeypatch.setenv("OCI_PRIVATE_KEY_PATH", str(tmp_path))
+
+    path = cloud_secrets.bootstrap_oci_private_key()
+
+    assert path is not None
+    assert path != str(tmp_path)
+    assert os.path.isfile(path)
+    with open(path, "r", encoding="utf-8") as f:
+        assert f.read() == PEM_CONTENT
+
+
+def test_bootstrap_returns_none_on_write_failure(monkeypatch):
+    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+    monkeypatch.delenv("OCI_PRIVATE_KEY_PATH", raising=False)
+
+    def _bad_mkstemp(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("tempfile.mkstemp", _bad_mkstemp)
+
+    assert cloud_secrets.bootstrap_oci_private_key() is None
