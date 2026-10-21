@@ -18,13 +18,15 @@ _STATUS = "generado"
 _QUESTIONS_DELIMITER = "\n---\n"
 
 
-def cluster_faq_targets(candidatos: List[FAQCandidate]) -> List[List[FAQCandidate]]:
-    """Group FAQ candidates into at most 10 semantic themes.
+def cluster_faq_targets(
+    candidatos: List[FAQCandidate],
+) -> tuple[List[List[FAQCandidate]], List[FAQCandidate]]:
+    """Group FAQ candidates into at most 9 semantic themes.
 
-    Grouping is driven by the candidate topics (already normalized by the
-    analyzer). Candidates with multiple topics join the most globally-frequent
-    topic. Untopiced candidates and groups beyond the 10th merge into a single
-    "otros" bucket so no candidate is dropped.
+    Returns ``(themes, orphaned)``: ``themes`` are the up-to-9 clusters with a
+    clear, frequent topic; ``orphaned`` are the candidates without a clear
+    topic plus any topic group beyond the 9th, so the UI can list them as
+    "detected questions that did not map to a FAQ theme".
     """
     all_topics = [
         topic
@@ -60,14 +62,13 @@ def cluster_faq_targets(candidatos: List[FAQCandidate]) -> List[List[FAQCandidat
     sorted_keys = sorted(clusters.keys(), key=lambda k: (-len(clusters[k]), k))
     groups = [clusters[k] for k in sorted_keys]
 
-    # Preserve at most 9 explicit topic clusters; everything else (group 10+
-    # and untopiced candidates) collapses into one "otros" bucket so no
-    # candidate is dropped and the total stays <= 10.
-    overflow = groups[9:] + [untopiced] if untopiced else groups[9:]
-    if overflow:
-        groups = groups[:9] + [sum(overflow, [])]
+    # At most 9 explicit topic clusters become themes; group 10+ and untopiced
+    # candidates are returned separately as orphaned, so no candidate is
+    # dropped and the UI can list them apart from the themed FAQ entries.
+    themes = groups[:9]
+    orphaned = sum(groups[9:], []) + untopiced
 
-    return groups
+    return themes, orphaned
 
 
 class FAQThemeGenerator(BaseGenerator[FAQSuggestion]):
@@ -94,7 +95,11 @@ class FAQThemeGenerator(BaseGenerator[FAQSuggestion]):
     def generate_theme(
         self, candidates: List[FAQCandidate]
     ) -> FAQSuggestion | None:
-        """Generate one FAQSuggestion for a cluster of related questions."""
+        """Generate one FAQSuggestion for a cluster of related questions.
+
+        Only the most representative question is surfaced (with the total
+        count), so near-duplicate synthetic questions don't repeat in the UI.
+        """
         if not candidates:
             return None
 
@@ -110,9 +115,25 @@ class FAQThemeGenerator(BaseGenerator[FAQSuggestion]):
             texto=_QUESTIONS_DELIMITER.join(questions),
         )
         analysis = AnalysisComplete(message_id="theme")
-        return self._generate_from_prompt(
+        result = self._generate_from_prompt(
             build_faq_theme_prompt(questions), msg, analysis
         )
+        if result is not None:
+            result.pregunta_representativa = self._pick_representative(candidates)
+            result.total_preguntas = len(questions)
+        return result
+
+    @staticmethod
+    def _pick_representative(candidates: List[FAQCandidate]) -> str:
+        """Pick the most representative question: highest relevance, ties
+        broken by the shortest text (less noisy synthetic variants)."""
+        with_text = [c for c in candidates if c.texto_original]
+        if not with_text:
+            return ""
+        return max(
+            with_text,
+            key=lambda c: (c.relevancia, -len(c.texto_original)),
+        ).texto_original
 
     def enrich(
         self,
@@ -122,9 +143,4 @@ class FAQThemeGenerator(BaseGenerator[FAQSuggestion]):
     ) -> Dict[str, Any]:
         data["origen"] = message.canal or ""
         data["status"] = _STATUS
-        data["preguntas_relacionadas"] = (
-            message.texto.split(_QUESTIONS_DELIMITER)
-            if message.texto
-            else []
-        )
         return data

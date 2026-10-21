@@ -237,15 +237,18 @@ class NewsletterHighlight(BaseModel):
 class FAQSuggestion(BaseModel):
     """Maps to the JSON key `sugerencia_contenido_faq`.
 
-    Additive extension for semantic FAQ consolidation (issue #116): a generated
-    `respuesta` and the `preguntas_relacionadas` that were grouped into this
-    theme. Old payloads still validate because both new fields have defaults.
+    Semantic consolidation (issue #116): a generated `respuesta`, one
+    `pregunta_representativa` (the most representative question of the group)
+    and `total_preguntas` (how many questions were grouped). The full list of
+    grouped questions is NOT materialised, to avoid repeating near-duplicate
+    synthetic questions in the UI.
     """
     tema: str
     origen: str = ""
     status: str = ""
     respuesta: str = ""
-    preguntas_relacionadas: List[str] = Field(default_factory=list)
+    pregunta_representativa: str = ""
+    total_preguntas: int = 0
 
 
 class DerivedMessage(BaseModel):

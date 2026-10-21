@@ -72,25 +72,27 @@ def test_faq_theme_generator_returns_suggestion():
     assert result.respuesta == "Desde el panel."
     assert result.origen == "#dudas"
     assert result.status == "generado"
-    assert result.preguntas_relacionadas == ["¿Cómo configuro el retry?"]
+    assert result.pregunta_representativa == "¿Cómo configuro el retry?"
+    assert result.total_preguntas == 1
 
 
 def test_faq_theme_generator_overrides_forged_metadata():
-    # Even if the model invents origen/status/preguntas, the code owns them.
+    # Even if the model invents origen/status/pregunta, the code owns them.
     payload = json.dumps(
         {
             "tema": "Tema",
             "respuesta": "R",
             "origen": "pedido por el LLM",
             "status": "otra cosa",
-            "preguntas_relacionadas": ["pregunta inventada"],
+            "pregunta_representativa": "pregunta inventada",
         }
     )
     gen = FAQThemeGenerator(client=FakeClient(payload))
     result = gen.generate_theme([_faq_candidate()])
     assert result.origen == "#dudas"
     assert result.status == "generado"
-    assert result.preguntas_relacionadas == ["¿Cómo configuro el retry?"]
+    assert result.pregunta_representativa == "¿Cómo configuro el retry?"
+    assert result.total_preguntas == 1
 
 
 def test_faq_theme_generator_returns_none_for_empty_cluster():
@@ -114,9 +116,10 @@ def test_cluster_faq_targets_collapses_duplicate_topics():
         _faq_candidate("¿Qué es este error?", topics=["errores"]),
         _faq_candidate("¿Cómo evito el error?", topics=["error"]),
     ]
-    clusters = cluster_faq_targets(candidates)
-    assert len(clusters) == 1
-    assert len(clusters[0]) == 2
+    temas, huerfanos = cluster_faq_targets(candidates)
+    assert len(temas) == 1
+    assert len(temas[0]) == 2
+    assert huerfanos == []
 
 
 def test_cluster_faq_targets_joins_multi_topic_candidate_to_most_frequent():
@@ -127,9 +130,10 @@ def test_cluster_faq_targets_joins_multi_topic_candidate_to_most_frequent():
         _faq_candidate("¿Qué modelo elijo?", topics=["ia"]),
         _faq_candidate("¿Python o JS?", topics=["python", "ia"]),
     ]
-    clusters = cluster_faq_targets(candidates)
-    assert len(clusters) == 1
-    assert len(clusters[0]) == 3
+    temas, huerfanos = cluster_faq_targets(candidates)
+    assert len(temas) == 1
+    assert len(temas[0]) == 3
+    assert huerfanos == []
 
 
 def test_cluster_faq_targets_caps_at_ten():
@@ -137,10 +141,10 @@ def test_cluster_faq_targets_caps_at_ten():
         _faq_candidate(f"Pregunta {i}?", topics=[f"tema{i:02d}"])
         for i in range(15)
     ]
-    clusters = cluster_faq_targets(candidates)
-    assert len(clusters) <= 10
-    # Every candidate still belongs to some cluster (no drops).
-    assert sum(len(c) for c in clusters) == 15
+    temas, huerfanos = cluster_faq_targets(candidates)
+    assert len(temas) <= 9
+    # Every candidate still belongs to some cluster or orphaned (no drops).
+    assert sum(len(c) for c in temas) + len(huerfanos) == 15
 
 
 def test_cluster_faq_targets_buckets_untopiced_into_otros():
@@ -148,11 +152,19 @@ def test_cluster_faq_targets_buckets_untopiced_into_otros():
         _faq_candidate(f"Pregunta {i}?", topics=[f"tema{i}"])
         for i in range(9)
     ]
-    candidates.append(_faq_candidate("Sin topic", topics=[]))
-    clusters = cluster_faq_targets(candidates)
-    assert len(clusters) == 10
-    # The untopiced candidate ends up in the last (overflow) cluster.
-    assert any(len(c) == 1 and c[0].texto_original == "Sin topic" for c in clusters)
+    candidates.append(
+        FAQCandidate(
+            autor="Ana",
+            canal="#dudas",
+            texto_original="Sin topic",
+            relevancia=0.9,
+            topics=[],
+        )
+    )
+    temas, huerfanos = cluster_faq_targets(candidates)
+    assert len(temas) == 9
+    # The untopiced candidate is returned as orphaned.
+    assert any(c.texto_original == "Sin topic" for c in huerfanos)
 
 
 def test_generators_degrade_to_none_on_bad_json():

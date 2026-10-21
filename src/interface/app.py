@@ -1064,13 +1064,16 @@ def main():
                 for numero, tema in enumerate(temas_faq, start=1):
                     titulo = str(tema.get("tema") or "")
                     respuesta = str(tema.get("respuesta") or titulo)
-                    preguntas = tema.get("preguntas_relacionadas") or []
+                    representativa = str(tema.get("pregunta_representativa") or "")
+                    total = int(tema.get("total_preguntas") or 0)
                     with st.container(border=True):
                         st.write(f"**{numero}. {titulo}**")
-                        if preguntas:
-                            st.caption("Preguntas relacionadas:")
-                            for pregunta in preguntas:
-                                st.write(f"- {pregunta}")
+                        if representativa:
+                            st.write(f"- {representativa}")
+                        if total > 0:
+                            st.caption(
+                                f"{total} pregunta(s) relacionada(s) con este tema."
+                            )
                         st.info("Respuesta sugerida:")
                         st.write(respuesta)
                         st.caption(
@@ -1112,14 +1115,14 @@ def main():
                 faq_edited = ""
                 faq_estado = CURATION_STATUS_PENDING
 
-            # List-only visibility of every question routed by the FAQ rule:
-            # the curator can SEE the candidates (text, author, relevance)
-            # without any extra generation and without a selector.
+            # List-only visibility of the questions that did NOT map to a FAQ
+            # theme (orphaned). The themed questions already appear inside each
+            # theme above, so this list avoids repeating them.
             candidatos_faq = assets.get("candidatos_faq") or []
             if candidatos_faq:
                 st.caption(
-                    f"{len(candidatos_faq)} preguntas detectadas en este lote "
-                    "(solo listado, sin generación adicional)."
+                    f"{len(candidatos_faq)} preguntas detectadas sin tema claro "
+                    "(no mapeadas a ningún tema FAQ)."
                 )
                 for numero, candidato in enumerate(candidatos_faq, start=1):
                     texto = str(candidato.get("texto_original") or "").strip()

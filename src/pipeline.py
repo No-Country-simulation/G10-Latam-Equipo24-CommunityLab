@@ -218,9 +218,10 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             )
         )
 
-    # FAQ candidates: every CREAR_FAQ decision in batch order, listed with the
-    # original question only. Topics are preserved for semantic clustering.
-    candidatos_faq = [
+    # Every CREAR_FAQ decision becomes a candidate first (topics preserved for
+    # clustering). Clustering then splits them into themed groups and orphaned
+    # questions (no clear topic).
+    candidatos_faq_todos = [
         FAQCandidate(
             autor=msg.autor,
             canal=msg.canal,
@@ -238,16 +239,21 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
         if decision.action == ActionType.CREAR_FAQ
     ]
 
-    # FAQ semantic consolidation: group candidates into <=10 themes and generate
-    # one tema+respuesta per cluster. The first theme stays the single published
+    # FAQ semantic consolidation: group candidates into <=9 themes and generate
+    # one tema+respuesta per theme. The first theme stays the single published
     # suggestion (`sugerencia_contenido_faq`) for backward compatibility.
-    faq_clusters = cluster_faq_targets(candidatos_faq)
+    faq_themes, faq_orphaned = cluster_faq_targets(candidatos_faq_todos)
     temas_faq = [
         theme
-        for cluster in faq_clusters
+        for cluster in faq_themes
         if (theme := faq_gen.generate_theme(cluster)) is not None
     ]
     sugerencia_contenido_faq = temas_faq[0] if temas_faq else None
+
+    # The FAQ candidate list only carries the orphaned questions (those that
+    # did not map to a theme), so the UI's "detected questions" list does not
+    # repeat the questions already shown inside each theme.
+    candidatos_faq = faq_orphaned
 
     # Operator inbox: every DERIVAR decision becomes a DerivedMessage. The UI
     # cannot reconstruct this from the summary, so the pipeline materialises the

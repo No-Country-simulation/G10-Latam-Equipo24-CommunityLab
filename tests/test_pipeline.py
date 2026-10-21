@@ -329,10 +329,12 @@ def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, t
     output = run_pipeline(source)
     assets = output.activos_distribucion_generados
 
+    # The 3 questions share the same topic, so they collapse into one theme
+    # and none is orphaned (`candidatos_faq` now lists only orphaned questions).
     candidatos = assets.candidatos_faq
-    assert len(candidatos) == 3
-    assert [c.autor for c in candidatos] == ["Dev 1", "Dev 2", "Dev 3"]
-    assert all(c.relevancia == 0.9 for c in candidatos)
+    assert len(candidatos) == 0
+    assert len(assets.temas_faq) == 1
+    assert assets.temas_faq[0].total_preguntas == 3
 
     # The single materialized suggestion still works, generated only once.
     assert assets.sugerencia_contenido_faq is not None
@@ -378,7 +380,12 @@ def test_faq_semantic_consolidation_groups_same_topic_questions(monkeypatch, tmp
     theme = assets.temas_faq[0]
     assert theme.tema == "Tema generado"
     assert theme.respuesta == "Respuesta generada"
-    assert len(theme.preguntas_relacionadas) == 3
+    assert theme.total_preguntas == 3
+    assert theme.pregunta_representativa in {
+        "¿Cómo configuro el retry?",
+        "¿Dónde cambio el límite de reintentos?",
+        "¿Por qué falla el reintento?",
+    }
     assert assets.sugerencia_contenido_faq is assets.temas_faq[0]
     assert client.faq_calls == 1
 

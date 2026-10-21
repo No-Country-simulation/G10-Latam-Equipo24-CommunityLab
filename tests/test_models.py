@@ -259,18 +259,21 @@ def test_distribution_assets_legacy_payload_without_derivados_deserializes():
 # ---------------------------------------------------------------------------
 
 
-def test_faq_suggestion_carries_respuesta_and_preguntas_relacionadas():
-    """Extended FAQSuggestion exposes a generated answer and related questions."""
+def test_faq_suggestion_carries_respuesta_and_representative_question():
+    """Extended FAQSuggestion exposes a generated answer, a representative
+    question and the grouped count."""
     suggestion = FAQSuggestion(
         tema="Configurar retry en Mastodon",
         origen="#dudas",
         status="generado",
         respuesta="Se configura desde el panel de administración.",
-        preguntas_relacionadas=["¿Cómo configuro el retry?"],
+        pregunta_representativa="¿Cómo configuro el retry?",
+        total_preguntas=3,
     )
     assert suggestion.tema == "Configurar retry en Mastodon"
     assert suggestion.respuesta == "Se configura desde el panel de administración."
-    assert suggestion.preguntas_relacionadas == ["¿Cómo configuro el retry?"]
+    assert suggestion.pregunta_representativa == "¿Cómo configuro el retry?"
+    assert suggestion.total_preguntas == 3
     assert suggestion.status == "generado"
 
 
@@ -279,7 +282,8 @@ def test_faq_suggestion_respuesta_and_preguntas_default_empty():
     legacy = {"tema": "Tema viejo", "origen": "#general", "status": "derivado_a_mentoria"}
     suggestion = FAQSuggestion.model_validate(legacy)
     assert suggestion.respuesta == ""
-    assert suggestion.preguntas_relacionadas == []
+    assert suggestion.pregunta_representativa == ""
+    assert suggestion.total_preguntas == 0
 
 
 def test_distribution_assets_temas_faq_defaults_empty():
@@ -292,7 +296,8 @@ def test_distribution_assets_temas_faq_accepts_list():
     theme = FAQSuggestion(
         tema="Retry en Mastodon",
         respuesta="Desde el panel.",
-        preguntas_relacionadas=["¿Cómo?"],
+        pregunta_representativa="¿Cómo?",
+        total_preguntas=1,
     )
     assets = DistributionAssets(temas_faq=[theme])
     assert len(assets.temas_faq) == 1
