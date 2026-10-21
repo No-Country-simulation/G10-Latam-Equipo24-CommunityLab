@@ -5,20 +5,40 @@ import altair as alt
 import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
-from src.interface import app
+from src.interface import app, state
+
+
+class _FakeOCIStorage:
+    """In-memory OCI JSON store for isolated dashboard-state tests.
+
+    The store lives on the CLASS: the state layer builds a fresh client on
+    every call, so a per-instance store would lose everything between two
+    calls. The autouse fixture clears it before each test.
+    """
+
+    store = {}
+
+    def put_json(self, bucket_name, key, data):
+        # Round-trip through JSON so stored values are plain dicts/lists.
+        self.store[(bucket_name, key)] = json.loads(json.dumps(data))
+        return True
+
+    def get_json(self, bucket_name, key, default=None):
+        return self.store.get((bucket_name, key), default)
 
 
 @pytest.fixture(autouse=True)
-def _isolate_attended_path(tmp_path, monkeypatch):
-    """Isolate the persisted attended-state file so tests never touch the repo.
+def _isolate_persisted_state(tmp_path, monkeypatch):
+    """Isolate persisted state and OCI so tests never touch the repo or cloud.
 
-    The override is set as an env var (not as a module attribute) because
-    `AppTest` executes the app script in its own context: the env var is the
-    only override that reaches those runs.
+    The seams live in ``src.interface.state`` and are patched THERE: the app
+    runs as a copy of ``app.py`` (Streamlit and ``AppTest`` both do it), so a
+    seam patched on ``app`` would never reach the script that actually runs.
     """
-    monkeypatch.setenv(
-        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "derivados-atendidos.json")
-    )
+    _FakeOCIStorage.store.clear()
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    monkeypatch.setattr(state, "OCIStorageClient", _FakeOCIStorage)
+    monkeypatch.setattr(state, "DEFAULT_BUCKET", "test-bucket")
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -1932,3 +1952,69 @@ def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
 
     faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
     assert faq_editor.value == "Tema sin respuesta"
+
+
+# ---------------------------------------------------------------------------
+# Domain B: globally persisted attended state (OCI-first, local fallback)
+# ---------------------------------------------------------------------------
+
+
+def test_load_attended_merges_oci_and_local_with_local_winning(tmp_path, monkeypatch):
+    """Local mirror wins over OCI so offline edits are not silently overwritten."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.OCIStorageClient().put_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json", {"m-1": True}
+    )
+    app.ATTENDED_PATH.write_text(json.dumps({"m-1": False, "m-2": True}), encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {"m-1": False, "m-2": True}
+
+
+def test_load_attended_empty_store_and_local_corrupt_returns_empty_dict(tmp_path, monkeypatch):
+    """A corrupt local mirror degrades to an empty dict."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.ATTENDED_PATH.write_text("not json", encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {}
+
+
+def test_set_atendido_writes_local_mirror_and_oci():
+    """Marking a derived message attended persists to both local and OCI stores."""
+    session_state = {}
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+    assert app.OCIStorageClient().get_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json"
+    ) == {"m-1": True}
+
+
+def test_set_atendido_oci_failure_does_not_raise(monkeypatch):
+    """An OCI write failure leaves the local mirror written and never raises."""
+    class BrokenOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return False
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", BrokenOCI)
+    session_state = {}
+
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
+def test_fresh_session_state_restores_persisted_attended_marks():
+    """Reload simulation: a brand new session_state restores saved attended marks."""
+    app.set_atendido({}, "m-1", True)
+
+    fresh_session_state = {}
+    assert app.is_atendido(fresh_session_state, "m-1") is True

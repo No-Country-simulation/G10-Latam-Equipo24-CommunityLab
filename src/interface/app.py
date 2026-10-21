@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 import sys
 import tempfile
 from datetime import date, datetime
@@ -28,7 +27,7 @@ if str(REPO_ROOT) not in sys.path:
 import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
-from src.interface import telegram_publish  # noqa: E402
+from src.interface import state, telegram_publish  # noqa: E402
 from src.pipeline import run_pipeline  # noqa: E402
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
@@ -48,6 +47,36 @@ EDIT_WIDGET_KEYS = (
 # Prefix for the per-derived-message toggle keys in session_state. These are
 # cleared on every new batch so attended states do not leak across runs.
 DERIVED_WIDGET_KEY_PREFIX = "derivado_atendido_"
+
+# Names served by ``src.interface.state``. They are resolved through the
+# module ``__getattr__`` (PEP 562) instead of being bound here on purpose:
+# Streamlit runs a COPY of this file, so a seam bound in this module would
+# not be the one the running script reads. Delegating keeps a single source
+# of truth for every copy of the app.
+_STATE_EXPORTS = (
+    "ATTENDED_OCI_KEY",
+    "ATTENDED_PATH",
+    "DEFAULT_BUCKET",
+    "OCIStorageClient",
+    "_attended_cache",
+    "_load_attended",
+    "_save_attended",
+    "is_atendido",
+    "set_atendido",
+)
+
+
+def __getattr__(name):
+    """Serve the shared persistence layer's names (PEP 562).
+
+    ``state`` owns the seams (paths, OCI client, bucket) and the persistence
+    helpers. Every copy of this script imports the SAME ``state`` module, so
+    patching a seam there is observed by all of them.
+    """
+    if name in _STATE_EXPORTS:
+        return getattr(state, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
     "assets", "branding", "communitylab-logo-principal.png"
@@ -441,64 +470,6 @@ def build_assets_summary_df(resumen, assets):
     return pd.DataFrame(data)
 
 
-def _attended_path() -> Path:
-    """Resolve the file that holds the attended state (read on every call).
-
-    The override is resolved at call time instead of at import: `AppTest`
-    executes this script in its own context, so a value captured at import
-    time would point the test run at the repository instead of its tmp dir.
-    """
-    override = os.environ.get("COMMUNITYLAB_ATTENDED_PATH")
-    if override:
-        return Path(override)
-    return REPO_ROOT / "storage" / "derivados-atendidos.json"
-
-
-def _load_attended() -> dict:
-    """Load the persisted attended-state dict, or ``{}`` if absent/corrupt."""
-    path = _attended_path()
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
-
-
-def _save_attended(attended: dict) -> None:
-    """Persist the attended-state dict to storage (best-effort)."""
-    path = _attended_path()
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(attended, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-    except OSError:
-        pass
-
-
-def is_atendido(session_state, message_id):
-    """Returns whether a derived message is marked as attended.
-
-    Falls back to the persisted file when the key is not yet in session_state,
-    so a reload restores prior attendance decisions.
-    """
-    attended = (session_state or {}).get("derivados_atendidos")
-    if attended is None:
-        attended = _load_attended()
-        if session_state is not None:
-            session_state["derivados_atendidos"] = attended
-    return bool(attended.get(message_id))
-
-
-def set_atendido(session_state, message_id, value):
-    """Marks a derived message as attended (or not) and persists it."""
-    attended = session_state.setdefault("derivados_atendidos", _load_attended())
-    attended[message_id] = bool(value)
-    _save_attended(attended)
-
-
 def build_derivados_entries(mensajes, session_state):
     """Build the list rendered by the "Derivados" tab.
 
@@ -506,17 +477,11 @@ def build_derivados_entries(mensajes, session_state):
     and a stable ``key`` for the toggle widget. When a message lacks an id,
     the key falls back to ``idx-<position>`` so the UI can still track state.
 
-    The attended state is persisted, so it is read back from disk when the
-    session does not carry it yet: a reload must show the same marks that
-    were saved before.
+    The attended flags come from the persisted state (OCI first, local
+    mirror), so a reload shows the marks the operator already made instead
+    of resetting them to unchecked.
     """
-    attended = None
-    if session_state is not None:
-        attended = session_state.get("derivados_atendidos")
-    if attended is None:
-        attended = _load_attended()
-        if session_state is not None:
-            session_state["derivados_atendidos"] = attended
+    attended = state._attended_cache(session_state)
     entries = []
     for position, mensaje in enumerate(mensajes):
         message_id = str(mensaje.get("message_id") or "").strip()
@@ -1204,7 +1169,8 @@ def main():
             if mensajes_derivados:
                 st.write(
                     f"{len(mensajes_derivados)} mensaje(s) derivado(s) a revisión humana. "
-                    "El estado 'atendido' se guarda localmente entre sesiones."
+                    "El estado 'atendido' se guarda en OCI (con espejo local) "
+                    "y sobrevive a la recarga."
                 )
                 for entry in build_derivados_entries(mensajes_derivados, st.session_state):
                     key = entry["key"]
@@ -1228,7 +1194,7 @@ def main():
                             key=widget_key,
                         )
                         if atendido != entry["atendido"]:
-                            set_atendido(st.session_state, key, atendido)
+                            state.set_atendido(st.session_state, key, atendido)
             else:
                 st.info("No hay mensajes derivados a revisión humana en este lote.")
 
