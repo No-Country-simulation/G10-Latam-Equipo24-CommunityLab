@@ -215,11 +215,16 @@ class FAQCandidate(BaseModel):
     Mirrors `LinkedInCandidate` but cheaper: the FAQ suggestion the contract
     materializes is a single asset, so the candidates only expose the original
     question and who asked it (no title/copy fields, no LLM call).
+
+    Additive `topics` supports semantic consolidation (issue #116): the
+    candidate carries the topics assigned by the analyzer so clustering can
+    group related questions without a second LLM pass.
     """
     autor: str = ""
     canal: str = ""
     texto_original: str = ""
     relevancia: float = 0.0
+    topics: List[str] = Field(default_factory=list)
 
 
 class NewsletterHighlight(BaseModel):
@@ -230,10 +235,35 @@ class NewsletterHighlight(BaseModel):
 
 
 class FAQSuggestion(BaseModel):
-    """Maps to the JSON key `sugerencia_contenido_faq`."""
+    """Maps to the JSON key `sugerencia_contenido_faq`.
+
+    Semantic consolidation (issue #116): a generated `respuesta`, one
+    `pregunta_representativa` (the most representative question of the group)
+    and `total_preguntas` (how many questions were grouped). The full list of
+    grouped questions is NOT materialised, to avoid repeating near-duplicate
+    synthetic questions in the UI.
+    """
     tema: str
     origen: str = ""
     status: str = ""
+    respuesta: str = ""
+    pregunta_representativa: str = ""
+    total_preguntas: int = 0
+
+
+class DerivedMessage(BaseModel):
+    """A message routed to a human operator (decision DERIVAR).
+
+    Additive output field: the operator inbox needs the original text, author,
+    channel, reason and confidence so the UI can list and prioritise them.
+    """
+    message_id: str = ""
+    autor: str = ""
+    canal: str = ""
+    texto_original: str = ""
+    razon: str = ""
+    confianza: float = 0.0
+    menciones: int = 1
 
 
 class DistributionAssets(BaseModel):
@@ -249,6 +279,13 @@ class DistributionAssets(BaseModel):
     # default_factory: old outputs lack it. The contract still materializes a
     # single `sugerencia_contenido_faq`.
     candidatos_faq: List[FAQCandidate] = Field(default_factory=list)
+    # Semantic FAQ themes (issue #116): each theme groups related questions and
+    # carries a generated answer. Additive via default_factory: old outputs lack
+    # it. The first theme is also exposed as `sugerencia_contenido_faq`.
+    temas_faq: List[FAQSuggestion] = Field(default_factory=list)
+    # Messages routed to a human by DERIVAR decisions, surfaced in the operator
+    # inbox. Additive via default_factory: old outputs lack it.
+    mensajes_derivados: List[DerivedMessage] = Field(default_factory=list)
 
 
 class OCIStorage(BaseModel):

@@ -8,6 +8,12 @@ from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
 from src.interface import app
 
 
+@pytest.fixture(autouse=True)
+def _isolate_attended_path(tmp_path, monkeypatch):
+    """Isolate the persisted attended-state file so tests never touch the repo."""
+    monkeypatch.setattr(app, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+
+
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
     output = OutputBatch(
         status="exito",
@@ -82,6 +88,201 @@ def test_reset_batch_state_clears_results_and_previous_edits():
     assert session_state == {"processing_done": False, "llm_results": None}
     for key in ("linkedin_estado_0", "news_estado_0", "faq_estado", "telegram_published_times"):
         assert key not in session_state
+
+
+def test_is_atendido_defaults_to_false():
+    assert app.is_atendido({}, "m-1") is False
+
+
+def test_set_atendido_stores_state_in_session():
+    session_state = {}
+    app.set_atendido(session_state, "m-1", True)
+    assert app.is_atendido(session_state, "m-1") is True
+
+    app.set_atendido(session_state, "m-1", False)
+    assert app.is_atendido(session_state, "m-1") is False
+
+
+def test_reset_batch_state_clears_derivados_state_and_widget_keys():
+    session_state = {
+        "derivados_atendidos": {"m-1": True},
+        "derivado_atendido_m-1": True,
+        "derivado_atendido_m-2": False,
+        "processing_done": True,
+        "llm_results": {"status": "exito"},
+    }
+
+    app.reset_batch_state(session_state)
+
+    assert "derivados_atendidos" not in session_state
+    assert "derivado_atendido_m-1" not in session_state
+    assert "derivado_atendido_m-2" not in session_state
+
+
+def test_build_derivados_entries_marks_attended_state():
+    mensajes = [
+        {
+            "message_id": "m-1",
+            "autor": "Nora",
+            "canal": "#general",
+            "texto_original": "No me gustó.",
+            "razon": "Feedback negativo",
+            "confianza": 0.85,
+        },
+        {
+            "message_id": "m-2",
+            "autor": "Luis",
+            "canal": "#feedback",
+            "texto_original": "Pésimo servicio.",
+            "razon": "Feedback negativo",
+            "confianza": 0.95,
+        },
+    ]
+    session_state = {"derivados_atendidos": {"m-1": True}}
+
+    entries = app.build_derivados_entries(mensajes, session_state)
+
+    assert len(entries) == 2
+    assert entries[0]["atendido"] is True
+    assert entries[1]["atendido"] is False
+
+
+def test_build_derivados_entries_uses_index_fallback_when_message_id_missing():
+    mensajes = [
+        {
+            "message_id": "",
+            "autor": "Nora",
+            "canal": "#general",
+            "texto_original": "No me gustó.",
+            "razon": "Feedback negativo",
+            "confianza": 0.85,
+        },
+    ]
+    session_state = {"derivados_atendidos": {"idx-0": True}}
+
+    entries = app.build_derivados_entries(mensajes, session_state)
+
+    assert entries[0]["key"] == "idx-0"
+    assert entries[0]["atendido"] is True
+
+
+def test_derivados_tab_renders_without_exceptions():
+    """La pestaña Derivados se renderiza sin excepciones con mensajes."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 2,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {
+                "origen": "o",
+                "status": "s",
+                "tema": "q",
+            },
+            "mensajes_derivados": [
+                {
+                    "message_id": "m-1",
+                    "autor": "Nora",
+                    "canal": "#general",
+                    "texto_original": "No me gustó el taller.",
+                    "razon": "Feedback negativo",
+                    "confianza": 0.85,
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    tab_labels = [tab.label for tab in at.tabs]
+    assert any("Derivados" in label for label in tab_labels)
+
+
+def test_derivados_tab_toggle_updates_session_state(monkeypatch, tmp_path):
+    """Marcar un mensaje como atendido actualiza st.session_state."""
+    monkeypatch.setenv(
+        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "attended.json")
+    )
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 1,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": None,
+            "destaque_newsletter_semanal": None,
+            "sugerencia_contenido_faq": None,
+            "mensajes_derivados": [
+                {
+                    "message_id": "m-1",
+                    "autor": "Nora",
+                    "canal": "#general",
+                    "texto_original": "No me gustó el taller.",
+                    "razon": "Feedback negativo",
+                    "confianza": 0.85,
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    # Tabs render all children regardless of selection, so the toggle is
+    # directly reachable without switching tabs.
+    checkbox = next(cb for cb in at.checkbox if cb.label == "Atendido")
+    assert checkbox.value is False
+
+    checkbox.check().run()
+    assert not at.exception
+    assert at.session_state["derivados_atendidos"]["m-1"] is True
+    assert at.session_state["derivado_atendido_m-1"] is True
 
 
 def test_branding_assets_are_available():
@@ -299,7 +500,7 @@ def test_render_with_derivadas_metrics():
     assert not at.exception
 
     metric_labels = [metric.label for metric in at.metric]
-    assert "Derivados a humano" in metric_labels
+    assert "Feedback negativo" in metric_labels
     assert "Análisis degradados" in metric_labels
 
     warning_texts = [warning.value for warning in at.warning]
@@ -593,7 +794,7 @@ def test_build_assets_summary_df_counts_assets_by_type():
     assert counts["Post LinkedIn"] == 2
     assert counts["Newsletter"] == 1
     assert counts["Dudas frecuentes (FAQ)"] == 3
-    assert counts["Derivados a humano"] == 2
+    assert counts["Feedback negativo"] == 2
 
 
 def test_process_combined_sample_combines_sources_and_runs(tmp_path, monkeypatch):
@@ -1575,3 +1776,127 @@ def test_publish_button_requires_approval_and_unsent_signature(monkeypatch):
     at.run()
     assert not at.exception
     assert _publish_button(at).disabled is True
+
+
+# ---------------------------------------------------------------------------
+# FAQ semantic consolidation rendering (issue #116)
+# ---------------------------------------------------------------------------
+
+
+def test_faq_tab_renders_grouped_themes_with_questions_and_answer():
+    """La pestaña FAQ muestra los temas agrupados con sus preguntas y respuesta."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 4,
+            "sentimiento_predominante": "positivo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+            "dudas_frecuentes": 3,
+            "distribucion_sentimiento": {"positivo": 2, "neutral": 1},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 2}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": None,
+            "destaque_newsletter_semanal": None,
+            "sugerencia_contenido_faq": {
+                "tema": "Configurar retry",
+                "origen": "#dudas",
+                "status": "generado",
+                "respuesta": "Desde el panel de administración.",
+                "preguntas_relacionadas": [
+                    "¿Cómo configuro el retry?",
+                    "¿Dónde cambio el límite?",
+                ],
+            },
+            "temas_faq": [
+                {
+                    "tema": "Configurar retry",
+                    "origen": "#dudas",
+                    "status": "generado",
+                    "respuesta": "Desde el panel de administración.",
+                    "preguntas_relacionadas": [
+                        "¿Cómo configuro el retry?",
+                        "¿Dónde cambio el límite?",
+                    ],
+                },
+            ],
+            "candidatos_faq": [
+                {"autor": "Dev 1", "canal": "#dudas", "texto_original": "¿Cómo configuro el retry?", "relevancia": 0.9},
+                {"autor": "Dev 2", "canal": "#dudas", "texto_original": "¿Dónde cambio el límite?", "relevancia": 0.85},
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    markdown = "\n".join(node.value for node in at.markdown)
+    assert "Configurar retry" in markdown
+    assert "¿Cómo configuro el retry?" in markdown
+    assert "Desde el panel de administración." in markdown
+
+    # The editor for the published suggestion uses the generated answer.
+    faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
+    assert faq_editor.value == "Desde el panel de administración."
+
+
+def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
+    """Temas sin respuesta generada usan el tema como valor del editor."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": 1,
+            "sentimiento_predominante": "neutral",
+            "temas_principales": [],
+            "feedback_negativo": 0,
+            "analisis_degradados": 0,
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": None,
+            "destaque_newsletter_semanal": None,
+            "sugerencia_contenido_faq": {
+                "tema": "Tema sin respuesta",
+                "origen": "#dudas",
+                "status": "generado",
+                "respuesta": "",
+            },
+            "temas_faq": [
+                {
+                    "tema": "Tema sin respuesta",
+                    "origen": "#dudas",
+                    "status": "generado",
+                    "respuesta": "",
+                },
+            ],
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "storage/x.json",
+            "status": "pendiente",
+        },
+    }
+    at.run()
+    assert not at.exception
+
+    faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
+    assert faq_editor.value == "Tema sin respuesta"

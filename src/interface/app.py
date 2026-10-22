@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import sys
 import tempfile
 from datetime import date, datetime
@@ -43,6 +44,10 @@ EDIT_WIDGET_KEYS = (
     "faq_edit",
     "faq_estado",
 )
+
+# Prefix for the per-derived-message toggle keys in session_state. These are
+# cleared on every new batch so attended states do not leak across runs.
+DERIVED_WIDGET_KEY_PREFIX = "derivado_atendido_"
 
 BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
     "assets", "branding", "communitylab-logo-principal.png"
@@ -431,9 +436,88 @@ def build_assets_summary_df(resumen, assets):
         {"activo": "Post LinkedIn", "conteo": linkedin_count},
         {"activo": "Newsletter", "conteo": newsletter_count},
         {"activo": "Dudas frecuentes (FAQ)", "conteo": int((resumen or {}).get("dudas_frecuentes", 0))},
-        {"activo": "Derivados a humano", "conteo": int((resumen or {}).get("feedback_negativo", 0))},
+        {"activo": "Feedback negativo", "conteo": int((resumen or {}).get("feedback_negativo", 0))},
     ]
     return pd.DataFrame(data)
+
+
+ATTENDED_PATH = Path(
+    os.environ.get(
+        "COMMUNITYLAB_ATTENDED_PATH",
+        str(REPO_ROOT / "storage" / "derivados-atendidos.json"),
+    )
+)
+
+
+def _load_attended() -> dict:
+    """Load the persisted attended-state dict, or ``{}`` if absent/corrupt."""
+    if not ATTENDED_PATH.exists():
+        return {}
+    try:
+        data = json.loads(ATTENDED_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_attended(attended: dict) -> None:
+    """Persist the attended-state dict to storage (best-effort)."""
+    try:
+        ATTENDED_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ATTENDED_PATH.write_text(
+            json.dumps(attended, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
+def is_atendido(session_state, message_id):
+    """Returns whether a derived message is marked as attended.
+
+    Falls back to the persisted file when the key is not yet in session_state,
+    so a reload restores prior attendance decisions.
+    """
+    attended = (session_state or {}).get("derivados_atendidos")
+    if attended is None:
+        attended = _load_attended()
+        if session_state is not None:
+            session_state["derivados_atendidos"] = attended
+    return bool(attended.get(message_id))
+
+
+def set_atendido(session_state, message_id, value):
+    """Marks a derived message as attended (or not) and persists it."""
+    attended = session_state.setdefault("derivados_atendidos", _load_attended())
+    attended[message_id] = bool(value)
+    _save_attended(attended)
+
+
+def build_derivados_entries(mensajes, session_state):
+    """Builds the list rendered by the "Derivados" tab.
+
+    Each entry carries the original message fields plus an ``atendido`` flag
+    and a stable ``key`` for the toggle widget. When a message lacks an id,
+    the key falls back to ``idx-<position>`` so the UI can still track state.
+    """
+    attended = (session_state or {}).get("derivados_atendidos", {})
+    entries = []
+    for position, mensaje in enumerate(mensajes):
+        message_id = str(mensaje.get("message_id") or "").strip()
+        key = message_id if message_id else f"idx-{position}"
+        entries.append(
+            {
+                "key": key,
+                "message_id": message_id,
+                "autor": mensaje.get("autor", ""),
+                "canal": mensaje.get("canal", ""),
+                "texto_original": mensaje.get("texto_original", ""),
+                "razon": mensaje.get("razon", ""),
+                "confianza": mensaje.get("confianza", 0.0),
+                "menciones": mensaje.get("menciones", 1),
+                "atendido": bool(attended.get(key)),
+            }
+        )
+    return entries
 
 
 def reset_batch_state(session_state):
@@ -446,6 +530,12 @@ def reset_batch_state(session_state):
             session_state.pop(key, None)
     for key in EDIT_WIDGET_KEYS:
         session_state.pop(key, None)
+    # Derived-message attended state is session-only and must not survive a new
+    # batch; clear both the dictionary and the per-message toggle widget keys.
+    session_state.pop("derivados_atendidos", None)
+    for key in list(session_state.keys()):
+        if key.startswith(DERIVED_WIDGET_KEY_PREFIX):
+            session_state.pop(key, None)
     # A new batch must not inherit which signatures were already published:
     # otherwise a fresh lot's candidate could be blocked as "already sent".
     session_state.pop("telegram_published_times", None)
@@ -744,13 +834,13 @@ def main():
                 st.markdown("**Temas Principales**")
                 st.write(", ".join(summary["temas_principales"]))
 
-        st.subheader("🚨 Derivación a humano")
+        st.subheader("🚨 Feedback negativo")
         deriv_col1, deriv_col2 = st.columns(2)
         feedback_negativo = summary.get("feedback_negativo", 0)
         analisis_degradados = summary.get("analisis_degradados", 0)
         with deriv_col1:
             with st.container(border=True):
-                st.metric(label="Derivados a humano", value=feedback_negativo)
+                st.metric(label="Feedback negativo", value=feedback_negativo)
         with deriv_col2:
             with st.container(border=True):
                 st.metric(label="Análisis degradados", value=analisis_degradados)
@@ -816,8 +906,8 @@ def main():
                 else:
                     st.altair_chart(chart, width="stretch")
                 st.caption(
-                    "Los candidatos de LinkedIn son los publicables; los derivados "
-                    "a humano salen del feedback negativo."
+                    "Los candidatos de LinkedIn son los publicables; el feedback "
+                    "negativo se lista en la pestaña Derivados."
                 )
 
         st.subheader("📝 Edición de Activos de Marketing")
@@ -825,7 +915,9 @@ def main():
         # its own newsletter highlight (tab 2).
         seleccionado = None
         selected_index = 0
-        tab1, tab2, tab3 = st.tabs(["💼 Post LinkedIn", "📰 Newsletter", "❓ Sugerencia FAQ"])
+        tab1, tab2, tab3, tab4 = st.tabs(
+            ["💼 Post LinkedIn", "📰 Newsletter", "❓ Sugerencia FAQ", "🚨 Derivados"]
+        )
 
         with tab1:
             linkedin = assets["post_linkedin"]
@@ -1001,12 +1093,49 @@ def main():
                 newsletter_estado = CURATION_STATUS_PENDING
 
         with tab3:
-            faq = assets["sugerencia_contenido_faq"]
-            if faq:
-                st.write(f"**Origen:** {faq['origen']}")
-                st.write(f"**Estado:** {faq['status']}")
+            temas_faq = assets.get("temas_faq") or []
+            sugerencia = assets.get("sugerencia_contenido_faq")
+
+            # Render consolidated themes when available; fall back to the legacy
+            # single suggestion for old outputs that lack `temas_faq`.
+            if temas_faq:
+                st.write(f"**{len(temas_faq)} tema(s) de FAQ detectado(s).**")
+                for numero, tema in enumerate(temas_faq, start=1):
+                    titulo = str(tema.get("tema") or "")
+                    respuesta = str(tema.get("respuesta") or titulo)
+                    representativa = str(tema.get("pregunta_representativa") or "")
+                    total = int(tema.get("total_preguntas") or 0)
+                    with st.container(border=True):
+                        st.write(f"**{numero}. {titulo}**")
+                        if representativa:
+                            st.write(f"- {representativa}")
+                        if total > 0:
+                            st.caption(
+                                f"{total} pregunta(s) relacionada(s) con este tema."
+                            )
+                        st.info("Respuesta sugerida:")
+                        st.write(respuesta)
+                        st.caption(
+                            f"Origen: {tema.get('origen', '')} · "
+                            f"Estado: {tema.get('status', '')}"
+                        )
+            elif sugerencia:
+                st.write(f"**Origen:** {sugerencia['origen']}")
+                st.write(f"**Estado:** {sugerencia['status']}")
                 st.info("Pregunta frecuente detectada automáticamente para la base de conocimiento.")
-                faq_edited = st.text_area("Entrada FAQ:", value=faq["tema"], height=200, key="faq_edit", width="stretch")
+
+            # The approval editor always follows the published single suggestion.
+            # If the pipeline produced themes but no explicit suggestion, the first
+            # theme is the suggestion; this keeps the package backward compatible.
+            sugerencia = sugerencia or (temas_faq[0] if temas_faq else None)
+            if sugerencia:
+                faq_edited = st.text_area(
+                    "Entrada FAQ:",
+                    value=sugerencia.get("respuesta") or sugerencia["tema"],
+                    height=200,
+                    key="faq_edit",
+                    width="stretch",
+                )
                 faq_estado = st.radio(
                     "Estado de curaduría:",
                     options=CURATION_STATUSES,
@@ -1025,14 +1154,14 @@ def main():
                 faq_edited = ""
                 faq_estado = CURATION_STATUS_PENDING
 
-            # List-only visibility of every question routed by the FAQ rule:
-            # the curator can SEE the candidates (text, author, relevance)
-            # without any extra generation and without a selector.
+            # List-only visibility of the questions that did NOT map to a FAQ
+            # theme (orphaned). The themed questions already appear inside each
+            # theme above, so this list avoids repeating them.
             candidatos_faq = assets.get("candidatos_faq") or []
             if candidatos_faq:
                 st.caption(
-                    f"{len(candidatos_faq)} preguntas detectadas en este lote "
-                    "(solo listado, sin generación adicional)."
+                    f"{len(candidatos_faq)} preguntas detectadas sin tema claro "
+                    "(no mapeadas a ningún tema FAQ)."
                 )
                 for numero, candidato in enumerate(candidatos_faq, start=1):
                     texto = str(candidato.get("texto_original") or "").strip()
@@ -1050,6 +1179,39 @@ def main():
                             if parte
                         )
                     )
+
+        with tab4:
+            mensajes_derivados = assets.get("mensajes_derivados") or []
+            if mensajes_derivados:
+                st.write(
+                    f"{len(mensajes_derivados)} mensaje(s) derivado(s) a revisión humana. "
+                    "El estado 'atendido' se guarda localmente entre sesiones."
+                )
+                for entry in build_derivados_entries(mensajes_derivados, st.session_state):
+                    key = entry["key"]
+                    widget_key = f"{DERIVED_WIDGET_KEY_PREFIX}{key}"
+                    col_text, col_toggle = st.columns([3, 1], gap="large")
+                    with col_text:
+                        st.write(f"**{entry['autor']}** · {entry['canal']}")
+                        st.write(entry["texto_original"])
+                        menciones = int(entry.get("menciones") or 1)
+                        caption = (
+                            f"Motivo: {entry['razon']} · "
+                            f"Confianza: {entry['confianza']:.0%}"
+                        )
+                        if menciones > 1:
+                            caption += f" · Mencionado {menciones} veces"
+                        st.caption(caption)
+                    with col_toggle:
+                        atendido = st.checkbox(
+                            "Atendido",
+                            value=entry["atendido"],
+                            key=widget_key,
+                        )
+                        if atendido != entry["atendido"]:
+                            set_atendido(st.session_state, key, atendido)
+            else:
+                st.info("No hay mensajes derivados a revisión humana en este lote.")
 
         # Un activo entra al paquete sólo si está Aprobado y su texto editado
         # no está vacío. Pendiente y Rechazado quedan afuera.

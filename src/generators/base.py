@@ -59,8 +59,21 @@ class BaseGenerator(ABC, Generic[T]):
         self, message: InputMessage, analysis: AnalysisComplete
     ) -> Optional[T]:
         """Generate one asset. Never raises: returns None on any failure."""
+        prompt = self.build_prompt(message, analysis)
+        return self._generate_from_prompt(prompt, message, analysis)
+
+    def _generate_from_prompt(
+        self,
+        prompt: str,
+        message: InputMessage,
+        analysis: AnalysisComplete,
+    ) -> Optional[T]:
+        """Shared LLM call + parse + validate + enrich; returns None on failure.
+
+        FAQThemeGenerator reuses this path with a prompt it builds directly
+        from a cluster of questions, instead of the per-message `build_prompt`.
+        """
         try:
-            prompt = self.build_prompt(message, analysis)
             raw = self.client.generate(prompt)
             data = self._parse_json(raw)
             data = self.enrich(data, message, analysis)
@@ -97,9 +110,19 @@ class BaseGenerator(ABC, Generic[T]):
 
     @staticmethod
     def _parse_json(raw: str) -> Dict[str, Any]:
-        """Tolerant JSON parse: strips markdown code fences (```json ... ```)."""
+        """Tolerant JSON parse: strips markdown code fences (```json ... ```).
+
+        Some LLMs wrap the object in a single-element array (``[{...}]``);
+        that is tolerated and unwrapped. Any other non-object result raises
+        ``ValueError`` so the caller degrades instead of misindexing a list.
+        """
         text = raw.strip()
         fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
         if fence:
             text = fence.group(1).strip()
-        return json.loads(text)
+        data = json.loads(text)
+        if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+            data = data[0]
+        if not isinstance(data, dict):
+            raise ValueError("La respuesta del LLM no es un objeto JSON")
+        return data

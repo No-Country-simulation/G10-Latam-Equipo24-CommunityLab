@@ -59,8 +59,8 @@ def test_reply_pregunta_tecnica_menciona_faq():
     reply = build_reply(MENSAJE_PREGUNTA)
     assert "Sentimiento: Neutro" in reply
     assert "CREAR_FAQ" in reply
-    # El FAQGenerator fija el status del activo.
-    assert "derivado_a_mentoria" in reply
+    # El FAQThemeGenerator fija el status del activo.
+    assert "generado" in reply
 
 
 def test_reply_neutro_devuelve_descartar():
