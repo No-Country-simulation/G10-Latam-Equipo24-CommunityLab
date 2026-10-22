@@ -62,6 +62,20 @@ def _try_remove(path: str) -> None:
         pass
 
 
+def _normalize_pem(content: str) -> str:
+    r"""Return the PEM content with real line breaks.
+
+    A PEM body is base64, so it never contains a backslash. When the secret
+    arrives as a single line holding literal ``\n`` sequences (the provider
+    kept the escape instead of turning it into a newline), the key would be
+    invalid, so those sequences are turned into real line breaks. Content that
+    already has real line breaks is returned unchanged.
+    """
+    if "\n" in content or "\\n" not in content:
+        return content
+    return content.replace("\\n", "\n")
+
+
 def bootstrap_oci_private_key() -> str | None:
     """Materialize an inline PEM secret to a temporary file for OCI SDK.
 
@@ -78,6 +92,8 @@ def bootstrap_oci_private_key() -> str | None:
     pem_content = os.environ.get("OCI_PRIVATE_KEY")
     if not pem_content:
         return None
+
+    pem_content = _normalize_pem(pem_content)
 
     existing_path = os.environ.get("OCI_PRIVATE_KEY_PATH")
     if existing_path and os.path.isfile(existing_path):
