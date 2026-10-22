@@ -10,8 +10,15 @@ from src.interface import app
 
 @pytest.fixture(autouse=True)
 def _isolate_attended_path(tmp_path, monkeypatch):
-    """Isolate the persisted attended-state file so tests never touch the repo."""
-    monkeypatch.setattr(app, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    """Isolate the persisted attended-state file so tests never touch the repo.
+
+    The override is set as an env var (not as a module attribute) because
+    `AppTest` executes the app script in its own context: the env var is the
+    only override that reaches those runs.
+    """
+    monkeypatch.setenv(
+        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "derivados-atendidos.json")
+    )
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -147,6 +154,29 @@ def test_build_derivados_entries_marks_attended_state():
     assert entries[1]["atendido"] is False
 
 
+def test_build_derivados_entries_restores_attended_state_after_reload():
+    """A clean session reads the persisted state back: the marks survive."""
+    mensajes = [
+        {
+            "message_id": "m-1",
+            "autor": "Nora",
+            "canal": "#general",
+            "texto_original": "No me gustó.",
+            "razon": "Feedback negativo",
+            "confianza": 0.85,
+        },
+    ]
+    app.set_atendido({}, "m-1", True)
+
+    # A reload starts with an empty session: the state comes from the file.
+    session_state = {}
+    entries = app.build_derivados_entries(mensajes, session_state)
+
+    assert entries[0]["atendido"] is True
+    # The session caches it, so the file is read once per session.
+    assert session_state["derivados_atendidos"] == {"m-1": True}
+
+
 def test_build_derivados_entries_uses_index_fallback_when_message_id_missing():
     mensajes = [
         {
@@ -227,11 +257,8 @@ def test_derivados_tab_renders_without_exceptions():
     assert any("Derivados" in label for label in tab_labels)
 
 
-def test_derivados_tab_toggle_updates_session_state(monkeypatch, tmp_path):
+def test_derivados_tab_toggle_updates_session_state(tmp_path):
     """Marcar un mensaje como atendido actualiza st.session_state."""
-    monkeypatch.setenv(
-        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "attended.json")
-    )
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
@@ -283,6 +310,11 @@ def test_derivados_tab_toggle_updates_session_state(monkeypatch, tmp_path):
     assert not at.exception
     assert at.session_state["derivados_atendidos"]["m-1"] is True
     assert at.session_state["derivado_atendido_m-1"] is True
+
+    # The AppTest run honors the isolated path: the state is persisted in the
+    # tmp dir and never in the repository.
+    persisted = tmp_path / "derivados-atendidos.json"
+    assert json.loads(persisted.read_text(encoding="utf-8")) == {"m-1": True}
 
 
 def test_branding_assets_are_available():

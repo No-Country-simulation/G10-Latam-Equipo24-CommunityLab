@@ -441,20 +441,26 @@ def build_assets_summary_df(resumen, assets):
     return pd.DataFrame(data)
 
 
-ATTENDED_PATH = Path(
-    os.environ.get(
-        "COMMUNITYLAB_ATTENDED_PATH",
-        str(REPO_ROOT / "storage" / "derivados-atendidos.json"),
-    )
-)
+def _attended_path() -> Path:
+    """Resolve the file that holds the attended state (read on every call).
+
+    The override is resolved at call time instead of at import: `AppTest`
+    executes this script in its own context, so a value captured at import
+    time would point the test run at the repository instead of its tmp dir.
+    """
+    override = os.environ.get("COMMUNITYLAB_ATTENDED_PATH")
+    if override:
+        return Path(override)
+    return REPO_ROOT / "storage" / "derivados-atendidos.json"
 
 
 def _load_attended() -> dict:
     """Load the persisted attended-state dict, or ``{}`` if absent/corrupt."""
-    if not ATTENDED_PATH.exists():
+    path = _attended_path()
+    if not path.exists():
         return {}
     try:
-        data = json.loads(ATTENDED_PATH.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
         return data if isinstance(data, dict) else {}
     except (json.JSONDecodeError, OSError):
         return {}
@@ -462,9 +468,10 @@ def _load_attended() -> dict:
 
 def _save_attended(attended: dict) -> None:
     """Persist the attended-state dict to storage (best-effort)."""
+    path = _attended_path()
     try:
-        ATTENDED_PATH.parent.mkdir(parents=True, exist_ok=True)
-        ATTENDED_PATH.write_text(
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
             json.dumps(attended, ensure_ascii=False, indent=2), encoding="utf-8"
         )
     except OSError:
@@ -493,13 +500,23 @@ def set_atendido(session_state, message_id, value):
 
 
 def build_derivados_entries(mensajes, session_state):
-    """Builds the list rendered by the "Derivados" tab.
+    """Build the list rendered by the "Derivados" tab.
 
     Each entry carries the original message fields plus an ``atendido`` flag
     and a stable ``key`` for the toggle widget. When a message lacks an id,
     the key falls back to ``idx-<position>`` so the UI can still track state.
+
+    The attended state is persisted, so it is read back from disk when the
+    session does not carry it yet: a reload must show the same marks that
+    were saved before.
     """
-    attended = (session_state or {}).get("derivados_atendidos", {})
+    attended = None
+    if session_state is not None:
+        attended = session_state.get("derivados_atendidos")
+    if attended is None:
+        attended = _load_attended()
+        if session_state is not None:
+            session_state["derivados_atendidos"] = attended
     entries = []
     for position, mensaje in enumerate(mensajes):
         message_id = str(mensaje.get("message_id") or "").strip()
@@ -530,8 +547,10 @@ def reset_batch_state(session_state):
             session_state.pop(key, None)
     for key in EDIT_WIDGET_KEYS:
         session_state.pop(key, None)
-    # Derived-message attended state is session-only and must not survive a new
-    # batch; clear both the dictionary and the per-message toggle widget keys.
+    # The attended state is persisted, so the session copy is only a cache:
+    # dropping it makes the next render read the persisted file back. The
+    # per-message toggle widget keys go too, so the checkboxes re-render with
+    # the persisted values instead of the stale widget state.
     session_state.pop("derivados_atendidos", None)
     for key in list(session_state.keys()):
         if key.startswith(DERIVED_WIDGET_KEY_PREFIX):
