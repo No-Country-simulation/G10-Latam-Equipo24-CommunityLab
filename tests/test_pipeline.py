@@ -9,6 +9,7 @@ The storage step is isolated in `tmp_path`: without OCI credentials the
 pipeline degrades to a local JSON snapshot, and the autouse fixture changes the
 working directory so those snapshots never land in the repository.
 """
+import hashlib
 import json
 import logging
 from datetime import date
@@ -30,7 +31,7 @@ from src.domain.models import (
     SentimentType,
 )
 from src.oci.storage import OCI_REQUIRED_ENV
-from src.pipeline import _generate, _summarize, run_pipeline
+from src.pipeline import _generate, _normalize_derived_text, _summarize, run_pipeline
 from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "pipeline_sample.json"
@@ -1126,7 +1127,12 @@ def test_generate_populates_mensajes_derivados_for_derivar_decisions():
 
     assert len(assets.mensajes_derivados) == 1
     dm = assets.mensajes_derivados[0]
-    assert dm.message_id == "d0"
+    # The id comes from the normalized text, not from the source message: it is
+    # the key of the persisted "atendido" state, so it must not change when the
+    # representative of the group changes.
+    assert dm.message_id == hashlib.sha1(
+        _normalize_derived_text("texto 0").encode("utf-8")
+    ).hexdigest()[:12]
     assert dm.autor == "Autor 0"
     assert dm.canal == "#canal0"
     assert dm.texto_original == "texto 0"
@@ -1229,6 +1235,43 @@ def test_generate_consolidates_duplicate_derived_messages():
     # A stable id is assigned for persistence across reloads.
     assert first.message_id
     assert second.message_id
+
+
+def test_consolidated_derived_id_depends_only_on_the_text():
+    """The id of a consolidated complaint must not depend on the source message.
+
+    The representative of the group is the shortest text and it can change
+    between runs (another wording arrives, the author changes). The id is the
+    key of the persisted "atendido" state, so it must depend only on the
+    complaint itself.
+    """
+    from src.domain.models import DerivedMessage
+    from src.pipeline import _consolidate_derived
+
+    def make(mid, autor, texto):
+        return DerivedMessage(
+            message_id=mid,
+            autor=autor,
+            canal="#canal",
+            texto_original=texto,
+            razon="negativo",
+        )
+
+    primera = _consolidate_derived(
+        [
+            make("d0", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d1", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+    segunda = _consolidate_derived(
+        [
+            make("d9", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d8", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+
+    assert primera[0].message_id
+    assert primera[0].message_id == segunda[0].message_id
 
 
 # ---------------------------------------------------------------------------

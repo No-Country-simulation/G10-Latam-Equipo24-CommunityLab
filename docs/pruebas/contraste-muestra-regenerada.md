@@ -16,7 +16,7 @@ consolidación semántica del FAQ y el tope de candidatos LinkedIn.
 | Feedback negativo (total) | 22 | 41 | +19 |
 | Derivados a humano (gate > 0.8) | 22 | 17 | −5 |
 | Derivados consolidados (reclamos únicos) | — | 4 | nuevo |
-| Dudas frecuentes (R2) | 78 | 75 | −3 |
+| Dudas frecuentes (R2) | 78 | 74 | −4 |
 | Candidatos LinkedIn | 32 | 25 (top 25) | −7 |
 | Temas FAQ | — | 9 | nuevo |
 | Preguntas FAQ huérfanas | — | 38 | nuevo |
@@ -51,4 +51,9 @@ consolidación semántica del FAQ y el tope de candidatos LinkedIn.
   pocos entre corridas.
 - La muestra es un snapshot ya calculado (`OutputBatch` serializado); el dashboard la
   carga con "⚡ Cargar muestra de ejemplo" sin ejecutar el LLM.
+- El conteo de 74 dudas frecuentes es el de la muestra commiteada: 36 preguntas
+  agrupadas en los 9 temas + 38 preguntas huérfanas (`candidatos_faq`).
+- La prioridad por frecuencia del agrupamiento se corrigió después de esta corrida
+  (los topics con acento perdían la prioridad), así que una regeneración nueva puede
+  repartir los candidatos entre temas y huérfanas de otra manera.
 - Referencias: `docs/DECISIONS.md` (D-F, D-I) y `docs/pruebas/analisis-decisiones.md`.

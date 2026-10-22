@@ -340,10 +340,12 @@ def _consolidate_derived(
             key=lambda m: (len(m.texto_original), m.autor),
         )
         representative.menciones = len(group)
-        representative.message_id = (
-            representative.message_id
-            or hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
-        )
+        # The id comes from the normalized group key, not from the
+        # representative: the representative is the shortest text of the group
+        # and it can change between runs (a shorter wording arrives, the
+        # author changes). The id is the key of the persisted "atendido"
+        # state, so it must only depend on the complaint itself.
+        representative.message_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
         consolidated.append(representative)
     return consolidated
 
