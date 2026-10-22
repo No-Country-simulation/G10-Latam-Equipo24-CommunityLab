@@ -123,12 +123,14 @@ def test_cluster_faq_targets_collapses_duplicate_topics():
 
 
 def test_cluster_faq_targets_joins_multi_topic_candidate_to_most_frequent():
-    # Global frequency: "ia" appears 3 times, "python" once. The multi-topic
-    # candidate should join the "ia" cluster, not split into its own group.
+    # Global frequency: "zeta" appears 3 times, "alfa" once. The multi-topic
+    # candidate should join the "zeta" cluster, not split into its own group.
+    # The topic names are picked so the alphabetical tie-break alone would pick
+    # "alfa": only the frequency priority can put the candidate in "zeta".
     candidates = [
-        _faq_candidate("¿Cómo uso LangChain?", topics=["ia"]),
-        _faq_candidate("¿Qué modelo elijo?", topics=["ia"]),
-        _faq_candidate("¿Python o JS?", topics=["python", "ia"]),
+        _faq_candidate("¿Cómo uso LangChain?", topics=["zeta"]),
+        _faq_candidate("¿Qué modelo elijo?", topics=["zeta"]),
+        _faq_candidate("¿Python o JS?", topics=["alfa", "zeta"]),
     ]
     temas, huerfanos = cluster_faq_targets(candidates)
     assert len(temas) == 1
@@ -136,7 +138,22 @@ def test_cluster_faq_targets_joins_multi_topic_candidate_to_most_frequent():
     assert huerfanos == []
 
 
-def test_cluster_faq_targets_caps_at_ten():
+def test_cluster_faq_targets_keeps_frequency_priority_for_accented_topics():
+    # "análisis de datos" appears 3 times, "python" once. The accented topic
+    # must keep the frequency priority: the grouping key drops the accent
+    # ("analisis de datos") while the ranked label keeps it.
+    candidates = [
+        _faq_candidate("¿Cómo analizo datos?", topics=["análisis de datos"]),
+        _faq_candidate("¿Qué dataset uso?", topics=["análisis de datos"]),
+        _faq_candidate("¿Python o JS?", topics=["python", "análisis de datos"]),
+    ]
+    temas, huerfanos = cluster_faq_targets(candidates)
+    assert len(temas) == 1
+    assert len(temas[0]) == 3
+    assert huerfanos == []
+
+
+def test_cluster_faq_targets_caps_at_nine():
     candidates = [
         _faq_candidate(f"Pregunta {i}?", topics=[f"tema{i:02d}"])
         for i in range(15)
