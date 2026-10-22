@@ -24,11 +24,21 @@ DEFAULT_BUCKET = "communitylab-activos-marketing"
 # an upload that used to work to a local snapshot.
 OCI_REQUIRED_ENV = (
     "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
     "OCI_FINGERPRINT",
     "OCI_TENANCY_ID",
     "OCI_REGION",
 )
+
+# The private key can arrive in two shapes and the SDK accepts both: a path to
+# a `.pem` file (local checkout) or the PEM content itself (Streamlit Cloud
+# secrets). One of the two is enough, so neither is required on its own.
+OCI_KEY_ENV = (
+    "OCI_PRIVATE_KEY_PATH",
+    "OCI_PRIVATE_KEY",
+)
+
+# Every variable that holds a credential, for callers that need to clear them.
+OCI_CREDENTIAL_ENV = OCI_REQUIRED_ENV + OCI_KEY_ENV
 
 _LOCAL_STATE_DIR = Path("storage") / "estado"
 
@@ -37,9 +47,14 @@ def missing_oci_credentials() -> list[str]:
     """Names of the OCI credential env vars that are unset or empty.
 
     The list is what the caller is missing, so the log says *which* variables
-    to set instead of only that something is missing.
+    to set instead of only that something is missing. The private key counts
+    as present when either of its two variables is set, so both names are
+    reported only when neither one is.
     """
-    return [name for name in OCI_REQUIRED_ENV if not os.getenv(name)]
+    missing = [name for name in OCI_REQUIRED_ENV if not os.getenv(name)]
+    if not any(os.getenv(name) for name in OCI_KEY_ENV):
+        missing.extend(OCI_KEY_ENV)
+    return missing
 
 
 def oci_credentials_complete() -> bool:

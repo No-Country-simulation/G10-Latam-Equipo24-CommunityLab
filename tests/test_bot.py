@@ -17,7 +17,7 @@ from src.ingest.bot import (
     run_bot,
     send_message,
 )
-from src.oci.storage import OCI_REQUIRED_ENV
+from src.oci.storage import OCI_CREDENTIAL_ENV
 
 # Mensajes elegidos para que el backend rule_based arme cada camino:
 # - positivo -> testimonio -> PUBLICAR (post de LinkedIn).
@@ -33,7 +33,7 @@ def bot_env(monkeypatch, tmp_path):
     """Backend rule_based, sin credenciales OCI y cwd aislado en tmp_path."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in OCI_REQUIRED_ENV:
+    for var in OCI_CREDENTIAL_ENV:
         monkeypatch.delenv(var, raising=False)
 
 

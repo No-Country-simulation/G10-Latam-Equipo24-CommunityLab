@@ -15,7 +15,7 @@ import pytest
 from src.domain.models import InputBatch, InputMessage
 from src.ingest.csv_loader import CSVInputLoader
 from src.ingest.loader import load_batch
-from src.oci.storage import OCI_REQUIRED_ENV
+from src.oci.storage import OCI_CREDENTIAL_ENV
 from src.pipeline import run_pipeline
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -283,7 +283,7 @@ def test_dataset_generado_y_pipeline_offline(tmp_path, monkeypatch):
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in OCI_REQUIRED_ENV:
+    for var in OCI_CREDENTIAL_ENV:
         monkeypatch.delenv(var, raising=False)
 
     output = run_pipeline(str(salida))

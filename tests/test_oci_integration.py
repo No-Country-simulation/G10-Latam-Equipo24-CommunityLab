@@ -11,6 +11,8 @@ import pytest
 
 from src.oci.storage import (
     OCIStorage,
+    OCI_CREDENTIAL_ENV,
+    OCI_KEY_ENV,
     OCI_REQUIRED_ENV,
     missing_oci_credentials,
     oci_credentials_complete,
@@ -78,7 +80,7 @@ class _RecordingOCIClient(_FakeOCIClient):
 @pytest.fixture
 def credentials(monkeypatch):
     """Fake OCI credentials so the credential gate lets a call reach OCI."""
-    for var in OCI_REQUIRED_ENV:
+    for var in OCI_CREDENTIAL_ENV:
         monkeypatch.setenv(var, "set")
     return True
 
@@ -90,7 +92,7 @@ def no_credentials(monkeypatch):
     The vars are emptied instead of deleted on purpose: `load_dotenv()` would
     restore them from a real `.env` file.
     """
-    for var in OCI_REQUIRED_ENV:
+    for var in OCI_CREDENTIAL_ENV:
         monkeypatch.setenv(var, "")
     return True
 
@@ -218,12 +220,12 @@ def test_get_json_without_credentials_returns_default_when_mirror_is_empty(
 
 
 def test_missing_oci_credentials_reports_the_missing_variables(monkeypatch, no_credentials):
-    assert missing_oci_credentials() == list(OCI_REQUIRED_ENV)
+    assert missing_oci_credentials() == list(OCI_REQUIRED_ENV) + list(OCI_KEY_ENV)
 
     monkeypatch.setenv("OCI_REGION", "sa-sa-santiago-1")
     assert missing_oci_credentials() == [
         name for name in OCI_REQUIRED_ENV if name != "OCI_REGION"
-    ]
+    ] + list(OCI_KEY_ENV)
 
 
 def test_missing_credentials_are_logged_once(tmp_path, monkeypatch, no_credentials, caplog):
@@ -244,10 +246,27 @@ def test_oci_credentials_complete_requires_every_credential_variable(monkeypatch
     for var in OCI_REQUIRED_ENV:
         monkeypatch.setenv(var, "set")
 
+    assert oci_credentials_complete() is False
+
+    monkeypatch.setenv("OCI_PRIVATE_KEY_PATH", "set")
     assert oci_credentials_complete() is True
 
     monkeypatch.setenv("OCI_FINGERPRINT", "")
     assert oci_credentials_complete() is False
+
+
+def test_either_key_variable_is_enough(monkeypatch):
+    """The key can arrive as a path or as content; one of the two is enough."""
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "set")
+
+    monkeypatch.setenv("OCI_PRIVATE_KEY", "pem-content")
+    assert oci_credentials_complete() is True
+    assert missing_oci_credentials() == []
+
+    monkeypatch.setenv("OCI_PRIVATE_KEY", "")
+    assert oci_credentials_complete() is False
+    assert missing_oci_credentials() == list(OCI_KEY_ENV)
 
 
 def test_required_env_holds_credentials_not_target():
@@ -256,11 +275,19 @@ def test_required_env_holds_credentials_not_target():
     assert "OCI_NAMESPACE" not in OCI_REQUIRED_ENV
     assert set(OCI_REQUIRED_ENV) == {
         "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
         "OCI_FINGERPRINT",
         "OCI_TENANCY_ID",
         "OCI_REGION",
     }
+    assert set(OCI_KEY_ENV) == {
+        "OCI_PRIVATE_KEY_PATH",
+        "OCI_PRIVATE_KEY",
+    }
+
+
+def test_credential_env_lists_every_variable_that_holds_a_secret():
+    """Fixtures that clear the credentials need the whole list, key included."""
+    assert set(OCI_CREDENTIAL_ENV) == set(OCI_REQUIRED_ENV) | set(OCI_KEY_ENV)
 
 
 @pytest.mark.skipif(
