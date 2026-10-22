@@ -20,9 +20,12 @@ Outside a Streamlit runtime (CLI scripts, tests) the import is a no-op.
 from __future__ import annotations
 
 import atexit
+import logging
 import os
 import stat
 import tempfile
+
+logger = logging.getLogger(__name__)
 
 
 def export_secrets_to_environ() -> int:
@@ -101,21 +104,27 @@ def bootstrap_oci_private_key() -> str | None:
 
     try:
         fd, temp_path = tempfile.mkstemp(suffix=".pem", prefix="oci_private_key_")
-    except Exception:  # pragma: no cover - defensive: filesystem unavailable
+    except Exception as exc:  # pragma: no cover - defensive: filesystem unavailable
+        logger.warning("Could not create the temporary file for the OCI key: %s", exc)
         return None
 
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(pem_content)
         os.chmod(temp_path, stat.S_IRUSR | stat.S_IWUSR)
-    except Exception:  # pragma: no cover - defensive: filesystem unavailable
+    except Exception as exc:  # pragma: no cover - defensive: filesystem unavailable
+        logger.warning("Could not write the OCI key to the temporary file: %s", exc)
         _try_remove(temp_path)
         return None
 
     os.environ["OCI_PRIVATE_KEY_PATH"] = temp_path
     atexit.register(_try_remove, temp_path)
+    logger.info("OCI private key materialized at %s", temp_path)
     return temp_path
 
 
+# Streamlit executes the app script on import, so the secrets have to be in
+# the environment before any module that reads them is imported. Running both
+# calls at import time is deliberate.
 export_secrets_to_environ()
 bootstrap_oci_private_key()

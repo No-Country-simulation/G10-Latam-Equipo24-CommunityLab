@@ -7,6 +7,8 @@ import stat
 import sys
 import types
 
+import pytest
+
 from src.interface import cloud_secrets
 
 
@@ -84,6 +86,16 @@ def test_bootstrap_writes_pem_to_temp_file_and_sets_path(monkeypatch, tmp_path):
     assert os.environ["OCI_PRIVATE_KEY_PATH"] == path
     with open(path, "r", encoding="utf-8") as f:
         assert f.read() == PEM_CONTENT
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permissions are not enforced on Windows")
+def test_bootstrap_temp_file_is_owner_only(monkeypatch):
+    _clear_oci_private_key_vars(monkeypatch)
+    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+
+    path = cloud_secrets.bootstrap_oci_private_key()
+
+    assert path is not None
     assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
 
 
