@@ -46,11 +46,18 @@ Para conectar el pipeline con OCI, debés configurar las siguientes variables de
 # OCI Object Storage Configuration
 OCI_USER_ID="ocid1.user.oc1..tu_user_ocid_aqui"
 OCI_PRIVATE_KEY_PATH="path/a/tu/api-key.pem"
-OCI_FINGERPRINT="xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+OCI_FINGERPRINT="xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
 OCI_TENANCY_ID="ocid1.tenancy.oc1..tu_tenancy_ocid_aqui"
 OCI_REGION="sa-valparaiso-1"
 OCI_BUCKET_NAME="communitylab-activos-marketing"
 ```
+
+> La clave privada se puede declarar de dos formas y alcanza con una: como
+> **ruta** (`OCI_PRIVATE_KEY_PATH`, para el checkout local) o como **contenido**
+> (`OCI_PRIVATE_KEY`, para los secrets de la nube). Si la ruta apunta a un
+> archivo que existe, esa gana; si no, se usa el contenido. Ver
+> [`ARQ-07`](DECISIONS.md#arq-07--la-clave-privada-llega-como-archivo-o-como-contenido).
+
 
 ---
 

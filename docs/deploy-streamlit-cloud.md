@@ -51,6 +51,9 @@ OCI_TENANCY_ID = ""
 OCI_REGION = "sa-valparaiso-1"
 OCI_NAMESPACE = "axcyr94oehmi"
 OCI_BUCKET_NAME = "communitylab-activos-marketing"
+# Clave privada: el contenido PEM completo, pegado como string multilínea
+# de TOML ("""..."""); alternativamente, la ruta a un archivo .pem
+OCI_PRIVATE_KEY = ""
 ```
 
 `src/interface/cloud_secrets.py` copia cada entrada de `secrets.toml` a
@@ -61,12 +64,15 @@ mismo código que lee un `.env` local funciona en la nube.
 > credenciales reales. El archivo ya está excluido en `.gitignore`; verificá
 > igualmente antes de commitear.
 >
-> **Nota sobre `OCI_PRIVATE_KEY_PATH`:** la app espera una **ruta a un archivo
-> `.pem`**, que no existe en Community Cloud. Para subir a OCI desde la nube
-> hay que montar la clave dentro del contenedor de la app, por ejemplo
-> escribiendo el contenido PEM desde un secret a un archivo temporal en un
-> arranque previo. Si no se hace, el pipeline degrada a snapshot local con
-> status `pendiente` (nada falla).
+> **Nota sobre la clave privada:** la app acepta la clave de **dos formas**,
+> y alcanza con una de las dos: `OCI_PRIVATE_KEY_PATH` (una **ruta a un
+> archivo `.pem`**, que es lo que existe en un checkout local) o
+> `OCI_PRIVATE_KEY` (el **contenido PEM** completo, que es lo que se pega en
+> los secrets de la nube). Si la ruta apunta a un archivo que existe, esa
+> gana; si no, la app usa el contenido. No hace falta montar ni escribir
+> ningún archivo en el contenedor: el secret va tal cual. Si no se configura
+> ninguna de las dos, el pipeline degrada a snapshot local con status
+> `pendiente` (nada falla). Ver [`ARQ-07`](DECISIONS.md#arq-07--la-clave-privada-llega-como-archivo-o-como-contenido).
 
 ### 2. Crear la app
 

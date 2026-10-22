@@ -23,6 +23,69 @@ La trazabilidad de cada decisión a sus casos de prueba vive en `docs/pruebas/an
 | ARQ-04 | Persistencia | OCI Object Storage | Base de datos | Requisito obligatorio del hackathon + compatible con Always Free |
 | ARQ-05 | Módulo de decisiones | Reglas + LLM híbrido | Solo LLM | Determinismo en reglas críticas + contexto en matices |
 | ARQ-06 | Deploy | Local + OCI opcional | Solo OCI | MVP rápido + diferencial si hay tiempo |
+| ARQ-07 | Clave privada de OCI | Ruta **o** contenido, sin archivo temporal | Solo ruta (archivo temporal en la nube) | El SDK acepta el contenido: no hace falta escribir la clave en disco |
+
+### ARQ-07 — La clave privada llega como archivo o como contenido
+
+**Fecha:** 2026-10-22
+**Estado:** decidida
+
+**Qué decide.** Cómo llega la clave privada de OCI a la app y qué exige el gate
+de credenciales antes de intentar una llamada a Object Storage.
+
+**Decisión.** La clave tiene **dos formas admitidas** y alcanza con una:
+
+| Variable | Forma | Dónde aplica |
+|---|---|---|
+| `OCI_PRIVATE_KEY_PATH` | ruta a un archivo `.pem` | checkout local |
+| `OCI_PRIVATE_KEY` | el contenido PEM | secrets de Streamlit Cloud |
+
+- Si la ruta apunta a un archivo que **existe**, **gana la ruta**.
+- Si no existe, se usa el **contenido**, con los escapes `\n` literales
+  convertidos en saltos de línea (un cuerpo PEM es base64 y nunca lleva barra
+  invertida, así que un `\n` literal solo puede ser un escape).
+- El SDK recibe el contenido por `key_content`: **no se escribe ningún archivo
+  en disco**, ni temporal ni de ningún otro tipo.
+
+**El gate** (en `src/oci/storage.py`) pide **cuatro** variables obligatorias —
+`OCI_USER_ID`, `OCI_FINGERPRINT`, `OCI_TENANCY_ID`, `OCI_REGION` — y **una de
+las dos** formas de la clave. Si falta alguna, la operación degrada al mirror
+local y el log dice qué variables faltan.
+
+**Por qué.**
+
+1. **La nube no tiene archivos.** En Community Cloud los secrets son strings;
+   la versión anterior resolvía el problema escribiendo la clave en un archivo
+   temporal con permisos `0600` y registrándolo en `atexit`. Eso agregaba
+   superficie (un archivo con la clave en el disco del contenedor, una limpieza
+   que depende del proceso, `chmod` que no existe en Windows) para resolver un
+   problema que el SDK ya resuelve solo.
+2. **El local no cambia.** Con la ruta a un `.pem` que ya existe, el
+   comportamiento es el de siempre: el mismo `key_file` de siempre.
+3. **El gate queda explícito.** Antes la clave era obligatoria *como ruta*;
+   ahora el gate dice "una de las dos", y el log nombra el grupo completo
+   cuando no hay ninguna.
+
+**Alternativas evaluadas.**
+
+| Alternativa | Por qué no |
+|---|---|
+| Mantener el bootstrap a archivo temporal | Un archivo con la clave en el disco del contenedor, permisos que el SO no siempre aplica, y una limpieza atada al ciclo de vida del proceso |
+| Aceptar solo el contenido | Rompe el checkout local, que ya tiene la clave en un `.pem` y la ruta documentada en `docs/oci-setup.md` |
+| Aceptar solo la ruta | Obliga a la nube a montar o escribir la clave, que es exactamente lo que se quería evitar |
+
+**Dónde vive.**
+
+- `src/oci/client.py` — `_normalize_pem` y el `config` con `key_file` /
+  `key_content` (el archivo gana cuando existe)
+- `src/oci/storage.py` — `OCI_REQUIRED_ENV`, `OCI_KEY_ENV`,
+  `OCI_CREDENTIAL_ENV` y `missing_oci_credentials()`
+- `src/interface/cloud_secrets.py` — exporta los secrets y nada más
+- `tests/test_oci_client.py`, `tests/test_oci_integration.py`,
+  `tests/test_interface_cloud_secrets.py`
+
+**Desvío respecto al PDF.** Ninguno: sigue siendo OCI Object Storage como
+persistencia (ARQ-04) y la app degrada a snapshot local sin credenciales.
 
 ---
 
