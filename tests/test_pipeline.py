@@ -9,6 +9,7 @@ The storage step is isolated in `tmp_path`: without OCI credentials the
 pipeline degrades to a local JSON snapshot, and the autouse fixture changes the
 working directory so those snapshots never land in the repository.
 """
+import hashlib
 import json
 import logging
 from datetime import date
@@ -29,7 +30,8 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
 )
-from src.pipeline import _generate, _summarize, run_pipeline
+from src.oci.storage import OCI_REQUIRED_ENV
+from src.pipeline import _generate, _normalize_derived_text, _summarize, run_pipeline
 from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "pipeline_sample.json"
@@ -100,17 +102,11 @@ def pipeline_env(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: FakeLLMClient())
     # A real .env must not leak into the tests: run_pipeline() calls
-    # load_dotenv() again, which would re-populate the credentials that the
-    # delenv below just removed. Neutralize it so the isolation holds.
+    # load_dotenv() again, which would re-populate the credentials.
+    # Neutralize it so the isolation holds.
     monkeypatch.setattr("src.pipeline.load_dotenv", lambda: None)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
     return tmp_path
 
 
@@ -480,14 +476,8 @@ def test_pipeline_with_rule_based_backend_offline_end_to_end(
     """End-to-end offline test with real RuleBasedClient backend."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     interacciones = [
         {
@@ -536,14 +526,9 @@ def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
     period-scoped object key from the contract example, using a simulated
     Object Storage client (no `oci` SDK required)."""
     monkeypatch.chdir(tmp_path)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.setenv(var, "fake")
+    monkeypatch.setenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
 
     calls = {}
 
@@ -1054,14 +1039,8 @@ def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
     # The autouse fixture fakes the LLM client; re-point it at the real factory
     # so this test genuinely exercises the rule_based backend end-to-end.
     monkeypatch.setattr("src.pipeline.get_llm_client", real_get_llm_client)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     source = _write_batch(
         tmp_path,
@@ -1148,7 +1127,12 @@ def test_generate_populates_mensajes_derivados_for_derivar_decisions():
 
     assert len(assets.mensajes_derivados) == 1
     dm = assets.mensajes_derivados[0]
-    assert dm.message_id == "d0"
+    # The id comes from the normalized text, not from the source message: it is
+    # the key of the persisted "atendido" state, so it must not change when the
+    # representative of the group changes.
+    assert dm.message_id == hashlib.sha1(
+        _normalize_derived_text("texto 0").encode("utf-8")
+    ).hexdigest()[:12]
     assert dm.autor == "Autor 0"
     assert dm.canal == "#canal0"
     assert dm.texto_original == "texto 0"
@@ -1156,8 +1140,13 @@ def test_generate_populates_mensajes_derivados_for_derivar_decisions():
     assert dm.confianza == 0.81
 
 
-def test_generate_keeps_mensajes_derivados_empty_for_low_confidence_negative():
-    """A negative message below the confidence gate does NOT populate the inbox."""
+def test_generate_keeps_mensajes_derivados_empty_for_descartar_decision():
+    """A DESCARTAR decision does NOT populate the inbox.
+
+    The R4 confidence gate (`sentiment.score > 0.8`) lives in the decision
+    engine and is covered there; this test only checks that the pipeline
+    honours the decision it receives.
+    """
     results = [
         _derivation_result(0, ActionType.DESCARTAR, 0.79),
     ]
@@ -1251,6 +1240,43 @@ def test_generate_consolidates_duplicate_derived_messages():
     # A stable id is assigned for persistence across reloads.
     assert first.message_id
     assert second.message_id
+
+
+def test_consolidated_derived_id_depends_only_on_the_text():
+    """The id of a consolidated complaint must not depend on the source message.
+
+    The representative of the group is the shortest text and it can change
+    between runs (another wording arrives, the author changes). The id is the
+    key of the persisted "atendido" state, so it must depend only on the
+    complaint itself.
+    """
+    from src.domain.models import DerivedMessage
+    from src.pipeline import _consolidate_derived
+
+    def make(mid, autor, texto):
+        return DerivedMessage(
+            message_id=mid,
+            autor=autor,
+            canal="#canal",
+            texto_original=texto,
+            razon="negativo",
+        )
+
+    primera = _consolidate_derived(
+        [
+            make("d0", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d1", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+    segunda = _consolidate_derived(
+        [
+            make("d9", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d8", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+
+    assert primera[0].message_id
+    assert primera[0].message_id == segunda[0].message_id
 
 
 # ---------------------------------------------------------------------------

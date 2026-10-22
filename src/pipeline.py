@@ -51,6 +51,7 @@ from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
 from src.ingest.loader import load_batch
 from src.oci.client import OCIClient
+from src.oci.storage import DEFAULT_BUCKET, oci_credentials_complete
 from src.utils.llm import LLMClient, get_llm_client
 
 logger = logging.getLogger(__name__)
@@ -60,15 +61,6 @@ _Result = Tuple[InputMessage, AnalysisComplete, DecisionResult]
 # The (message, analysis) pair a generator needs.
 _Target = Tuple[InputMessage, AnalysisComplete]
 
-# Env vars that must be present (non-empty) before attempting an OCI upload.
-_OCI_REQUIRED_ENV = (
-    "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
-    "OCI_FINGERPRINT",
-    "OCI_TENANCY_ID",
-    "OCI_REGION",
-)
-_DEFAULT_BUCKET = "communitylab-activos-marketing"
 _SNAPSHOT_DIR = Path("storage") / "activos"
 
 # Maximum number of topics exposed in `temas_principales` (issue #87): the
@@ -348,10 +340,12 @@ def _consolidate_derived(
             key=lambda m: (len(m.texto_original), m.autor),
         )
         representative.menciones = len(group)
-        representative.message_id = (
-            representative.message_id
-            or hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
-        )
+        # The id comes from the normalized group key, not from the
+        # representative: the representative is the shortest text of the group
+        # and it can change between runs (a shorter wording arrives, the
+        # author changes). The id is the key of the persisted "atendido"
+        # state, so it must only depend on the complaint itself.
+        representative.message_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
         consolidated.append(representative)
     return consolidated
 
@@ -518,7 +512,7 @@ def _store(assets: DistributionAssets, batch: InputBatch) -> OCIStorage:
     `status="guardado_con_exito"` and a period-scoped object key
     (`activos/<año>-semana-<n>/paquete-distribucion.json`, per the PDF).
     """
-    bucket = os.getenv("OCI_BUCKET_NAME", _DEFAULT_BUCKET)
+    bucket = os.getenv("OCI_BUCKET_NAME", DEFAULT_BUCKET)
     today = date.today().isoformat()
     payload = assets.model_dump_json(indent=2)
     object_key = (
@@ -572,7 +566,7 @@ def _period_folder(periodo_referencia: str) -> str:
 
 def _oci_credentials_present() -> bool:
     """True when every OCI credential env var is set to a non-empty value."""
-    return all(os.getenv(name) for name in _OCI_REQUIRED_ENV)
+    return oci_credentials_complete()
 
 
 if __name__ == "__main__":

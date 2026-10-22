@@ -35,7 +35,11 @@ def cluster_faq_targets(
         if topic and topic.strip()
     ]
     ranked = rank_topics(all_topics, top_n=None)
-    topic_priority = {label: idx for idx, (label, _) in enumerate(ranked)}
+    # `rank_topics` returns labels (normalized, accents kept) while the lookup
+    # below uses the accent-free grouping key. Normalizing both sides keeps the
+    # frequency priority for topics such as "análisis de datos"; comparing the
+    # label with the key made every accented topic look unfrequent.
+    topic_priority = {_normalize_key(label): idx for idx, (label, _) in enumerate(ranked)}
 
     clusters: Dict[str, List[FAQCandidate]] = {}
     untopiced: List[FAQCandidate] = []
