@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import importlib
 import os
-import stat
 import sys
 import types
-
-import pytest
 
 from src.interface import cloud_secrets
 
@@ -58,9 +56,6 @@ def test_export_is_noop_without_streamlit_secrets(monkeypatch):
 
 
 PEM_CONTENT = "-----BEGIN PRIVATE KEY-----\nFAKE\n-----END PRIVATE KEY-----\n"
-PEM_WITH_LITERAL_ESCAPES = (
-    "-----BEGIN PRIVATE KEY-----\\nFAKE\\n-----END PRIVATE KEY-----\\n"
-)
 
 
 def _clear_oci_private_key_vars(monkeypatch):
@@ -76,93 +71,13 @@ def _clear_oci_private_key_vars(monkeypatch):
         monkeypatch.delenv(name)
 
 
-def test_bootstrap_writes_pem_to_temp_file_and_sets_path(monkeypatch, tmp_path):
+def test_import_does_not_materialize_a_temporary_key_file(monkeypatch, tmp_path):
+    """The PEM content reaches the OCI client directly; nothing hits the disk."""
     _clear_oci_private_key_vars(monkeypatch)
     monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
+    monkeypatch.chdir(tmp_path)
 
-    path = cloud_secrets.bootstrap_oci_private_key()
+    importlib.reload(cloud_secrets)
 
-    assert path is not None
-    assert os.environ["OCI_PRIVATE_KEY_PATH"] == path
-    with open(path, "r", encoding="utf-8") as f:
-        assert f.read() == PEM_CONTENT
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permissions are not enforced on Windows")
-def test_bootstrap_temp_file_is_owner_only(monkeypatch):
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
-
-    path = cloud_secrets.bootstrap_oci_private_key()
-
-    assert path is not None
-    assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
-
-
-def test_bootstrap_turns_literal_newline_escapes_into_line_breaks(monkeypatch):
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_WITH_LITERAL_ESCAPES)
-
-    path = cloud_secrets.bootstrap_oci_private_key()
-
-    assert path is not None
-    with open(path, "r", encoding="utf-8") as f:
-        assert f.read() == PEM_CONTENT
-
-
-def test_bootstrap_keeps_a_multiline_secret_untouched(monkeypatch):
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
-
-    path = cloud_secrets.bootstrap_oci_private_key()
-
-    assert path is not None
-    with open(path, "r", encoding="utf-8") as f:
-        assert f.read() == PEM_CONTENT
-    assert "\\n" not in PEM_CONTENT
-
-
-def test_bootstrap_preserves_existing_private_key_path(monkeypatch, tmp_path):
-    existing = tmp_path / "existing.pem"
-    existing.write_text("existing-key", encoding="utf-8")
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
-    monkeypatch.setenv("OCI_PRIVATE_KEY_PATH", str(existing))
-
-    path = cloud_secrets.bootstrap_oci_private_key()
-
-    assert path == str(existing)
-    assert os.environ["OCI_PRIVATE_KEY_PATH"] == str(existing)
-    assert existing.read_text(encoding="utf-8") == "existing-key"
-
-
-def test_bootstrap_skips_when_secret_is_missing(monkeypatch):
-    _clear_oci_private_key_vars(monkeypatch)
-
-    assert cloud_secrets.bootstrap_oci_private_key() is None
-
-
-def test_bootstrap_creates_temp_file_when_path_points_to_directory(monkeypatch, tmp_path):
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
-    monkeypatch.setenv("OCI_PRIVATE_KEY_PATH", str(tmp_path))
-
-    path = cloud_secrets.bootstrap_oci_private_key()
-
-    assert path is not None
-    assert path != str(tmp_path)
-    assert os.path.isfile(path)
-    with open(path, "r", encoding="utf-8") as f:
-        assert f.read() == PEM_CONTENT
-
-
-def test_bootstrap_returns_none_on_write_failure(monkeypatch):
-    _clear_oci_private_key_vars(monkeypatch)
-    monkeypatch.setenv("OCI_PRIVATE_KEY", PEM_CONTENT)
-
-    def _bad_mkstemp(*_args, **_kwargs):
-        raise OSError("disk full")
-
-    monkeypatch.setattr("tempfile.mkstemp", _bad_mkstemp)
-
-    assert cloud_secrets.bootstrap_oci_private_key() is None
+    assert "OCI_PRIVATE_KEY_PATH" not in os.environ
+    assert list(tmp_path.iterdir()) == []

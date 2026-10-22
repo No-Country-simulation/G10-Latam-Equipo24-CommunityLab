@@ -10,6 +10,10 @@ Importing this module maps each secret into ``os.environ`` (without
 overwriting variables that are already set), so the exact same application
 code runs locally and on the cloud with no branching.
 
+The OCI private key travels with the rest of the secrets: it is exported as
+``OCI_PRIVATE_KEY`` and the OCI client reads the content directly, so no
+temporary file is written anywhere.
+
 Placement matters: import this module *before* ``src.pipeline`` /
 ``src.oci`` so the mapped variables are in place when those modules run
 their own ``load_dotenv()`` calls.
@@ -19,11 +23,8 @@ Outside a Streamlit runtime (CLI scripts, tests) the import is a no-op.
 
 from __future__ import annotations
 
-import atexit
 import logging
 import os
-import stat
-import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -57,74 +58,7 @@ def export_secrets_to_environ() -> int:
     return exported
 
 
-def _try_remove(path: str) -> None:
-    """Best-effort cleanup of a temporary file; never raises."""
-    try:
-        os.remove(path)
-    except Exception:  # pragma: no cover - defensive cleanup
-        pass
-
-
-def _normalize_pem(content: str) -> str:
-    r"""Return the PEM content with real line breaks.
-
-    A PEM body is base64, so it never contains a backslash. When the secret
-    arrives as a single line holding literal ``\n`` sequences (the provider
-    kept the escape instead of turning it into a newline), the key would be
-    invalid, so those sequences are turned into real line breaks. Content that
-    already has real line breaks is returned unchanged.
-    """
-    if "\n" in content or "\\n" not in content:
-        return content
-    return content.replace("\\n", "\n")
-
-
-def bootstrap_oci_private_key() -> str | None:
-    """Materialize an inline PEM secret to a temporary file for OCI SDK.
-
-    Streamlit Cloud exposes secrets as strings, but the OCI SDK requires a
-    filesystem path. When ``OCI_PRIVATE_KEY`` is present and
-    ``OCI_PRIVATE_KEY_PATH`` does not point to an existing file, this function
-    writes the PEM content to a temp file with owner-only permissions (0600),
-    points ``OCI_PRIVATE_KEY_PATH`` at it, and registers best-effort cleanup at
-    process exit. If the path already exists, it is left untouched.
-
-    Returns the resolved path, or ``None`` when no secret is available or the
-    write fails.
-    """
-    pem_content = os.environ.get("OCI_PRIVATE_KEY")
-    if not pem_content:
-        return None
-
-    pem_content = _normalize_pem(pem_content)
-
-    existing_path = os.environ.get("OCI_PRIVATE_KEY_PATH")
-    if existing_path and os.path.isfile(existing_path):
-        return existing_path
-
-    try:
-        fd, temp_path = tempfile.mkstemp(suffix=".pem", prefix="oci_private_key_")
-    except Exception as exc:  # pragma: no cover - defensive: filesystem unavailable
-        logger.warning("Could not create the temporary file for the OCI key: %s", exc)
-        return None
-
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(pem_content)
-        os.chmod(temp_path, stat.S_IRUSR | stat.S_IWUSR)
-    except Exception as exc:  # pragma: no cover - defensive: filesystem unavailable
-        logger.warning("Could not write the OCI key to the temporary file: %s", exc)
-        _try_remove(temp_path)
-        return None
-
-    os.environ["OCI_PRIVATE_KEY_PATH"] = temp_path
-    atexit.register(_try_remove, temp_path)
-    logger.info("OCI private key materialized at %s", temp_path)
-    return temp_path
-
-
 # Streamlit executes the app script on import, so the secrets have to be in
-# the environment before any module that reads them is imported. Running both
-# calls at import time is deliberate.
+# the environment before any module that reads them is imported. Running the
+# export at import time is deliberate.
 export_secrets_to_environ()
-bootstrap_oci_private_key()
