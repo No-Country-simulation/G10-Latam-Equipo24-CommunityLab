@@ -143,7 +143,7 @@ Rutas:
   `content`, igual que el CSV). Responde 200 con
   `{status, resumen, activos, almacenamiento}`; 400 si el body es inválido;
   500 si el pipeline falla.
-- `POST /telegram`: recibe un Update de la Bot API de Telegram (Fase 1 del
+- `POST /telegram`: recibe un Update de la Bot API de Telegram (Fase 2 del
   webhook de Telegram, ver más abajo). Responde 200 con
   `{status, ruta, update_id, resumen, activos, almacenamiento}`.
 - `GET /health`: 200 `{"status": "ok"}`.
@@ -182,12 +182,12 @@ curl -X POST http://127.0.0.1:8765/ingest \
 curl http://127.0.0.1:8765/health
 ```
 
-### Webhook de Telegram (Fase 1)
+### Webhook de Telegram (Fase 2)
 
 `POST /telegram` recibe un **Update** de la Bot API de Telegram, lo convierte
 en un `InputBatch` con `messages_to_batch` (`src/ingest/telegram.py`) y lo corre
-por el mismo helper `_run_with_batch` que `/ingest`. Es la Fase 1 del webhook de
-Telegram y hace tres cosas:
+por el mismo helper `_run_with_batch` que `/ingest`. Es la Fase 2 del webhook de
+Telegram y hace cuatro cosas:
 
 1. Valida el header `X-Telegram-Bot-Api-Secret-Token` contra el secret
    configurado en `TELEGRAM_WEBHOOK_SECRET` (comparación en tiempo constante).
@@ -195,6 +195,10 @@ Telegram y hace tres cosas:
    volver a correr el pipeline (Telegram reintenta hasta recibir 2xx).
 3. Responde el resumen del pipeline, igual que `/ingest`, más `ruta` y
    `update_id` para correlacionar.
+4. Si hay `TELEGRAM_BOT_TOKEN` configurado, le envía el análisis de vuelta al
+   chat que originó el update (`sendMessage`), la misma experiencia que el bot
+   en polling. Sin ese token el análisis se procesa igual y la respuesta al
+   chat queda `omitida`, con un warning en el log.
 
 Es **fail closed**: si `TELEGRAM_WEBHOOK_SECRET` no está configurado, la ruta
 responde **503** y no acepta input. Si el header falta o no coincide, responde
@@ -202,9 +206,10 @@ responde **503** y no acepta input. Si el header falta o no coincide, responde
 comando que empieza con `/`) responde 200 `ignorado` y no corre el pipeline; un
 body que no sea JSON responde 400; otro método responde 405 con `Allow: POST`.
 
-**Alcance de la Fase 1:** el webhook **no se registra** con Telegram (no se
-llama a `setWebhook`) y el camino de polling (`getUpdates`) queda **sin
-cambios**. Se prueba localmente con `curl`, simulando un update:
+**Alcance:** el webhook **no se registra** con Telegram por sí solo (no se
+llama a `setWebhook`); para eso está `scripts/set_webhook_url.sh`. El camino de
+polling (`getUpdates`) queda **sin cambios** y no debe usarse a la vez que el
+webhook. Se prueba localmente con `curl`, simulando un update:
 
 ```bash
 export TELEGRAM_WEBHOOK_SECRET="mi-secret"
@@ -220,7 +225,7 @@ curl -X POST http://127.0.0.1:8765/telegram \
              "date": 1730000000,
              "text": "Logré mi primer empleo como desarrolladora!",
              "from": {"id": 111, "first_name": "Ana"},
-             "chat": {"id": -1001234567890, "type": "supergroup", "title": "Comunidad"}
+             "chat": {"id": 111, "type": "private", "first_name": "Ana"}
            }
          }'
 ```
@@ -228,11 +233,15 @@ curl -X POST http://127.0.0.1:8765/telegram \
 Repetir el `curl` con el mismo `update_id` devuelve `{"status": "duplicado", ...}`
 sin reprocesar.
 
+El chat de ejemplo es **privado** porque el bot sólo responde en chats privados
+(igual que en polling). Con un chat de grupo el análisis se procesa pero la
+respuesta al chat queda `omitida`.
+
 **Limitación conocida:** el pipeline corre **sincrónicamente** dentro del
 request. Una entrega real de Telegram debería recibir un 2xx rápido (Telegram
 reintenta si tarda o falla), por lo que mover el procesamiento a segundo plano
-es un tema de la Fase 2 (junto con registrar el webhook y exponer una URL
-pública).
+sigue siendo una mejora pendiente. El registro del webhook ya está resuelto con
+`scripts/set_webhook_url.sh`.
 
 ### Convergencia
 
