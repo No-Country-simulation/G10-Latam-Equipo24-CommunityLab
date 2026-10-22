@@ -1140,8 +1140,13 @@ def test_generate_populates_mensajes_derivados_for_derivar_decisions():
     assert dm.confianza == 0.81
 
 
-def test_generate_keeps_mensajes_derivados_empty_for_low_confidence_negative():
-    """A negative message below the confidence gate does NOT populate the inbox."""
+def test_generate_keeps_mensajes_derivados_empty_for_descartar_decision():
+    """A DESCARTAR decision does NOT populate the inbox.
+
+    The R4 confidence gate (`sentiment.score > 0.8`) lives in the decision
+    engine and is covered there; this test only checks that the pipeline
+    honours the decision it receives.
+    """
     results = [
         _derivation_result(0, ActionType.DESCARTAR, 0.79),
     ]
