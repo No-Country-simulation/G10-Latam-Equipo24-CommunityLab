@@ -15,9 +15,11 @@ jobs:
   autolabel:
     name: Auto-label desde el titulo
     runs-on: ubuntu-22.04
+    # gh usa la mutacion GraphQL addLabelsToLabelable, que requiere write
+    # sobre pull-requests (issues: write no alcanza para labels de PR).
     permissions:
-      pull-requests: read
-      issues: write
+      contents: read
+      pull-requests: write
     steps:
       - name: Aplicar el label type:* que corresponde al prefijo del titulo
         env:
