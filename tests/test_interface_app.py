@@ -5,20 +5,44 @@ import altair as alt
 import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
-from src.interface import app
+from src.interface import app, state
+
+
+class _FakeOCIStorage:
+    """In-memory OCI JSON store for isolated dashboard-state tests.
+
+    The store lives on the CLASS: the state layer builds a fresh client on
+    every call, so a per-instance store would lose everything between two
+    calls. The autouse fixture clears it before each test.
+    """
+
+    store = {}
+
+    def put_json(self, bucket_name, key, data):
+        # Round-trip through JSON so stored values are plain dicts/lists.
+        self.store[(bucket_name, key)] = json.loads(json.dumps(data))
+        return True
+
+    def get_json(self, bucket_name, key, default=None):
+        return self.store.get((bucket_name, key), default)
 
 
 @pytest.fixture(autouse=True)
-def _isolate_attended_path(tmp_path, monkeypatch):
-    """Isolate the persisted attended-state file so tests never touch the repo.
+def _isolate_persisted_state(tmp_path, monkeypatch):
+    """Isolate persisted state and OCI so tests never touch the repo or cloud.
 
-    The override is set as an env var (not as a module attribute) because
-    `AppTest` executes the app script in its own context: the env var is the
-    only override that reaches those runs.
+    The seams live in ``src.interface.state`` and are patched THERE: the app
+    runs as a copy of ``app.py`` (Streamlit and ``AppTest`` both do it), so a
+    seam patched on ``app`` would never reach the script that actually runs.
     """
-    monkeypatch.setenv(
-        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "derivados-atendidos.json")
-    )
+    _FakeOCIStorage.store.clear()
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    monkeypatch.setattr(state, "OCIStorageClient", _FakeOCIStorage)
+    monkeypatch.setattr(state, "DEFAULT_BUCKET", "test-bucket")
+    # The real .env is loaded into the process env by ``load_dotenv()`` (see
+    # ``src/oci/client.py``): without this, the bucket of a developer's machine
+    # would leak into the tests and point them at production.
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -1932,3 +1956,231 @@ def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
 
     faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
     assert faq_editor.value == "Tema sin respuesta"
+
+
+# ---------------------------------------------------------------------------
+# Domain B: globally persisted attended state (OCI-first, local fallback)
+# ---------------------------------------------------------------------------
+
+
+def test_load_attended_merges_oci_and_local_with_local_winning(tmp_path, monkeypatch):
+    """Local mirror wins over OCI so offline edits are not silently overwritten."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.OCIStorageClient().put_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json", {"m-1": True}
+    )
+    app.ATTENDED_PATH.write_text(json.dumps({"m-1": False, "m-2": True}), encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {"m-1": False, "m-2": True}
+
+
+def test_load_attended_empty_store_and_local_corrupt_returns_empty_dict(tmp_path, monkeypatch):
+    """A corrupt local mirror degrades to an empty dict."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.ATTENDED_PATH.write_text("not json", encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {}
+
+
+def test_set_atendido_writes_local_mirror_and_oci():
+    """Marking a derived message attended persists to both local and OCI stores."""
+    session_state = {}
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+    assert app.OCIStorageClient().get_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json"
+    ) == {"m-1": True}
+
+
+def test_set_atendido_oci_failure_does_not_raise(monkeypatch):
+    """An OCI write failure leaves the local mirror written and never raises."""
+    class BrokenOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return False
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", BrokenOCI)
+    session_state = {}
+
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
+def test_set_atendido_rereads_before_writing_and_keeps_other_marks():
+    """Only this message's key changes: another operator's mark survives.
+
+    The session cache can be stale (it is loaded once per session), so writing
+    it back verbatim would drop a mark OCI already has.
+    """
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-2": True}
+    )
+    session_state = {"derivados_atendidos": {"m-1": True}}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    persisted = _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)]
+    assert persisted == {"m-1": True, "m-2": True}
+    assert session_state["derivados_atendidos"] == {"m-1": True, "m-2": True}
+
+
+def test_load_attended_heals_oci_with_the_merged_state():
+    """When the merge differs from OCI, the merged state is pushed back."""
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-1": True}
+    )
+    state.ATTENDED_PATH.write_text(json.dumps({"m-2": True}), encoding="utf-8")
+
+    state._load_attended()
+
+    assert _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)] == {
+        "m-1": True,
+        "m-2": True,
+    }
+
+
+def test_set_atendido_oci_exception_does_not_raise(monkeypatch):
+    """An OCI client that raises (not just returns False) never reaches the UI."""
+
+    class ExplodingOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+    monkeypatch.setattr(state, "OCIStorageClient", ExplodingOCI)
+    session_state = {}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    assert state.is_atendido(session_state, "m-1") is True
+    assert json.loads(state.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
+def test_fresh_session_state_restores_persisted_attended_marks():
+    """Reload simulation: a brand new session_state restores saved attended marks."""
+    app.set_atendido({}, "m-1", True)
+
+    fresh_session_state = {}
+    assert app.is_atendido(fresh_session_state, "m-1") is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: remediación de la auditoría del panel
+# ---------------------------------------------------------------------------
+
+
+def test_state_layer_targets_the_bucket_configured_by_env(monkeypatch):
+    """OCI_BUCKET_NAME manda sobre el bucket por defecto (design D2)."""
+    monkeypatch.setenv("OCI_BUCKET_NAME", "otro-bucket")
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("otro-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
+    """Sin OCI_BUCKET_NAME se usa el bucket por defecto."""
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("test-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def _derived_message(message_id):
+    """One derived message, as the pipeline materializes it."""
+    return {
+        "message_id": message_id,
+        "autor": "Mariana Souza",
+        "canal": "#logros-y-empleos",
+        "texto_original": "Consegui mi primer empleo",
+        "razon": "Feedback negativo con alta confianza",
+        "confianza": 0.95,
+    }
+
+
+def _run_app_with_negative_feedback(feedback_negativo, mensajes_derivados):
+    """Render the dashboard with a batch that carries negative feedback."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+    at.run()
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": feedback_negativo,
+            "sentimiento_predominante": "negativo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": feedback_negativo,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"negativo": feedback_negativo},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 1}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {"origen": "o", "status": "s", "tema": "q"},
+            "candidatos_post_linkedin": [],
+            "mensajes_derivados": mensajes_derivados,
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "activos/2026-semana-43/paquete-distribucion.json",
+            "status": "guardado_con_exito",
+        },
+    }
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _negative_feedback_notice(at):
+    """The notice rendered under the "Feedback negativo" subheader."""
+    notices = [warning.value for warning in at.warning if "feedback negativo" in warning.value]
+    assert notices, f"no negative-feedback notice rendered: {[w.value for w in at.warning]}"
+    return notices[0]
+
+
+def test_negative_feedback_notice_reports_the_real_derived_count():
+    """El aviso distingue cuántas fueron negativas de cuántas se derivaron."""
+    at = _run_app_with_negative_feedback(41, [_derived_message("m-1")])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "1 se derivó a revisión humana" in notice
+    assert "41 interacciones con feedback negativo se derivaron" not in notice
+
+
+def test_negative_feedback_notice_says_when_none_was_derived():
+    """Sin derivadas, el aviso lo dice en vez de insinuar que todas lo hicieron."""
+    at = _run_app_with_negative_feedback(41, [])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "ninguna" in notice.lower()
