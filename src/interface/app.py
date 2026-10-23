@@ -68,6 +68,7 @@ _STATE_EXPORTS = (
     "load_curation",
     "set_atendido",
     "_candidate_key",
+    "_faq_key",
     "_CURATION_OCI_KEY",
     "_curation_path",
     "_extract_periodo",

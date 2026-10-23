@@ -316,3 +316,11 @@ def _extract_periodo(session_state, results) -> str:
         return match.group(1)
 
     return _current_periodo()
+
+
+def _faq_key(tema) -> str:
+    """Key for an FAQ suggestion by theme (stable across runs)."""
+    if tema is None:
+        tema = ""
+    h = hashlib.sha256(str(tema).encode("utf-8")).hexdigest()
+    return h[:16]
