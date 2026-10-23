@@ -25,6 +25,7 @@ if str(REPO_ROOT) not in sys.path:
 # sees the same ``os.getenv`` values that a local ``.env`` provides. It must
 # run before ``src.pipeline`` / ``src.oci`` are imported below.
 import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
+from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
 from src.interface import state, telegram_publish  # noqa: E402
@@ -58,7 +59,7 @@ _STATE_EXPORTS = (
     "ATTENDED_PATH",
     "DEFAULT_BUCKET",
     "OCIStorageClient",
-    "_attended_cache",
+    "attended_cache",
     "_load_attended",
     "_save_attended",
     "is_atendido",
@@ -481,7 +482,7 @@ def build_derivados_entries(mensajes, session_state):
     mirror), so a reload shows the marks the operator already made instead
     of resetting them to unchecked.
     """
-    attended = state._attended_cache(session_state)
+    attended = state.attended_cache(session_state)
     entries = []
     for position, mensaje in enumerate(mensajes):
         message_id = str(mensaje.get("message_id") or "").strip()
@@ -832,19 +833,21 @@ def main():
         if feedback_negativo > 0:
             # The negative count and the derived count are different
             # populations: only the messages that pass the R4 confidence
-            # threshold (> 0.8) are routed to a human.
+            # threshold are routed to a human. The number comes from the
+            # engine constant, never from a copy pasted into the copy.
             total_derivados = len(assets.get("mensajes_derivados") or [])
             if total_derivados:
                 st.warning(
                     f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
                     f"{total_derivados} "
                     f"{'se derivó' if total_derivados == 1 else 'se derivaron'} "
-                    "a revisión humana (confianza > 0.8)."
+                    f"a revisión humana (confianza > {RuleBasedDecisionEngine.CONFIDENCE_THRESHOLD})."
                 )
             else:
                 st.warning(
                     f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
-                    "ninguna superó el umbral de confianza (0.8) para derivarse "
+                    "ninguna superó el umbral de confianza "
+                    f"({RuleBasedDecisionEngine.CONFIDENCE_THRESHOLD}) para derivarse "
                     "a revisión humana."
                 )
         else:

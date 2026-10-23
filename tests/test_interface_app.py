@@ -2016,6 +2016,58 @@ def test_set_atendido_oci_failure_does_not_raise(monkeypatch):
     assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
 
 
+def test_set_atendido_rereads_before_writing_and_keeps_other_marks():
+    """Only this message's key changes: another operator's mark survives.
+
+    The session cache can be stale (it is loaded once per session), so writing
+    it back verbatim would drop a mark OCI already has.
+    """
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-2": True}
+    )
+    session_state = {"derivados_atendidos": {"m-1": True}}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    persisted = _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)]
+    assert persisted == {"m-1": True, "m-2": True}
+    assert session_state["derivados_atendidos"] == {"m-1": True, "m-2": True}
+
+
+def test_load_attended_heals_oci_with_the_merged_state():
+    """When the merge differs from OCI, the merged state is pushed back."""
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-1": True}
+    )
+    state.ATTENDED_PATH.write_text(json.dumps({"m-2": True}), encoding="utf-8")
+
+    state._load_attended()
+
+    assert _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)] == {
+        "m-1": True,
+        "m-2": True,
+    }
+
+
+def test_set_atendido_oci_exception_does_not_raise(monkeypatch):
+    """An OCI client that raises (not just returns False) never reaches the UI."""
+
+    class ExplodingOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+    monkeypatch.setattr(state, "OCIStorageClient", ExplodingOCI)
+    session_state = {}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    assert state.is_atendido(session_state, "m-1") is True
+    assert json.loads(state.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
 def test_fresh_session_state_restores_persisted_attended_marks():
     """Reload simulation: a brand new session_state restores saved attended marks."""
     app.set_atendido({}, "m-1", True)

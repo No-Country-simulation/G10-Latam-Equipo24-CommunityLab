@@ -7,13 +7,19 @@ never reaches the copy that actually runs. This module is imported *by name*,
 so every copy of the script shares ONE instance of it — the seams below are
 therefore read at call time and always agree.
 
-Policy (design D4): read OCI-first and merge with the local mirror (local
-wins, because it only diverged while OCI was unreachable); write through to
-the local mirror and then to OCI on a best-effort basis. An OCI failure never
-reaches the UI.
+Policy (design D4): read OCI and the local mirror and merge them per key,
+with the local value winning on a conflict; write through to the local mirror
+and then to OCI on a best-effort basis. An OCI failure never reaches the UI.
+
+Known limit (MVP): the merge resolves conflicts by "local wins", not by
+per-message timestamps, so two operators editing the SAME message while both
+have a stale mirror can still lose one mark. ``set_atendido`` re-reads right
+before writing to shrink that window, and the docstring there states the
+remaining limit instead of promising more than the code does.
 """
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -23,6 +29,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.oci.storage import DEFAULT_BUCKET, OCIStorage as OCIStorageClient  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Seams. Read at call time, so patching them on THIS module is enough.
@@ -84,6 +92,11 @@ def _oci_get_dict(key: str) -> dict:
     try:
         value = OCIStorageClient().get_json(_bucket(), key, None)
     except Exception:
+        logger.warning(
+            "No se pudo leer %s de OCI; se sigue con el mirror local",
+            key,
+            exc_info=True,
+        )
         return {}
     return value if isinstance(value, dict) else {}
 
@@ -93,6 +106,11 @@ def _oci_put_dict(key: str, data: dict) -> bool:
     try:
         return bool(OCIStorageClient().put_json(_bucket(), key, data))
     except Exception:
+        logger.warning(
+            "No se pudo escribir %s en OCI; queda en el mirror local",
+            key,
+            exc_info=True,
+        )
         return False
 
 
@@ -102,11 +120,14 @@ def _oci_put_dict(key: str, data: dict) -> bool:
 
 
 def _load_attended() -> dict:
-    """Load the attended-state dict: OCI first, local mirror wins.
+    """Load the attended-state dict: OCI merged with the local mirror.
 
-    The mirror only diverges from OCI when it was edited while OCI was
-    unreachable, so the merge keeps the local value and pushes the result
-    back to OCI to heal the divergence.
+    Conflicts are resolved per key with the local value winning: it is the
+    copy this machine can always write, and the usual source of divergence is
+    an edit made while OCI was unreachable. That is a last-writer-wins policy,
+    not a per-message timestamp, so a stale mirror can still overwrite a mark
+    another operator made for the SAME key. When the merge differs from OCI
+    the result is pushed back to heal the divergence.
     """
     local = _read_json_dict(ATTENDED_PATH)
     remote = _oci_get_dict(ATTENDED_OCI_KEY)
@@ -129,7 +150,7 @@ def _save_attended(attended: dict) -> None:
     _oci_put_dict(ATTENDED_OCI_KEY, attended)
 
 
-def _attended_cache(session_state) -> dict:
+def attended_cache(session_state) -> dict:
     """Return the session cache of the attended state, loading it if absent."""
     if session_state is None:
         return _load_attended()
@@ -147,11 +168,27 @@ def is_atendido(session_state, message_id) -> bool:
     Falls back to the persisted state when the key is not yet in
     ``session_state``, so a reload restores prior attendance decisions.
     """
-    return bool(_attended_cache(session_state).get(message_id))
+    return bool(attended_cache(session_state).get(message_id))
 
 
 def set_atendido(session_state, message_id, value) -> None:
-    """Mark a derived message as attended (or not) and persist it."""
-    attended = _attended_cache(session_state)
-    attended[message_id] = bool(value)
-    _save_attended(attended)
+    """Mark a derived message as attended (or not) and persist it.
+
+    The persisted state is re-read right before writing and only this
+    message's key changes, so another operator's marks are not overwritten by
+    this session's cached copy. Two operators flipping the SAME message at the
+    same time still resolve last-writer-wins: this shrinks the window, it does
+    not add per-message versions.
+    """
+    current = _load_attended()
+    current[message_id] = bool(value)
+
+    if session_state is not None:
+        cache = session_state.get("derivados_atendidos")
+        if isinstance(cache, dict):
+            cache.clear()
+            cache.update(current)
+        else:
+            session_state["derivados_atendidos"] = current
+
+    _save_attended(current)
