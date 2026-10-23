@@ -2286,6 +2286,8 @@ def test_state_layer_targets_the_bucket_configured_by_env(monkeypatch):
 
     assert ("otro-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
 
+
+
 def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
     """Sin OCI_BUCKET_NAME se usa el bucket por defecto."""
     monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
