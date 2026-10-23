@@ -2272,3 +2272,90 @@ def test_curation_radio_seeded_from_persisted_state():
 
     radio = next(r for r in at.radio if r.key == "linkedin_estado_0")
     assert radio.value == app.CURATION_STATUS_APPROVED
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: remediación de la auditoría del panel
+# ---------------------------------------------------------------------------
+
+def test_state_layer_targets_the_bucket_configured_by_env(monkeypatch):
+    """OCI_BUCKET_NAME manda sobre el bucket por defecto (design D2)."""
+    monkeypatch.setenv("OCI_BUCKET_NAME", "otro-bucket")
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("otro-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
+    """Sin OCI_BUCKET_NAME se usa el bucket por defecto."""
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("test-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def _derived_message(message_id):
+    """One derived message, as the pipeline materializes it."""
+    return {
+        "message_id": message_id,
+        "autor": "Mariana Souza",
+        "canal": "#logros-y-empleos",
+        "texto_original": "Consegui mi primer empleo",
+        "razon": "Feedback negativo con alta confianza",
+        "confianza": 0.95,
+    }
+
+
+def _run_app_with_negative_feedback(feedback_negativo, mensajes_derivados):
+    """Render the dashboard with a batch that carries negative feedback."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+    at.run()
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": feedback_negativo,
+            "sentimiento_predominante": "negativo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": feedback_negativo,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"negativo": feedback_negativo},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 1}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {"origen": "o", "status": "s", "tema": "q"},
+            "candidatos_post_linkedin": [],
+            "mensajes_derivados": mensajes_derivados,
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "activos/2026-semana-43/paquete-distribucion.json",
+            "status": "guardado_con_exito",
+        },
+    }
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _negative_feedback_notice(at):
+    """The notice rendered under the "Feedback negativo" subheader."""
+    notices = [warning.value for warning in at.warning if "feedback negativo" in warning.value]
+    assert notices, f"no negative-feedback notice rendered: {[w.value for w in at.warning]}"
+    return notices[0]
