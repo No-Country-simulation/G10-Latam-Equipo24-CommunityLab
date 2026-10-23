@@ -2298,6 +2298,8 @@ def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
 
 
 
+
+
 def _derived_message(message_id):
     """One derived message, as the pipeline materializes it."""
     return {
