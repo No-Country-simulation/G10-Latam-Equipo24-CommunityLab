@@ -32,7 +32,12 @@ $categorias
 
 Criterios:
 - sentiment.type: positivo, negativo o neutral.
-- sentiment.score: tu CONFIANZA en esa clasificación, de 0.0 a 1.0 (no la intensidad del sentimiento).
+- sentiment.score: tu CONFIANZA en esa clasificación, de 0.0 a 1.0 (no la intensidad del sentimiento). Usá TODO el rango según cuán seguro estés:
+    * 0.9-1.0: sentimiento inequívoco y explícito (queja directa, frustración clara, elogio contundente).
+    * 0.7-0.8: sentimiento claro pero con matices o ambigüedad leve.
+    * 0.5-0.6: sentimiento mezclado o poco claro.
+    * 0.1-0.4: mensaje vago o ruidoso, sentimiento dudoso.
+  No uses 0.9-1.0 por defecto: reservá esos valores para cuando la clasificación sea indiscutible.
 - categorization.topics y categorization.entities: listas cortas de textos.
 - relevance.score: de 0.0 a 1.0. Valores altos solo si el mensaje contiene una historia de éxito concreta, un hito profesional o un aporte de alto valor para la comunidad.
 - sentiment.reasoning: explicación breve en español.

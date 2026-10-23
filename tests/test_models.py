@@ -1,6 +1,10 @@
 """Tests for domain models (contract)."""
 from src.domain.models import (
     CommunitySummary,
+    DerivedMessage,
+    DistributionAssets,
+    FAQCandidate,
+    FAQSuggestion,
     InputMessage,
     InputBatch,
     SentimentResult,
@@ -193,3 +197,134 @@ def test_community_summary_without_option_a_keys_still_deserializes():
 
     assert summary.distribucion_sentimiento == {}
     assert summary.temas_principales_conteo == []
+
+
+# ---------------------------------------------------------------------------
+# Derivación a humano (B): DerivedMessage + DistributionAssets.mensajes_derivados
+# ---------------------------------------------------------------------------
+
+
+def test_derived_message_carries_author_channel_text_reason_confidence():
+    """DerivedMessage exposes the fields the operator inbox needs."""
+    dm = DerivedMessage(
+        message_id="m-1",
+        autor="Nora",
+        canal="#general",
+        texto_original="No me gustó el taller.",
+        razon="Feedback negativo: requiere atención personalizada",
+        confianza=0.85,
+    )
+    assert dm.autor == "Nora"
+    assert dm.canal == "#general"
+    assert dm.texto_original == "No me gustó el taller."
+    assert dm.razon == "Feedback negativo: requiere atención personalizada"
+    assert dm.confianza == 0.85
+
+
+def test_distribution_assets_mensajes_derivados_defaults_empty():
+    """mensajes_derivados is additive: old outputs deserialize as empty."""
+    assets = DistributionAssets()
+    assert assets.mensajes_derivados == []
+
+
+def test_distribution_assets_mensajes_derivados_accepts_list():
+    dm = DerivedMessage(
+        message_id="m-1",
+        autor="Nora",
+        canal="#general",
+        texto_original="No me gustó el taller.",
+        razon="Feedback negativo",
+        confianza=0.85,
+    )
+    assets = DistributionAssets(mensajes_derivados=[dm])
+    assert len(assets.mensajes_derivados) == 1
+    assert assets.mensajes_derivados[0].autor == "Nora"
+
+
+def test_distribution_assets_legacy_payload_without_derivados_deserializes():
+    """A DistributionAssets payload without mensajes_derivados still loads."""
+    legacy = {
+        "post_linkedin": None,
+        "destaque_newsletter_semanal": None,
+        "sugerencia_contenido_faq": None,
+        "candidatos_post_linkedin": [],
+        "candidatos_faq": [],
+    }
+    assets = DistributionAssets.model_validate(legacy)
+    assert assets.mensajes_derivados == []
+
+
+# ---------------------------------------------------------------------------
+# FAQ semantic consolidation (C): FAQSuggestion extension + DistributionAssets.temas_faq
+# ---------------------------------------------------------------------------
+
+
+def test_faq_suggestion_carries_respuesta_and_representative_question():
+    """Extended FAQSuggestion exposes a generated answer, a representative
+    question and the grouped count."""
+    suggestion = FAQSuggestion(
+        tema="Configurar retry en Mastodon",
+        origen="#dudas",
+        status="generado",
+        respuesta="Se configura desde el panel de administración.",
+        pregunta_representativa="¿Cómo configuro el retry?",
+        total_preguntas=3,
+    )
+    assert suggestion.tema == "Configurar retry en Mastodon"
+    assert suggestion.respuesta == "Se configura desde el panel de administración."
+    assert suggestion.pregunta_representativa == "¿Cómo configuro el retry?"
+    assert suggestion.total_preguntas == 3
+    assert suggestion.status == "generado"
+
+
+def test_faq_suggestion_respuesta_and_preguntas_default_empty():
+    """Additive extension: old suggestions without the new fields still validate."""
+    legacy = {"tema": "Tema viejo", "origen": "#general", "status": "derivado_a_mentoria"}
+    suggestion = FAQSuggestion.model_validate(legacy)
+    assert suggestion.respuesta == ""
+    assert suggestion.pregunta_representativa == ""
+    assert suggestion.total_preguntas == 0
+
+
+def test_distribution_assets_temas_faq_defaults_empty():
+    """temas_faq is additive: old outputs deserialize as empty."""
+    assets = DistributionAssets()
+    assert assets.temas_faq == []
+
+
+def test_distribution_assets_temas_faq_accepts_list():
+    theme = FAQSuggestion(
+        tema="Retry en Mastodon",
+        respuesta="Desde el panel.",
+        pregunta_representativa="¿Cómo?",
+        total_preguntas=1,
+    )
+    assets = DistributionAssets(temas_faq=[theme])
+    assert len(assets.temas_faq) == 1
+    assert assets.temas_faq[0].respuesta == "Desde el panel."
+
+
+def test_distribution_assets_legacy_payload_without_temas_faq_deserializes():
+    """A DistributionAssets payload without temas_faq still loads."""
+    legacy = {
+        "post_linkedin": None,
+        "destaque_newsletter_semanal": None,
+        "sugerencia_contenido_faq": None,
+        "candidatos_post_linkedin": [],
+        "candidatos_faq": [],
+        "mensajes_derivados": [],
+    }
+    assets = DistributionAssets.model_validate(legacy)
+    assert assets.temas_faq == []
+
+
+def test_faq_candidate_carries_topics_for_clustering():
+    """FAQCandidate now carries topics so clustering can group by theme."""
+    candidate = FAQCandidate(
+        autor="Ana",
+        canal="#dudas",
+        texto_original="¿Cómo configuro el retry?",
+        relevancia=0.9,
+        topics=["configuración", "mastodon"],
+    )
+    assert candidate.topics == ["configuración", "mastodon"]

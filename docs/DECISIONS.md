@@ -88,7 +88,7 @@ La trazabilidad de cada decisión a sus casos de prueba vive en `docs/pruebas/an
 
 **Qué decide:** si la regla R1 (publicar LinkedIn/Newsletter) aplica solo a `testimonio` o también a `logro`.
 
-**Estado:** 🟡 pendiente (Yis + Rox). Propuesta: **sí**, R1 aplica a `testimonio` y a `logro`.
+**Estado:** ✅ **decidida** (Yis + Rox). Implementada: R1 aplica a `testimonio` y a `logro` (`src/decisions/engine.py:55` → `is_publishable_type = effective_type in {"testimonio", "logro"}`).
 
 **¿En el PDF?** **SÍ, y es la decisión más importante para cumplir el reto.** El "testimonio" de Mariana **es un logro** ("quedé seleccionada para el puesto de Dev Jr"), y es lo que genera el `post_linkedin` y el newsletter ("Logro de la Semana").
 

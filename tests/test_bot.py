@@ -17,14 +17,7 @@ from src.ingest.bot import (
     run_bot,
     send_message,
 )
-
-_OCI_REQUIRED_ENV = (
-    "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
-    "OCI_FINGERPRINT",
-    "OCI_TENANCY_ID",
-    "OCI_REGION",
-)
+from src.oci.storage import OCI_REQUIRED_ENV
 
 # Mensajes elegidos para que el backend rule_based arme cada camino:
 # - positivo -> testimonio -> PUBLICAR (post de LinkedIn).
@@ -40,7 +33,7 @@ def bot_env(monkeypatch, tmp_path):
     """Backend rule_based, sin credenciales OCI y cwd aislado en tmp_path."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in _OCI_REQUIRED_ENV:
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.delenv(var, raising=False)
 
 
@@ -59,8 +52,8 @@ def test_reply_pregunta_tecnica_menciona_faq():
     reply = build_reply(MENSAJE_PREGUNTA)
     assert "Sentimiento: Neutro" in reply
     assert "CREAR_FAQ" in reply
-    # El FAQGenerator fija el status del activo.
-    assert "derivado_a_mentoria" in reply
+    # El FAQThemeGenerator fija el status del activo.
+    assert "generado" in reply
 
 
 def test_reply_neutro_devuelve_descartar():

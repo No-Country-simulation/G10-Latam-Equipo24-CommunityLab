@@ -9,6 +9,7 @@ The storage step is isolated in `tmp_path`: without OCI credentials the
 pipeline degrades to a local JSON snapshot, and the autouse fixture changes the
 working directory so those snapshots never land in the repository.
 """
+import hashlib
 import json
 import logging
 from datetime import date
@@ -19,6 +20,7 @@ import pytest
 from src.domain.models import (
     ActionType,
     AnalysisComplete,
+    AssetType,
     CategorizationResult,
     DecisionResult,
     InputBatch,
@@ -28,7 +30,8 @@ from src.domain.models import (
     SentimentResult,
     SentimentType,
 )
-from src.pipeline import _summarize, run_pipeline
+from src.oci.storage import OCI_REQUIRED_ENV
+from src.pipeline import _generate, _normalize_derived_text, _summarize, run_pipeline
 from src.utils.llm import LLMClient, LLMError, get_llm_client as real_get_llm_client
 
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "pipeline_sample.json"
@@ -54,7 +57,7 @@ _NEWSLETTER_PAYLOAD = {
     "titular": "Titular generado",
     "resumen": "Resumen generado",
 }
-_FAQ_PAYLOAD = {"tema": "Tema generado"}
+_FAQ_PAYLOAD = {"tema": "Tema generado", "respuesta": "Respuesta generada"}
 
 
 class FakeLLMClient(LLMClient):
@@ -83,7 +86,7 @@ class FakeLLMClient(LLMClient):
             return json.dumps(_LINKEDIN_PAYLOAD)
         if "destaque de newsletter semanal" in prompt:
             return json.dumps(_NEWSLETTER_PAYLOAD)
-        if "TEMA de una FAQ" in prompt:
+        if "preguntas técnicas delimitadas" in prompt:
             return json.dumps(_FAQ_PAYLOAD)
         raise AssertionError(f"FakeLLMClient got an unexpected prompt: {prompt[:120]!r}")
 
@@ -98,14 +101,12 @@ def pipeline_env(monkeypatch, tmp_path):
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: FakeLLMClient())
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    # A real .env must not leak into the tests: run_pipeline() calls
+    # load_dotenv() again, which would re-populate the credentials.
+    # Neutralize it so the isolation holds.
+    monkeypatch.setattr("src.pipeline.load_dotenv", lambda: None)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
     return tmp_path
 
 
@@ -288,27 +289,28 @@ def test_technical_question_generates_faq_from_decision():
 
     assert faq is not None
     assert faq.tema == "Tema generado"
+    assert faq.respuesta == "Respuesta generada"
     # Code-owned metadata: origen from the first pregunta_tecnica channel.
     assert faq.origen == "#dudas-langgraph"
-    assert faq.status == "derivado_a_mentoria"
+    assert faq.status == "generado"
 
 
 class CountingFAQClient(FakeLLMClient):
-    """Counts FAQ generator calls to prove candidates add no LLM request."""
+    """Counts FAQ theme generator calls to prove one call per cluster."""
 
     def __init__(self):
         self.faq_calls = 0
 
     def generate(self, prompt: str, **kwargs) -> str:
-        if "TEMA de una FAQ" in prompt:
+        if "preguntas técnicas delimitadas" in prompt:
             self.faq_calls += 1
         return super().generate(prompt, **kwargs)
 
 
 def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, tmp_path):
-    # N technical questions -> len(candidatos_faq) == N, and the FAQ generator
-    # runs EXACTLY ONCE (the single `sugerencia_contenido_faq`): listing the
-    # candidates must not add an LLM call.
+    # N technical questions -> len(candidatos_faq) == N, and the FAQ theme
+    # generator runs ONCE per cluster (all share the same fake topic), so one
+    # LLM call produces both the single suggestion and the themes list.
     client = CountingFAQClient()
     monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
 
@@ -327,16 +329,65 @@ def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, t
     output = run_pipeline(source)
     assets = output.activos_distribucion_generados
 
+    # The 3 questions share the same topic, so they collapse into one theme
+    # and none is orphaned (`candidatos_faq` now lists only orphaned questions).
     candidatos = assets.candidatos_faq
-    assert len(candidatos) == 3
-    assert [c.autor for c in candidatos] == ["Dev 1", "Dev 2", "Dev 3"]
-    assert all(c.relevancia == 0.9 for c in candidatos)
+    assert len(candidatos) == 0
+    assert len(assets.temas_faq) == 1
+    assert assets.temas_faq[0].total_preguntas == 3
 
     # The single materialized suggestion still works, generated only once.
     assert assets.sugerencia_contenido_faq is not None
+    assert assets.sugerencia_contenido_faq == assets.temas_faq[0]
     assert client.faq_calls == 1
     # `dudas_frecuentes` stays the count of CREAR_FAQ decisions.
     assert output.resumen_comunidad.dudas_frecuentes == 3
+
+
+def test_faq_semantic_consolidation_groups_same_topic_questions(monkeypatch, tmp_path):
+    # Three technical questions with the same fake topic collapse into one
+    # FAQ theme; the published suggestion equals the first (and only) theme.
+    client = CountingFAQClient()
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+
+    source = _write_batch(
+        tmp_path,
+        [
+            {
+                "autor": "Dev 1",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Cómo configuro el retry?",
+            },
+            {
+                "autor": "Dev 2",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Dónde cambio el límite de reintentos?",
+            },
+            {
+                "autor": "Dev 3",
+                "canal": "#dudas",
+                "tipo": "pregunta_tecnica",
+                "texto": "¿Por qué falla el reintento?",
+            },
+        ],
+    )
+    output = run_pipeline(source)
+    assets = output.activos_distribucion_generados
+
+    assert len(assets.temas_faq) == 1
+    theme = assets.temas_faq[0]
+    assert theme.tema == "Tema generado"
+    assert theme.respuesta == "Respuesta generada"
+    assert theme.total_preguntas == 3
+    assert theme.pregunta_representativa in {
+        "¿Cómo configuro el retry?",
+        "¿Dónde cambio el límite de reintentos?",
+        "¿Por qué falla el reintento?",
+    }
+    assert assets.sugerencia_contenido_faq is assets.temas_faq[0]
+    assert client.faq_calls == 1
 
 
 def test_negative_testimonial_is_not_published(tmp_path):
@@ -413,6 +464,8 @@ def test_storage_without_oci_creds_writes_local_snapshot(tmp_path):
         "sugerencia_contenido_faq",
         "candidatos_post_linkedin",
         "candidatos_faq",
+        "temas_faq",
+        "mensajes_derivados",
     }
     assert payload["post_linkedin"]["titulo"] == "Titulo generado"
 
@@ -423,14 +476,8 @@ def test_pipeline_with_rule_based_backend_offline_end_to_end(
     """End-to-end offline test with real RuleBasedClient backend."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMMUNITYLAB_LLM_BACKEND", "rule_based")
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     interacciones = [
         {
@@ -479,14 +526,9 @@ def test_storage_with_oci_creds_uploads_and_reports_guardado_con_exito(
     period-scoped object key from the contract example, using a simulated
     Object Storage client (no `oci` SDK required)."""
     monkeypatch.chdir(tmp_path)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
+    for var in OCI_REQUIRED_ENV:
         monkeypatch.setenv(var, "fake")
+    monkeypatch.setenv("OCI_BUCKET_NAME", "communitylab-activos-marketing")
 
     calls = {}
 
@@ -997,14 +1039,8 @@ def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
     # The autouse fixture fakes the LLM client; re-point it at the real factory
     # so this test genuinely exercises the rule_based backend end-to-end.
     monkeypatch.setattr("src.pipeline.get_llm_client", real_get_llm_client)
-    for var in (
-        "OCI_USER_ID",
-        "OCI_PRIVATE_KEY_PATH",
-        "OCI_FINGERPRINT",
-        "OCI_TENANCY_ID",
-        "OCI_REGION",
-    ):
-        monkeypatch.delenv(var, raising=False)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
 
     source = _write_batch(
         tmp_path,
@@ -1042,3 +1078,309 @@ def test_option_a_summary_counts_end_to_end_rule_based(monkeypatch, tmp_path):
         "logro",
     ]
     assert [tf.conteo for tf in summary.temas_principales_conteo] == [1, 1, 1]
+
+
+# ---------------------------------------------------------------------------
+# Buzón de derivación: mensajes_derivados en DistributionAssets (PR 2)
+# ---------------------------------------------------------------------------
+
+
+def _derivation_result(idx, action, score):
+    """Builds a (message, analysis, decision) triple for derivation tests."""
+    mid = f"d{idx}"
+    msg = InputMessage(
+        autor=f"Autor {idx}",
+        canal=f"#canal{idx}",
+        tipo="feedback",
+        texto=f"texto {idx}",
+        id=mid,
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid,
+            sentiment=SentimentType.NEGATIVO,
+            score=score,
+            reasoning="test",
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="feedback", topics=[], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=0.5, is_marketing_worthy=False
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=action,
+        reason="Feedback negativo: requiere atención personalizada",
+    )
+    return msg, analysis, decision
+
+
+def test_generate_populates_mensajes_derivados_for_derivar_decisions():
+    """DERIVAR decisions become DerivedMessage entries in DistributionAssets."""
+    results = [
+        _derivation_result(0, ActionType.DERIVAR, 0.81),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.mensajes_derivados) == 1
+    dm = assets.mensajes_derivados[0]
+    # The id comes from the normalized text, not from the source message: it is
+    # the key of the persisted "atendido" state, so it must not change when the
+    # representative of the group changes.
+    assert dm.message_id == hashlib.sha1(
+        _normalize_derived_text("texto 0").encode("utf-8")
+    ).hexdigest()[:12]
+    assert dm.autor == "Autor 0"
+    assert dm.canal == "#canal0"
+    assert dm.texto_original == "texto 0"
+    assert dm.razon == "Feedback negativo: requiere atención personalizada"
+    assert dm.confianza == 0.81
+
+
+def test_generate_keeps_mensajes_derivados_empty_for_descartar_decision():
+    """A DESCARTAR decision does NOT populate the inbox.
+
+    The R4 confidence gate (`sentiment.score > 0.8`) lives in the decision
+    engine and is covered there; this test only checks that the pipeline
+    honours the decision it receives.
+    """
+    results = [
+        _derivation_result(0, ActionType.DESCARTAR, 0.79),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert assets.mensajes_derivados == []
+
+
+def test_generate_keeps_mensajes_derivados_empty_for_positive():
+    """Positive messages never populate the human-derivation inbox."""
+    mid = "p0"
+    msg = InputMessage(
+        autor="Ana", canal="#general", tipo="testimonio", texto="texto", id=mid
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid, sentiment=SentimentType.POSITIVO, score=0.95, reasoning="test"
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="testimonio", topics=[], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=0.9, is_marketing_worthy=True
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=ActionType.PUBLISH,
+        asset_type="linkedin",
+        reason="Testimonio positivo relevante",
+    )
+    assets = _generate([(msg, analysis, decision)], FakeLLMClient())
+
+    assert assets.mensajes_derivados == []
+
+
+def test_generate_orders_mensajes_derivados_by_batch():
+    """Multiple DERIVAR messages preserve batch order in the inbox."""
+    results = [
+        _derivation_result(0, ActionType.DERIVAR, 0.85),
+        _derivation_result(1, ActionType.DERIVAR, 0.95),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert [dm.autor for dm in assets.mensajes_derivados] == ["Autor 0", "Autor 1"]
+
+
+def test_generate_consolidates_duplicate_derived_messages():
+    """Near-duplicate complaints collapse into one entry with a menciones count."""
+    def make(idx, texto):
+        mid = f"d{idx}"
+        msg = InputMessage(
+            autor=f"Autor {idx}",
+            canal="#canal",
+            tipo="feedback",
+            texto=texto,
+            id=mid,
+        )
+        analysis = AnalysisComplete(
+            message_id=mid,
+            sentiment=SentimentResult(
+                message_id=mid,
+                sentiment=SentimentType.NEGATIVO,
+                score=0.9,
+                reasoning="test",
+            ),
+            categorization=CategorizationResult(
+                message_id=mid, category="feedback", topics=[], entities=[]
+            ),
+            relevance=RelevanceResult(
+                message_id=mid, score=0.5, is_marketing_worthy=False
+            ),
+        )
+        decision = DecisionResult(
+            message_id=mid, action=ActionType.DERIVAR, reason="negativo"
+        )
+        return msg, analysis, decision
+
+    results = [
+        make(0, "El canal de ayuda quedó sin respuestas"),
+        make(1, "el canal de ayuda quedó sin respuestas!!!"),
+        make(2, "Otro problema distinto"),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.mensajes_derivados) == 2
+    first, second = assets.mensajes_derivados
+    assert first.menciones == 2
+    assert second.menciones == 1
+    # A stable id is assigned for persistence across reloads.
+    assert first.message_id
+    assert second.message_id
+
+
+def test_consolidated_derived_id_depends_only_on_the_text():
+    """The id of a consolidated complaint must not depend on the source message.
+
+    The representative of the group is the shortest text and it can change
+    between runs (another wording arrives, the author changes). The id is the
+    key of the persisted "atendido" state, so it must depend only on the
+    complaint itself.
+    """
+    from src.domain.models import DerivedMessage
+    from src.pipeline import _consolidate_derived
+
+    def make(mid, autor, texto):
+        return DerivedMessage(
+            message_id=mid,
+            autor=autor,
+            canal="#canal",
+            texto_original=texto,
+            razon="negativo",
+        )
+
+    primera = _consolidate_derived(
+        [
+            make("d0", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d1", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+    segunda = _consolidate_derived(
+        [
+            make("d9", "Ana", "El canal de ayuda quedó sin respuestas"),
+            make("d8", "Beto", "El canal de ayuda quedó sin respuestas"),
+        ]
+    )
+
+    assert primera[0].message_id
+    assert primera[0].message_id == segunda[0].message_id
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn relevance floor and cap (PR 4, Frente D)
+# ---------------------------------------------------------------------------
+
+
+def _linkedin_result(idx, relevancia, action=ActionType.PUBLISH):
+    """Builds a (message, analysis, decision) triple for LinkedIn tests."""
+    mid = f"l{idx}"
+    msg = InputMessage(
+        autor=f"Autor {idx}",
+        canal=f"#logros-{idx}",
+        tipo="testimonio",
+        texto=f"texto {idx}",
+        id=mid,
+    )
+    analysis = AnalysisComplete(
+        message_id=mid,
+        sentiment=SentimentResult(
+            message_id=mid,
+            sentiment=SentimentType.POSITIVO,
+            score=0.9,
+            reasoning="test",
+        ),
+        categorization=CategorizationResult(
+            message_id=mid, category="testimonio", topics=["logro"], entities=[]
+        ),
+        relevance=RelevanceResult(
+            message_id=mid, score=relevancia, is_marketing_worthy=relevancia >= 0.6
+        ),
+    )
+    decision = DecisionResult(
+        message_id=mid,
+        action=action,
+        asset_type=AssetType.LINKEDIN,
+        reason="Testimonio positivo relevante",
+    )
+    return msg, analysis, decision
+
+
+def test_linkedin_floor_excludes_below_060():
+    """Candidates with relevance < 0.60 never reach the LinkedIn shortlist."""
+    results = [
+        _linkedin_result(0, 0.59),
+        _linkedin_result(1, 0.61),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.candidatos_post_linkedin) == 1
+    assert assets.candidatos_post_linkedin[0].relevancia == 0.61
+
+
+def test_linkedin_cap_keeps_top_25_sorted_desc():
+    """Only the top 25 by descending relevance survive; order is enforced."""
+    results = [_linkedin_result(i, round(0.60 + i * 0.01, 2)) for i in range(30)]
+    assets = _generate(results, FakeLLMClient())
+
+    candidatos = assets.candidatos_post_linkedin
+    assert len(candidatos) == 25
+    assert [c.relevancia for c in candidatos] == sorted(
+        [c.relevancia for c in candidatos], reverse=True
+    )
+    assert candidatos[0].relevancia == 0.89
+    assert candidatos[-1].relevancia == 0.65
+
+
+def test_linkedin_small_batch_kept_intact():
+    """Fewer than 25 surviving candidates are kept without capping."""
+    results = [_linkedin_result(i, 0.60 + i * 0.01) for i in range(10)]
+    assets = _generate(results, FakeLLMClient())
+
+    assert len(assets.candidatos_post_linkedin) == 10
+
+
+def test_linkedin_realignment_uses_first_survivor_and_reuses_generation():
+    """When the first raw target is below floor, the published post realigns to
+    the first survivor and reuses that generation (no duplicate LLM call)."""
+    results = [
+        _linkedin_result(0, 0.55),
+        _linkedin_result(1, 0.80),
+    ]
+    client = DivergentLinkedInClient()
+    assets = _generate(results, client)
+
+    assert assets.post_linkedin is not None
+    assert assets.candidatos_post_linkedin[0].relevancia == 0.80
+    assert assets.candidatos_post_linkedin[0].copy == assets.post_linkedin.copy
+    # One generation for the survivor; the 0.55 target is filtered out before
+    # any generator call, so no extra LinkedIn call is wasted.
+    assert client.linkedin_calls == 1
+
+
+def test_linkedin_all_below_floor_yields_no_post():
+    """If no candidate clears the floor there is no LinkedIn post or candidate."""
+    results = [
+        _linkedin_result(0, 0.55),
+        _linkedin_result(1, 0.59),
+    ]
+    assets = _generate(results, FakeLLMClient())
+
+    assert assets.post_linkedin is None
+    assert assets.candidatos_post_linkedin == []
+    # Newsletter falls back to the first non-discarded/non-derived interaction,
+    # which here is the first LinkedIn-decided message even though it did not
+    # clear the relevance floor.
+    assert assets.destaque_newsletter_semanal is not None

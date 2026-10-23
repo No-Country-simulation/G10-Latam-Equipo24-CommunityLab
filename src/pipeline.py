@@ -14,6 +14,7 @@ Wiring:
       are available; on any OCI failure it degrades to a local JSON snapshot
       under `storage/activos/` (working-directory relative).
 """
+import hashlib
 import logging
 import os
 import re
@@ -33,6 +34,7 @@ from src.domain.models import (
     AssetType,
     CommunitySummary,
     DecisionResult,
+    DerivedMessage,
     DistributionAssets,
     FAQCandidate,
     InputBatch,
@@ -44,11 +46,12 @@ from src.domain.models import (
     TopicFrequency,
 )
 from src.generators.base import BaseGenerator
-from src.generators.faq import FAQGenerator
+from src.generators.faq import FAQThemeGenerator, cluster_faq_targets
 from src.generators.linkedin import LinkedInGenerator
 from src.generators.newsletter import NewsletterGenerator
 from src.ingest.loader import load_batch
 from src.oci.client import OCIClient
+from src.oci.storage import DEFAULT_BUCKET, oci_credentials_complete
 from src.utils.llm import LLMClient, get_llm_client
 
 logger = logging.getLogger(__name__)
@@ -58,15 +61,6 @@ _Result = Tuple[InputMessage, AnalysisComplete, DecisionResult]
 # The (message, analysis) pair a generator needs.
 _Target = Tuple[InputMessage, AnalysisComplete]
 
-# Env vars that must be present (non-empty) before attempting an OCI upload.
-_OCI_REQUIRED_ENV = (
-    "OCI_USER_ID",
-    "OCI_PRIVATE_KEY_PATH",
-    "OCI_FINGERPRINT",
-    "OCI_TENANCY_ID",
-    "OCI_REGION",
-)
-_DEFAULT_BUCKET = "communitylab-activos-marketing"
 _SNAPSHOT_DIR = Path("storage") / "activos"
 
 # Maximum number of topics exposed in `temas_principales` (issue #87): the
@@ -76,6 +70,11 @@ _MAX_TOPICS = 5
 # Option A (HU-S4-003): maximum number of topics exposed with their counts in
 # `temas_principales_conteo`. The single place to change the cap.
 _TOP_TOPICS_COUNTED = 10
+
+# LinkedIn curation: minimum relevance to become a publishable candidate, and
+# the maximum number of candidates kept after sorting by relevance descending.
+LINKEDIN_RELEVANCE_FLOOR = 0.60
+LINKEDIN_MAX_CANDIDATES = 25
 
 # Presentation phrase for `sentimiento_predominante` (decision B, issue #87):
 # the PDF example shows a phrase, not the raw enum value. The single place to
@@ -152,36 +151,41 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
     """
     linkedin_gen = LinkedInGenerator(client=llm)
     newsletter_gen = NewsletterGenerator(client=llm)
-    faq_gen = FAQGenerator(client=llm)
+    faq_gen = FAQThemeGenerator(client=llm)
 
     all_linkedin_targets = [
         (msg, analysis)
         for msg, analysis, decision in results
         if _is_linkedin_decision(decision)
     ]
-    linkedin_target = all_linkedin_targets[0] if all_linkedin_targets else None
+
+    # Frente D: keep only candidates above the relevance floor, sort by
+    # descending relevance, and cap the shortlist before choosing the published
+    # target. This makes `linkedin_target` the first SURVIVOR, not the first raw
+    # publishable message.
+    curated_linkedin_targets = _curate_linkedin_targets(all_linkedin_targets)
+    linkedin_target = curated_linkedin_targets[0] if curated_linkedin_targets else None
     newsletter_target = linkedin_target or _first_target(
         results,
         lambda d: d.action not in (ActionType.DESCARTAR, ActionType.DERIVAR),
     )
-    faq_target = _first_target(results, lambda d: d.action == ActionType.CREAR_FAQ)
 
     # Published post and weekly highlight stay single assets (backward
-    # compatible): the published post is the FIRST target, and the newsletter
-    # comes from that same testimonio (falling back to the first interaction
-    # that is neither discarded nor derived to a human).
+    # compatible): the published post is the FIRST surviving target, and the
+    # newsletter comes from that same testimonio (falling back to the first
+    # interaction that is neither discarded nor derived to a human).
     post_linkedin = _run(linkedin_gen, linkedin_target)
     destaque_newsletter = _run(newsletter_gen, newsletter_target)
 
-    # Option A: one candidate per publishable testimonio, in batch order, so the
-    # UI can offer a manual selector. "Grande": each candidate carries its FULL
-    # post and its own newsletter highlight, so the selector swaps every field.
-    # The FIRST target reuses the published post/highlight generated above, so
-    # the first candidate can never diverge from the published copy (a
-    # non-deterministic LLM would otherwise answer differently on a second
-    # call).
+    # Option A: one candidate per publishable testimonio, sorted by relevance, so
+    # the UI can offer a manual selector. "Grande": each candidate carries its
+    # FULL post and its own newsletter highlight, so the selector swaps every
+    # field. The FIRST surviving target reuses the published post/highlight
+    # generated above, so the first candidate can never diverge from the
+    # published copy (a non-deterministic LLM would otherwise answer differently
+    # on a second call).
     candidatos = []
-    for index, (msg, analysis) in enumerate(all_linkedin_targets):
+    for index, (msg, analysis) in enumerate(curated_linkedin_targets):
         if index == 0:
             post = post_linkedin
             newsletter = destaque_newsletter
@@ -190,9 +194,7 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             newsletter = _run(newsletter_gen, (msg, analysis))
         if post is None:
             continue
-        relevancia = (
-            analysis.relevance.score if analysis.relevance is not None else 0.0
-        )
+        relevancia = _relevance_score(analysis)
         candidatos.append(
             LinkedInCandidate(
                 autor=msg.autor,
@@ -209,11 +211,10 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             )
         )
 
-    # FAQ candidates: every CREAR_FAQ decision in batch order, listed with the
-    # original question only. NO generator call here: `sugerencia_contenido_faq`
-    # above stays the single materialized asset, so listing candidates never
-    # adds an LLM request.
-    candidatos_faq = [
+    # Every CREAR_FAQ decision becomes a candidate first (topics preserved for
+    # clustering). Clustering then splits them into themed groups and orphaned
+    # questions (no clear topic).
+    candidatos_faq_todos = [
         FAQCandidate(
             autor=msg.autor,
             canal=msg.canal,
@@ -221,23 +222,132 @@ def _generate(results: List[_Result], llm: LLMClient) -> DistributionAssets:
             relevancia=(
                 analysis.relevance.score if analysis.relevance is not None else 0.0
             ),
+            topics=(
+                analysis.categorization.topics
+                if analysis.categorization is not None
+                else []
+            ),
         )
         for msg, analysis, decision in results
         if decision.action == ActionType.CREAR_FAQ
     ]
 
+    # FAQ semantic consolidation: group candidates into <=9 themes and generate
+    # one tema+respuesta per theme. The first theme stays the single published
+    # suggestion (`sugerencia_contenido_faq`) for backward compatibility.
+    faq_themes, faq_orphaned = cluster_faq_targets(candidatos_faq_todos)
+    temas_faq = [
+        theme
+        for cluster in faq_themes
+        if (theme := faq_gen.generate_theme(cluster)) is not None
+    ]
+    sugerencia_contenido_faq = temas_faq[0] if temas_faq else None
+
+    # The FAQ candidate list only carries the orphaned questions (those that
+    # did not map to a theme), so the UI's "detected questions" list does not
+    # repeat the questions already shown inside each theme.
+    candidatos_faq = faq_orphaned
+
+    # Operator inbox: every DERIVAR decision becomes a DerivedMessage. The UI
+    # cannot reconstruct this from the summary, so the pipeline materialises the
+    # list explicitly. Near-duplicate complaints (synthetic data, but also real
+    # repeated reports) are consolidated into one entry with a `menciones` count
+    # and a stable id derived from the normalized text.
+    mensajes_derivados = _consolidate_derived(
+        [
+            DerivedMessage(
+                message_id=msg.id or decision.message_id,
+                autor=msg.autor,
+                canal=msg.canal,
+                texto_original=msg.texto,
+                razon=decision.reason,
+                confianza=(
+                    analysis.sentiment.score if analysis.sentiment is not None else 0.0
+                ),
+            )
+            for msg, analysis, decision in results
+            if decision.action == ActionType.DERIVAR
+        ]
+    )
+
     return DistributionAssets(
         post_linkedin=post_linkedin,
         destaque_newsletter_semanal=destaque_newsletter,
-        sugerencia_contenido_faq=_run(faq_gen, faq_target),
+        sugerencia_contenido_faq=sugerencia_contenido_faq,
         candidatos_post_linkedin=candidatos,
         candidatos_faq=candidatos_faq,
+        temas_faq=temas_faq,
+        mensajes_derivados=mensajes_derivados,
     )
 
 
 def _is_linkedin_decision(decision: DecisionResult) -> bool:
     """True for the decision that calls for a LinkedIn post."""
     return decision.action == ActionType.PUBLISH and decision.asset_type == AssetType.LINKEDIN
+
+
+def _relevance_score(analysis: AnalysisComplete) -> float:
+    """Marketing relevance score, defaulting to 0.0 when absent."""
+    return analysis.relevance.score if analysis.relevance is not None else 0.0
+
+
+def _curate_linkedin_targets(targets: List[_Target]) -> List[_Target]:
+    """Apply the LinkedIn relevance floor, sort descending, and cap.
+
+    The returned shortlist contains at most `LINKEDIN_MAX_CANDIDATES` targets,
+    each with relevance >= `LINKEDIN_RELEVANCE_FLOOR`, ordered from highest to
+    lowest relevance. The first element is the published-post target.
+    """
+    eligible = [
+        (msg, analysis)
+        for msg, analysis in targets
+        if _relevance_score(analysis) >= LINKEDIN_RELEVANCE_FLOOR
+    ]
+    eligible.sort(key=lambda pair: _relevance_score(pair[1]), reverse=True)
+    return eligible[:LINKEDIN_MAX_CANDIDATES]
+
+
+def _normalize_derived_text(texto: str) -> str:
+    """Lowercase, strip punctuation and collapse whitespace for dedup grouping."""
+    texto = re.sub(r"[^a-záéíóúüñ0-9 ]", " ", texto.lower())
+    return " ".join(texto.split())
+
+
+def _consolidate_derived(
+    messages: List[DerivedMessage],
+) -> List[DerivedMessage]:
+    """Consolidate near-duplicate derived messages into one entry each.
+
+    Groups by a normalized text key (lowercase, punctuation-stripped) and keeps
+    the shortest representative text, counting how many messages were grouped
+    and assigning a stable ``message_id`` derived from the normalized key so the
+    UI can persist the attended state across reloads.
+    """
+    groups: dict[str, list[DerivedMessage]] = {}
+    order: list[str] = []
+    for message in messages:
+        key = _normalize_derived_text(message.texto_original)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(message)
+
+    consolidated: list[DerivedMessage] = []
+    for key in order:
+        group = groups[key]
+        representative = min(
+            group,
+            key=lambda m: (len(m.texto_original), m.autor),
+        )
+        representative.menciones = len(group)
+        # The id comes from the normalized group key, not from the
+        # representative: the representative is the shortest text of the group
+        # and it can change between runs (a shorter wording arrives, the
+        # author changes). The id is the key of the persisted "atendido"
+        # state, so it must only depend on the complaint itself.
+        representative.message_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
+        consolidated.append(representative)
+    return consolidated
 
 
 def _disagrees_with_llm_category(
@@ -402,7 +512,7 @@ def _store(assets: DistributionAssets, batch: InputBatch) -> OCIStorage:
     `status="guardado_con_exito"` and a period-scoped object key
     (`activos/<año>-semana-<n>/paquete-distribucion.json`, per the PDF).
     """
-    bucket = os.getenv("OCI_BUCKET_NAME", _DEFAULT_BUCKET)
+    bucket = os.getenv("OCI_BUCKET_NAME", DEFAULT_BUCKET)
     today = date.today().isoformat()
     payload = assets.model_dump_json(indent=2)
     object_key = (
@@ -456,7 +566,7 @@ def _period_folder(periodo_referencia: str) -> str:
 
 def _oci_credentials_present() -> bool:
     """True when every OCI credential env var is set to a non-empty value."""
-    return all(os.getenv(name) for name in _OCI_REQUIRED_ENV)
+    return oci_credentials_complete()
 
 
 if __name__ == "__main__":
