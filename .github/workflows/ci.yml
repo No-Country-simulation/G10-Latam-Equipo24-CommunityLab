@@ -1,10 +1,20 @@
 name: CI
 
 on:
+  # El PR ya valida cada push a una rama de trabajo. Correr tambien en
+  # `push` para todas las ramas duplicaba el check `test` sobre el mismo
+  # commit: doble minuto de runner, dos notificaciones y un estado ambiguo
+  # para el check requerido de main.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
     branches: ["**"]
+
+# Cancela el run anterior de la misma rama/PR, pero solo en PRs: en un push a
+# `main` no se cancela, para no perder el CI del commit de un merge anterior.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
