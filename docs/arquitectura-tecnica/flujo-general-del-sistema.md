@@ -20,7 +20,7 @@ flowchart TD
         ANA["El modelo lee cada mensaje<br/>y llena una planilla:<br/>sentimiento, tema,<br/>qué tan interesante es"] --> CHEQ{"¿La respuesta es<br/>correcta y completa?"}
         CHEQ -- "No" --> BLANK["Planilla en blanco:<br/>neutral y no interesante.<br/>El mensaje no se descarta,<br/>sigue con valores seguros"]
         CHEQ -- "Sí" --> DEC
-        BLANK --> DEC["Un decisor con reglas<br/>fijas (no usa IA) lee la<br/>planilla y decide:<br/>- testimonio o logro<br/>  positivo → publicar<br/>- muy negativo → derivar<br/>  a una persona<br/>- pregunta técnica →<br/>  crear una FAQ<br/>- lo demás → descartar"]
+        BLANK --> DEC["Un decisor con reglas<br/>fijas (no usa IA) lee la<br/>planilla y decide:<br/>- testimonio o logro<br/>  positivo → publicar<br/>- negativo con seguridad<br/>  alta → derivar a<br/>  una persona<br/>- pregunta técnica →<br/>  crear una FAQ<br/>- lo demás → descartar"]
     end
 
     DEC --> GEN
@@ -37,7 +37,7 @@ flowchart TD
     NAD --> INF
 
     subgraph F4["FASE 4 - ENTREGA: juntar y mostrar"]
-        INF["Todo se junta en el informe<br/>de la corrida: resumen de la<br/>comunidad más los productos<br/>generados"] --> NUBE["El informe se guarda en la<br/>nube (OCI) para no perderlo"]
+        INF["Todo se junta en el informe<br/>de la corrida: resumen de la<br/>comunidad más los productos<br/>generados"] --> NUBE["Los productos generados<br/>se guardan en la nube (OCI)<br/>para no perderlos"]
         NUBE --> TAB["El tablero web muestra el<br/>informe: el equipo revisa,<br/>marca lo ya atendido y<br/>elige qué publicar"]
     end
 ```
@@ -58,16 +58,19 @@ exacta, para que el equipo corrija y vuelva a intentar.
 
 ## Fase 2: Análisis y decisión (leer y decidir)
 
-El modelo de lenguaje (Gemini en la nube o Gemma en local, según la
-configuración del proyecto) **no escribe nada todavía**: solo lee y clasifica.
-Por cada mensaje hace una llamada y llena una planilla con tres campos:
+El modelo de lenguaje es intercambiable por configuración: puede ser **Gemini**
+en la nube (pide una clave) o un **modelo abierto servido por Ollama**, que
+corre en la máquina o en la nube. Si no se configura ninguno, el análisis se
+hace con reglas fijas, sin inteligencia artificial. Ese modelo **no escribe
+nada todavía**: solo lee y clasifica. Por cada mensaje llena una planilla con
+tres campos:
 
 1. **Sentimiento**: positivo, negativo o neutro, con un puntaje de seguridad.
 2. **Tema**: testimonio, pregunta técnica, feedback, logro o discusión.
 3. **Interés**: un puntaje de cero a uno que indica si el mensaje vale la pena
    publicar.
 
-Si el modelo falla, responde mal o devuelva categorías desconocidas, la
+Si el modelo falla, responde mal o devuelve categorías desconocidas, la
 planilla queda con valores seguros (neutral, sin tema conocido, sin interés)
 y el proceso sigue con el siguiente mensaje: **ninguna falla detiene la
 corrida**.
@@ -77,8 +80,8 @@ inteligencia artificial, por eso sus decisiones siempre resultan iguales —
 aplica las reglas de negocio en este orden:
 
 - Testimonio o logro **positivo** con interés suficiente → **publicar**.
-- Mensaje **muy negativo** con seguridad alta → **derivar** al community
-  manager para atención personalizada.
+- Mensaje **negativo** con una seguridad mayor al 80% → **derivar** al
+  community manager para atención personalizada.
 - **Pregunta técnica** → **crear una FAQ**.
 - Todo lo demás → **descartar**.
 
@@ -98,13 +101,14 @@ la corrida sigue: nunca se bloquea todo por un solo intento.
 
 ## Fase 4: Entrega (juntar y mostrar)
 
-El resultado completo de la corrida — resumen de la comunidad más los productos
-generados — se consolida en un informe único:
+La corrida junta todo en un informe único: el resumen de la comunidad y los
+productos generados.
 
-- Se **guarda en la nube** (almacenamiento OCI) para que no se pierda y se
-  pueda consultar después.
-- Se **muestra en el tablero web**, donde el equipo revisa los productos,
-  marca qué derivados ya fueron atendidos y elige qué publicar.
+- Los **productos generados** (post de LinkedIn, newsletter, FAQ) se **guardan
+  en la nube** (almacenamiento OCI) para no perderlos y poder consultarlos
+  después.
+- El informe se **muestra en el tablero web**, donde el equipo revisa los
+  productos, marca qué derivados ya fueron atendidos y elige qué publicar.
 
 El tablero también puede cargar una corrida ya guardada (como la muestra de
 ejemplo del proyecto) sin volver a analizar nada.
