@@ -2095,6 +2095,19 @@ def test_candidate_key_is_stable_for_same_content_and_distinct_otherwise():
     assert key_1 != key_4
 
 
+def test_faq_key_is_stable_for_same_theme_and_distinct_otherwise():
+    """FAQ curation identity binds to the theme, not the render order (D6)."""
+    key_1 = app._faq_key("¿Cómo armo mi CV?")
+    key_2 = app._faq_key("¿Cómo armo mi CV?")
+    key_3 = app._faq_key("¿Cómo preparo una entrevista?")
+    key_none = app._faq_key(None)
+
+    assert key_1 == key_2
+    assert len(key_1) == 12
+    assert key_1 != key_3
+    assert key_none == app._faq_key("")
+
+
 def test_load_set_curation_round_trips_approved_decision():
     """An approved LinkedIn decision persists and reloads for the same period."""
     periodo = "Semana_04"
@@ -2274,6 +2287,52 @@ def test_curation_radio_seeded_from_persisted_state():
     assert radio.value == app.CURATION_STATUS_APPROVED
 
 
+def test_newsletter_radio_seeded_from_persisted_state():
+    """A persisted newsletter decision seeds the newsletter radio before render."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    key = app._candidate_key(
+        "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
+    )
+    app.set_curation({}, periodo, "newsletter", key, app.CURATION_STATUS_APPROVED)
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "news_estado_0")
+    assert radio.value == app.CURATION_STATUS_APPROVED
+
+
+def test_faq_radio_seeded_from_persisted_state():
+    """A persisted FAQ decision seeds the FAQ radio before render."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    faq_key = app._faq_key("q")
+    app.set_curation({}, periodo, "faq", faq_key, app.CURATION_STATUS_APPROVED)
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "faq_estado")
+    assert radio.value == app.CURATION_STATUS_APPROVED
+
+
 # ---------------------------------------------------------------------------
 # Phase 5: remediación de la auditoría del panel
 # ---------------------------------------------------------------------------
@@ -2361,3 +2420,24 @@ def _negative_feedback_notice(at):
     notices = [warning.value for warning in at.warning if "feedback negativo" in warning.value]
     assert notices, f"no negative-feedback notice rendered: {[w.value for w in at.warning]}"
     return notices[0]
+
+
+def test_negative_feedback_notice_reports_the_real_derived_count():
+    """El aviso distingue cuántas fueron negativas de cuántas se derivaron."""
+    at = _run_app_with_negative_feedback(41, [_derived_message("m-1")])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "1 se derivó a revisión humana" in notice
+    assert "41 interacciones con feedback negativo se derivaron" not in notice
+
+
+def test_negative_feedback_notice_says_when_none_was_derived():
+    """Sin derivadas, el aviso lo dice en vez de insinuar que todas lo hicieron."""
+    at = _run_app_with_negative_feedback(41, [])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "ninguna" in notice.lower()
