@@ -186,8 +186,8 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-23 | feedback · feedback · negativo · 0.81 · no | R4: 0.81 supera el umbral | `derivar` | `negative_confidence = 0.81` supera el threshold | `test_high_confidence_negative_message_is_derived` · ✅ |
 | DEC-24 | feedback · feedback · negativo · 0.79 · no | R3: 0.79 no supera el umbral | `descartar` | `negative_confidence = 0.79` no supera el threshold; R4 no se activa | `test_low_confidence_negative_message_is_not_derived` · ✅ |
 | DEC-25 | pregunta_tecnica · pregunta_tecnica · negativo · 0.79 · no | R2 (R4 no aplica: 0.79 no supera > 0.8) | `crear_faq` / `faq` | Pregunta técnica negativa de baja confianza: R4 no deriva y cae en R2 | `test_low_confidence_negative_technical_question_goes_to_faq` · ✅ |
-| DEC-27 | feedback · feedback · negativo · 0.80 · no | R3 (R4 no aplica: 0.80 no supera > 0.8) | `descartar` | Caso exacto del umbral: con `> 0.8` estricto, 0.80 no deriva | `test_exact_threshold_negative_message_is_not_derived` · ✅ |
 | DEC-26 | logro · logro · negativo · 0.85 · no | R4, relevancia alta + sentimiento negativo | `derivar` | `is_relevant = true` pero R4 captura antes por `is_negative = true` + confianza | `test_high_confidence_negative_high_relevance_derived` · ✅ |
+| DEC-27 | feedback · feedback · negativo · 0.80 · no | R3 (R4 no aplica: 0.80 no supera > 0.8) | `descartar` | Caso exacto del umbral: con `> 0.8` estricto, 0.80 no deriva | `test_exact_threshold_negative_message_is_not_derived` · ✅ |
 
 ## C. Dudas recurrentes — Yis-ai-eng (HU-S2-007, PR #64 mergeado; follow-up #75)
 

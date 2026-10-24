@@ -162,7 +162,7 @@ backend `rule_based` (default de un clon limpio) sale `0`, porque ese cliente nu
 - `data/sample/demo_fixed.json` — mensaje negativo de ejemplo
 - `scripts/run_demo.py` — muestra el conteo en el resumen del demo
 - `docs/fichas-historias-usuario.md` — ficha HU actualizada a R4/D-F (PR #98)
-- `docs/pruebas/analisis-decisiones.md` — DEC-22, DEC-09 actualizada, PIP de `feedback_negativo`
+- `docs/pruebas/analisis-decisiones.md` — DEC-22 a DEC-27, PIP-07 (`feedback_negativo` vs `mensajes_derivados`)
 
 > **Nota:** `feedback_negativo` cuenta **todos** los mensajes con sentimiento negativo; `mensajes_derivados` lista solo los que superaron el umbral de confianza (> 0.8). Son **dos poblaciones distintas**. Ver D-I.
 
