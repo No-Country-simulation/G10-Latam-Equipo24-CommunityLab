@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
 from src.interface import app, state
+from src.oci.storage import PUT_LOCAL, PUT_OCI
 
 
 class _FakeOCIStorage:
@@ -21,7 +22,7 @@ class _FakeOCIStorage:
     def put_json(self, bucket_name, key, data):
         # Round-trip through JSON so stored values are plain dicts/lists.
         self.store[(bucket_name, key)] = json.loads(json.dumps(data))
-        return True
+        return PUT_OCI
 
     def get_json(self, bucket_name, key, default=None):
         return self.store.get((bucket_name, key), default)
@@ -1698,6 +1699,34 @@ def test_new_batch_does_not_inherit_previous_curation_state():
     assert _curation_radio(at, "linkedin_estado_0").value == app.CURATION_STATUS_PENDING
 
 
+def test_curation_change_confirms_saved_to_oci():
+    """Cambiar la curaduría muestra en pantalla que se guardó en OCI."""
+    at = _run_app_with_candidates()
+
+    _curation_radio(at, "linkedin_estado_0").set_value(app.CURATION_STATUS_APPROVED).run()
+    assert not at.exception
+
+    assert any("Guardado en OCI" in success.value for success in at.success)
+
+
+def test_curation_change_warns_when_only_local(monkeypatch):
+    """Sin OCI, el cambio de curaduría avisa que quedó solo en local."""
+    class LocalOnlyOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return PUT_LOCAL
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", LocalOnlyOCI)
+    at = _run_app_with_candidates()
+
+    _curation_radio(at, "linkedin_estado_0").set_value(app.CURATION_STATUS_APPROVED).run()
+    assert not at.exception
+
+    assert any("Guardado solo en local" in warning.value for warning in at.warning)
+
+
 def test_publish_button_disables_and_blocks_second_send(monkeypatch):
     """Tras un envío exitoso el botón queda deshabilitado para esa firma."""
     from streamlit.testing.v1 import AppTestError
@@ -1999,6 +2028,13 @@ def test_set_atendido_writes_local_mirror_and_oci():
     ) == {"m-1": True}
 
 
+def test_set_atendido_reports_the_oci_destination():
+    """set_atendido returns where the mark landed so the UI can show it."""
+    result = app.set_atendido({}, "m-1", True)
+
+    assert result == PUT_OCI
+
+
 def test_set_atendido_oci_failure_does_not_raise(monkeypatch):
     """An OCI write failure leaves the local mirror written and never raises."""
     class BrokenOCI:
@@ -2120,6 +2156,33 @@ def test_load_set_curation_round_trips_approved_decision():
         "newsletter": {},
         "faq": {},
     }
+
+
+def test_set_curation_reports_the_oci_destination():
+    """set_curation returns where the decision landed so the UI can show it."""
+    result = app.set_curation(
+        {}, "Semana_04", "linkedin", "key-x", app.CURATION_STATUS_APPROVED
+    )
+
+    assert result == PUT_OCI
+
+
+def test_set_curation_reports_local_when_oci_unavailable(monkeypatch):
+    """Without OCI, set_curation says 'local' instead of failing silently."""
+    class LocalOnlyOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return PUT_LOCAL
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", LocalOnlyOCI)
+
+    result = app.set_curation(
+        {}, "Semana_04", "linkedin", "key-x", app.CURATION_STATUS_APPROVED
+    )
+
+    assert result == PUT_LOCAL
 
 
 def test_curation_is_isolated_by_period():

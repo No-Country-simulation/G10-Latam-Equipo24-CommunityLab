@@ -118,17 +118,22 @@ def _oci_get_dict(key: str) -> dict:
     return value if isinstance(value, dict) else {}
 
 
-def _oci_put_dict(key: str, data: dict) -> bool:
-    """Write a JSON object to OCI. Never raises; False when unavailable."""
+def _oci_put_dict(key: str, data: dict):
+    """Write a JSON object to OCI. Never raises; ``None`` when unavailable.
+
+    Returns the destination reported by the storage layer: ``"oci"`` when the
+    write reached Object Storage, ``"local"`` when it fell back to the local
+    mirror, or ``None`` when both attempts failed.
+    """
     try:
-        return bool(OCIStorageClient().put_json(_bucket(), key, data))
+        return OCIStorageClient().put_json(_bucket(), key, data)
     except Exception:
         logger.warning(
             "No se pudo escribir %s en OCI; queda en el mirror local",
             key,
             exc_info=True,
         )
-        return False
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -157,14 +162,16 @@ def _load_attended() -> dict:
     return merged
 
 
-def _save_attended(attended: dict) -> None:
+def _save_attended(attended: dict):
     """Persist the attended-state dict locally and, best-effort, to OCI.
 
     The local mirror is written first: it is the only store guaranteed to be
-    reachable, and OCI must never be able to block the dashboard.
+    reachable, and OCI must never be able to block the dashboard. Returns the
+    OCI destination (``"oci"`` / ``"local"`` / ``None``) so the UI can say
+    where the mark landed.
     """
     _write_json_dict(ATTENDED_PATH, attended)
-    _oci_put_dict(ATTENDED_OCI_KEY, attended)
+    return _oci_put_dict(ATTENDED_OCI_KEY, attended)
 
 
 def attended_cache(session_state) -> dict:
@@ -188,7 +195,7 @@ def is_atendido(session_state, message_id) -> bool:
     return bool(attended_cache(session_state).get(message_id))
 
 
-def set_atendido(session_state, message_id, value) -> None:
+def set_atendido(session_state, message_id, value):
     """Mark a derived message as attended (or not) and persist it.
 
     The persisted state is re-read right before writing and only this
@@ -196,6 +203,9 @@ def set_atendido(session_state, message_id, value) -> None:
     this session's cached copy. Two operators flipping the SAME message at the
     same time still resolve last-writer-wins: this shrinks the window, it does
     not add per-message versions.
+
+    Returns the OCI destination (``"oci"`` / ``"local"`` / ``None``) so the
+    caller can tell the operator where the mark landed.
     """
     current = _load_attended()
     current[message_id] = bool(value)
@@ -208,7 +218,7 @@ def set_atendido(session_state, message_id, value) -> None:
         else:
             session_state["derivados_atendidos"] = current
 
-    _save_attended(current)
+    return _save_attended(current)
 
 # ---------------------------------------------------------------------------
 # Domain C
@@ -280,15 +290,19 @@ def load_curation(session_state, periodo) -> dict:
     return result
 
 
-def set_curation(session_state, periodo, canal, key, estado) -> None:
-    """Persist one curation decision for a period."""
+def set_curation(session_state, periodo, canal, key, estado):
+    """Persist one curation decision for a period.
+
+    Returns the OCI destination (``"oci"`` / ``"local"`` / ``None``) so the
+    caller can tell the operator where the decision landed.
+    """
     if not periodo or canal not in CURATION_CHANNELS:
-        return
+        return None
 
     data = load_curation(session_state, periodo)
     data.setdefault(canal, {})[key] = estado
     _write_json_dict(_curation_path(periodo), data)
-    _oci_put_dict(_CURATION_OCI_KEY(periodo), data)
+    return _oci_put_dict(_CURATION_OCI_KEY(periodo), data)
 
 
 def _current_periodo() -> str:

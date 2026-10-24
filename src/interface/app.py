@@ -29,6 +29,7 @@ from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
 from src.interface import state, telegram_publish  # noqa: E402
+from src.oci.storage import PUT_LOCAL, PUT_OCI  # noqa: E402
 from src.pipeline import run_pipeline  # noqa: E402
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
@@ -511,6 +512,20 @@ def _candidate_curation_key(candidatos, selected_index):
     )
 
 
+def _show_persist_destination(destino) -> None:
+    """Tell the operator where a curation/attended decision actually landed.
+
+    A silent write hides the difference between "saved to OCI" and "saved only
+    to the local mirror", so a broken OCI configuration goes unnoticed. This
+    makes the destination explicit: ``PUT_OCI`` confirms the cloud write,
+    ``PUT_LOCAL`` warns that the decision only lives on this machine.
+    """
+    if destino == PUT_OCI:
+        st.success("Guardado en OCI.")
+    elif destino == PUT_LOCAL:
+        st.warning("Guardado solo en local (sin conexión a OCI).")
+
+
 def _curation_radio(canal, candidate_key, widget_key, periodo):
     """Render a curation radio seeded from the persisted decision.
 
@@ -534,7 +549,10 @@ def _curation_radio(canal, candidate_key, widget_key, periodo):
     )
 
     if estado != (saved or CURATION_STATUS_PENDING):
-        state.set_curation(st.session_state, periodo, canal, candidate_key, estado)
+        destino = state.set_curation(
+            st.session_state, periodo, canal, candidate_key, estado
+        )
+        _show_persist_destination(destino)
     return estado
 
 
@@ -1303,7 +1321,8 @@ def main():
                             key=widget_key,
                         )
                         if atendido != entry["atendido"]:
-                            state.set_atendido(st.session_state, key, atendido)
+                            destino = state.set_atendido(st.session_state, key, atendido)
+                            _show_persist_destination(destino)
             else:
                 st.info("No hay mensajes derivados a revisión humana en este lote.")
 

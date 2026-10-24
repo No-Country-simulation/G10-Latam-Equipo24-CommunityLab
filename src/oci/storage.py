@@ -32,6 +32,12 @@ OCI_REQUIRED_ENV = (
 
 _LOCAL_STATE_DIR = Path("storage") / "estado"
 
+# Where ``put_json`` actually persisted the value. ``PUT_OCI`` means the write
+# reached Object Storage; ``PUT_LOCAL`` means it fell back to the local mirror
+# (missing credentials or an OCI failure). ``None`` means both attempts failed.
+PUT_OCI = "oci"
+PUT_LOCAL = "local"
+
 
 def missing_oci_credentials() -> list[str]:
     """Names of the OCI credential env vars that are unset or empty.
@@ -119,23 +125,23 @@ class OCIStorage:
         except Exception as e:
             return False, str(e)
 
-    def put_json(self, bucket_name: str, key: str, data) -> bool:
+    def put_json(self, bucket_name: str, key: str, data):
         """Serialize ``data`` to JSON and write it to OCI, falling back locally.
 
         The credential gate is checked first: without credentials the call goes
         straight to the local mirror and logs which variables are missing,
         instead of building a client that fails on the first call.
 
-        Returns ``True`` if the value was persisted (OCI or local mirror) and
-        ``False`` only when both attempts fail. The boolean does not say
-        *where* it was persisted. Never raises.
+        Returns ``PUT_OCI`` when the value was written to OCI, ``PUT_LOCAL``
+        when it fell back to the local mirror, or ``None`` when both attempts
+        failed. Never raises.
         """
         payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
 
         missing = missing_oci_credentials()
         if missing:
             self._warn_missing_credentials(missing)
-            return self._write_local_fallback(key, payload)
+            return PUT_LOCAL if self._write_local_fallback(key, payload) else None
 
         try:
             self.client.put_object(
@@ -144,7 +150,7 @@ class OCIStorage:
                 object_name=key,
                 put_object_body=payload,
             )
-            return True
+            return PUT_OCI
         except Exception as exc:
             logger.warning(
                 "OCI put_json failed for %s/%s (%s); falling back to local mirror.",
@@ -153,7 +159,7 @@ class OCIStorage:
                 exc,
             )
 
-        return self._write_local_fallback(key, payload)
+        return PUT_LOCAL if self._write_local_fallback(key, payload) else None
 
     def get_json(self, bucket_name: str, key: str, default=None):
         """Read JSON from OCI, falling back to the local mirror.
