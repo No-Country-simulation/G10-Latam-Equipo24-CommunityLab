@@ -30,17 +30,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Si un humano ya puso un label type:*, no lo pisamos. Para saberlo
-          # leemos el actor del evento `labeled` en el timeline: asi el bot solo
-          # reemplaza labels que el mismo puso, y corregir el titulo si re-etiqueta.
-          human_labels="$(gh api "repos/$REPO/issues/$PR_NUMBER/timeline" --paginate \
-            --jq '[.[] | select(.event == "labeled") | select((.label.name // "") | startswith("type:")) | select(.actor.login != "github-actions[bot]") | .label.name] | join(",")')" || human_labels=""
-
-          if [ -n "$human_labels" ]; then
-            echo "Un humano ya eligio label type:* ($human_labels); no se auto-etiqueta."
-            exit 0
-          fi
-
           prefix="$(printf '%s' "$TITLE" \
             | sed -nE 's/^([A-Za-z]+)(\([^)]*\))?!?:.*/\1/p' \
             | tr '[:upper:]' '[:lower:]')"
@@ -68,6 +57,28 @@ jobs:
             exit 0
           fi
 
+          # Si quedan labels type:* presentes, solo los respetamos si los puso
+          # un HUMANO (no el bot) y SIGUEN presentes. Cruzamos el actor del
+          # evento `labeled` con los labels actuales: un label humano que ya se
+          # quito no debe bloquear el auto-etiquetado.
+          if [ -n "$current" ]; then
+            human_labels="$(gh api "repos/$REPO/issues/$PR_NUMBER/timeline" --paginate \
+              --jq '[.[] | select(.event == "labeled") | select((.label.name // "") | startswith("type:")) | select(.actor.login != "github-actions[bot]") | .label.name] | join(",")')" || human_labels=""
+
+            if [ -n "$human_labels" ]; then
+              IFS=',' read -r -a cur_arr <<< "$current"
+              IFS=',' read -r -a human_arr <<< "$human_labels"
+              for cl in "${cur_arr[@]}"; do
+                for hl in "${human_arr[@]}"; do
+                  if [ "$cl" = "$hl" ]; then
+                    echo "Un humano puso label type:* ($cl) y sigue presente; no se auto-etiqueta."
+                    exit 0
+                  fi
+                done
+              done
+            fi
+          fi
+
           # Reemplazar los labels type:* del bot por el que corresponde al titulo.
           args=(--add-label "$target")
           if [ -n "$current" ]; then
@@ -86,9 +97,9 @@ jobs:
   type-label:
     name: Check PR Has type:* Label
     needs: autolabel
-    # always(): si autolabel fallara, el gate igual corre (y falla claro) en vez
-    # de quedar `skipped`, que a veces cuenta como verde en branch protection.
-    if: always()
+    # !cancelled(): el gate corre aunque autolabel falle, pero no si se cancela
+    # el workflow (un job cancelado no debe quedar como check que "pasó").
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-22.04
     steps:
       - name: Check exactly one type:* label
