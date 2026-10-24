@@ -12,6 +12,8 @@ import pytest
 from src.oci.storage import (
     OCIStorage,
     OCI_REQUIRED_ENV,
+    PUT_LOCAL,
+    PUT_OCI,
     missing_oci_credentials,
     oci_credentials_complete,
 )
@@ -120,7 +122,7 @@ def test_constructing_storage_does_not_build_the_client(tmp_path, monkeypatch, c
 
 def test_put_json_and_get_json_round_trip(storage):
     data = {"origen": "test", "items": [1, 2, 3]}
-    assert storage.put_json("test-bucket", "estado/round-trip.json", data) is True
+    assert storage.put_json("test-bucket", "estado/round-trip.json", data) == PUT_OCI
     assert storage.get_json("test-bucket", "estado/round-trip.json") == data
 
 
@@ -184,7 +186,7 @@ def test_put_json_without_credentials_skips_oci_and_writes_local_mirror(
     storage = OCIStorage(oci_client=recording)
 
     data = {"clave": "valor"}
-    assert storage.put_json("test-bucket", "estado/sin-credenciales.json", data) is True
+    assert storage.put_json("test-bucket", "estado/sin-credenciales.json", data) == PUT_LOCAL
 
     assert recording.builds == 0
     local_path = Path("storage/estado/sin-credenciales.json")
