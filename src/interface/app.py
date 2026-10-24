@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 import sys
 import tempfile
 from datetime import date, datetime
@@ -26,9 +25,11 @@ if str(REPO_ROOT) not in sys.path:
 # sees the same ``os.getenv`` values that a local ``.env`` provides. It must
 # run before ``src.pipeline`` / ``src.oci`` are imported below.
 import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
+from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
-from src.interface import telegram_publish  # noqa: E402
+from src.interface import state, telegram_publish  # noqa: E402
+from src.oci.storage import PUT_LOCAL, PUT_OCI  # noqa: E402
 from src.pipeline import run_pipeline  # noqa: E402
 
 # The LinkedIn post and newsletter editors are keyed per selected candidate
@@ -48,6 +49,45 @@ EDIT_WIDGET_KEYS = (
 # Prefix for the per-derived-message toggle keys in session_state. These are
 # cleared on every new batch so attended states do not leak across runs.
 DERIVED_WIDGET_KEY_PREFIX = "derivado_atendido_"
+
+# Names served by ``src.interface.state``. They are resolved through the
+# module ``__getattr__`` (PEP 562) instead of being bound here on purpose:
+# Streamlit runs a COPY of this file, so a seam bound in this module would
+# not be the one the running script reads. Delegating keeps a single source
+# of truth for every copy of the app.
+_STATE_EXPORTS = (
+    "ATTENDED_OCI_KEY",
+    "ATTENDED_PATH",
+    "CURATION_CHANNELS",
+    "CURATION_STATE_DIR",
+    "DEFAULT_BUCKET",
+    "OCIStorageClient",
+    "attended_cache",
+    "_load_attended",
+    "_save_attended",
+    "is_atendido",
+    "load_curation",
+    "set_atendido",
+    "_candidate_key",
+    "_faq_key",
+    "_CURATION_OCI_KEY",
+    "_curation_path",
+    "_extract_periodo",
+    "set_curation",
+)
+
+
+def __getattr__(name):
+    """Serve the shared persistence layer's names (PEP 562).
+
+    ``state`` owns the seams (paths, OCI client, bucket) and the persistence
+    helpers. Every copy of this script imports the SAME ``state`` module, so
+    patching a seam there is observed by all of them.
+    """
+    if name in _STATE_EXPORTS:
+        return getattr(state, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 BRAND_LOGO_PATH = Path(__file__).resolve().parent.joinpath(
     "assets", "branding", "communitylab-logo-principal.png"
@@ -95,8 +135,32 @@ def publish_decision(linkedin_aprobado, ya_publicado):
     return PUBLISH_DECISION_APPROVED
 
 
-def process_json_input(content):
-    """Procesa un lote JSON y devuelve la salida del contrato."""
+def _resolve_input_periodo(content, result):
+    """Resolve the period of a batch from its input envelope.
+
+    The envelope wins because it is what the operator actually sent; the OCI
+    object path is the fallback for batches whose envelope carries no period.
+    """
+    try:
+        envelope = json.loads(content)
+    except (TypeError, ValueError):
+        envelope = None
+
+    if isinstance(envelope, dict):
+        periodo = envelope.get("periodo_referencia")
+        if periodo:
+            return str(periodo)
+
+    return state._extract_periodo(None, result)
+
+
+def process_json_input(content, session_state=None):
+    """Procesa un lote JSON y devuelve la salida del contrato.
+
+    Cuando se entrega ``session_state``, el periodo del lote queda
+    registrado en él: es la clave del archivo de curaduría de ese lote, de
+    modo que las decisiones de un lote no invaden al siguiente.
+    """
     with tempfile.TemporaryDirectory() as temp_dir:
         source = Path(temp_dir) / "input.json"
         source.write_text(content, encoding="utf-8")
@@ -104,10 +168,13 @@ def process_json_input(content):
 
     if result.get("status") != "exito":
         raise ValueError(f"El pipeline devolvió un estado inesperado: {result.get('status')!r}")
+
+    if session_state is not None:
+        session_state["periodo_referencia"] = _resolve_input_periodo(content, result)
     return result
 
 
-def process_combined_sample(sources, limits=None):
+def process_combined_sample(sources, limits=None, session_state=None):
     """Combines several sample sources (JSON/CSV) into one batch and runs the pipeline.
 
     Parameters
@@ -118,6 +185,8 @@ def process_combined_sample(sources, limits=None):
         Optional per-source caps aligned with `sources`: an int keeps the first
         N interactions, None keeps the whole source. When `limits` is absent,
         every source keeps its full content.
+    session_state : dict | None
+        Optional session state that receives the merged batch's period.
 
     Returns
     -------
@@ -147,7 +216,9 @@ def process_combined_sample(sources, limits=None):
         periodo_referencia=periodo_referencia,
         interacciones=interacciones,
     )
-    return process_json_input(merged.model_dump_json(indent=2))
+    return process_json_input(
+        merged.model_dump_json(indent=2), session_state=session_state
+    )
 
 
 def load_sample_results(path):
@@ -427,6 +498,64 @@ def merged_newsletter(newsletter, seleccionado):
     return newsletter
 
 
+def _candidate_curation_key(candidatos, selected_index):
+    """Curation identity of the selected candidate.
+
+    The identity is the hash of the candidate's content, so the decision
+    follows the testimonio across reloads instead of staying attached to the
+    widget index it happened to have.
+    """
+    candidato = candidatos[selected_index] if candidatos else None
+    return state._candidate_key(
+        (candidato or {}).get("autor", ""),
+        (candidato or {}).get("texto_original", ""),
+    )
+
+
+def _show_persist_destination(destino) -> None:
+    """Tell the operator where a curation/attended decision actually landed.
+
+    A silent write hides the difference between "saved to OCI" and "saved only
+    to the local mirror", so a broken OCI configuration goes unnoticed. This
+    makes the destination explicit: ``PUT_OCI`` confirms the cloud write,
+    ``PUT_LOCAL`` warns that the decision only lives on this machine.
+    """
+    if destino == PUT_OCI:
+        st.success("Guardado en OCI.")
+    elif destino == PUT_LOCAL:
+        st.warning("Guardado solo en local (sin conexión a OCI).")
+
+
+def _curation_radio(canal, candidate_key, widget_key, periodo):
+    """Render a curation radio seeded from the persisted decision.
+
+    The widget key is seeded BEFORE the radio is created: a keyed widget
+    keeps its session value and ignores its own default once it exists, so a
+    saved decision has to reach ``st.session_state`` first. A decision that
+    differs from the persisted one is written back (OCI first, local mirror).
+    """
+    saved = (state.load_curation(st.session_state, periodo).get(canal) or {}).get(
+        candidate_key
+    )
+    if saved and widget_key not in st.session_state:
+        st.session_state[widget_key] = saved
+
+    estado = st.radio(
+        "Estado de curaduría:",
+        options=CURATION_STATUSES,
+        index=0,
+        horizontal=True,
+        key=widget_key,
+    )
+
+    if estado != (saved or CURATION_STATUS_PENDING):
+        destino = state.set_curation(
+            st.session_state, periodo, canal, candidate_key, estado
+        )
+        _show_persist_destination(destino)
+    return estado
+
+
 def build_assets_summary_df(resumen, assets):
     """Builds a DataFrame with the count of generated assets by type."""
     candidatos = (assets or {}).get("candidatos_post_linkedin") or []
@@ -441,64 +570,6 @@ def build_assets_summary_df(resumen, assets):
     return pd.DataFrame(data)
 
 
-def _attended_path() -> Path:
-    """Resolve the file that holds the attended state (read on every call).
-
-    The override is resolved at call time instead of at import: `AppTest`
-    executes this script in its own context, so a value captured at import
-    time would point the test run at the repository instead of its tmp dir.
-    """
-    override = os.environ.get("COMMUNITYLAB_ATTENDED_PATH")
-    if override:
-        return Path(override)
-    return REPO_ROOT / "storage" / "derivados-atendidos.json"
-
-
-def _load_attended() -> dict:
-    """Load the persisted attended-state dict, or ``{}`` if absent/corrupt."""
-    path = _attended_path()
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
-
-
-def _save_attended(attended: dict) -> None:
-    """Persist the attended-state dict to storage (best-effort)."""
-    path = _attended_path()
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(attended, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-    except OSError:
-        pass
-
-
-def is_atendido(session_state, message_id):
-    """Returns whether a derived message is marked as attended.
-
-    Falls back to the persisted file when the key is not yet in session_state,
-    so a reload restores prior attendance decisions.
-    """
-    attended = (session_state or {}).get("derivados_atendidos")
-    if attended is None:
-        attended = _load_attended()
-        if session_state is not None:
-            session_state["derivados_atendidos"] = attended
-    return bool(attended.get(message_id))
-
-
-def set_atendido(session_state, message_id, value):
-    """Marks a derived message as attended (or not) and persists it."""
-    attended = session_state.setdefault("derivados_atendidos", _load_attended())
-    attended[message_id] = bool(value)
-    _save_attended(attended)
-
-
 def build_derivados_entries(mensajes, session_state):
     """Build the list rendered by the "Derivados" tab.
 
@@ -506,17 +577,11 @@ def build_derivados_entries(mensajes, session_state):
     and a stable ``key`` for the toggle widget. When a message lacks an id,
     the key falls back to ``idx-<position>`` so the UI can still track state.
 
-    The attended state is persisted, so it is read back from disk when the
-    session does not carry it yet: a reload must show the same marks that
-    were saved before.
+    The attended flags come from the persisted state (OCI first, local
+    mirror), so a reload shows the marks the operator already made instead
+    of resetting them to unchecked.
     """
-    attended = None
-    if session_state is not None:
-        attended = session_state.get("derivados_atendidos")
-    if attended is None:
-        attended = _load_attended()
-        if session_state is not None:
-            session_state["derivados_atendidos"] = attended
+    attended = state.attended_cache(session_state)
     entries = []
     for position, mensaje in enumerate(mensajes):
         message_id = str(mensaje.get("message_id") or "").strip()
@@ -554,6 +619,12 @@ def reset_batch_state(session_state):
     session_state.pop("derivados_atendidos", None)
     for key in list(session_state.keys()):
         if key.startswith(DERIVED_WIDGET_KEY_PREFIX):
+            session_state.pop(key, None)
+    # The curation file is keyed by the batch period: a new batch must not
+    # inherit the previous one's decisions.
+    session_state.pop("periodo_referencia", None)
+    for key in list(session_state.keys()):
+        if key.startswith("curacion_"):
             session_state.pop(key, None)
     # A new batch must not inherit which signatures were already published:
     # otherwise a fresh lot's candidate could be blocked as "already sent".
@@ -823,7 +894,7 @@ def main():
                 else raw_json_input
             )
             with st.spinner("Analizando comunidad y generando activos..."):
-                st.session_state.llm_results = process_json_input(content)
+                st.session_state.llm_results = process_json_input(content, st.session_state)
                 st.session_state.processing_done = True
         except Exception as exc:
             st.error(f"No se pudo procesar el lote: {exc}")
@@ -837,6 +908,10 @@ def main():
         summary = results["resumen_comunidad"]
         assets = results["activos_distribucion_generados"]
         storage = results["almacenamiento_oci"]
+
+        # The period keys the curation file of this batch: the decisions of
+        # one lot never reach another one.
+        periodo = state._extract_periodo(st.session_state, results)
 
         st.success(f"Estado del lote: {results['status']}")
 
@@ -865,10 +940,25 @@ def main():
                 st.metric(label="Análisis degradados", value=analisis_degradados)
 
         if feedback_negativo > 0:
-            st.warning(
-                f"⚠️ {feedback_negativo} interacciones con feedback negativo "
-                "se derivaron a revisión humana."
-            )
+            # The negative count and the derived count are different
+            # populations: only the messages that pass the R4 confidence
+            # threshold are routed to a human. The number comes from the
+            # engine constant, never from a copy pasted into the copy.
+            total_derivados = len(assets.get("mensajes_derivados") or [])
+            if total_derivados:
+                st.warning(
+                    f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
+                    f"{total_derivados} "
+                    f"{'se derivó' if total_derivados == 1 else 'se derivaron'} "
+                    f"a revisión humana (confianza > {RuleBasedDecisionEngine.CONFIDENCE_THRESHOLD})."
+                )
+            else:
+                st.warning(
+                    f"⚠️ {feedback_negativo} interacciones con feedback negativo; "
+                    "ninguna superó el umbral de confianza "
+                    f"({RuleBasedDecisionEngine.CONFIDENCE_THRESHOLD}) para derivarse "
+                    "a revisión humana."
+                )
         else:
             st.info(
                 "No hubo interacciones con feedback negativo que requieran "
@@ -932,6 +1022,12 @@ def main():
         st.subheader("📝 Edición de Activos de Marketing")
         # The selected candidate drives BOTH tabs: its full post (tab 1) and
         # its own newsletter highlight (tab 2).
+        #
+        # The LinkedIn candidates are read here, before the tabs: the
+        # curation identity is the CONTENT of the candidate (not the widget
+        # index), so it survives a reload and stays comparable between the
+        # LinkedIn and the newsletter tabs.
+        candidatos = assets.get("candidatos_post_linkedin") or []
         seleccionado = None
         selected_index = 0
         tab1, tab2, tab3, tab4 = st.tabs(
@@ -941,7 +1037,6 @@ def main():
         with tab1:
             linkedin = assets["post_linkedin"]
             if linkedin:
-                candidatos = assets.get("candidatos_post_linkedin") or []
                 if len(candidatos) > 1:
                     opciones = build_linkedin_candidate_options(candidatos)
                     selected_label = st.selectbox(
@@ -978,12 +1073,11 @@ def main():
                         key=f"linkedin_edit_{selected_index}",
                         width="stretch",
                     )
-                    linkedin_estado = st.radio(
-                        "Estado de curaduría:",
-                        options=CURATION_STATUSES,
-                        index=0,
-                        horizontal=True,
-                        key=f"linkedin_estado_{selected_index}",
+                    linkedin_estado = _curation_radio(
+                        "linkedin",
+                        _candidate_curation_key(candidatos, selected_index),
+                        f"linkedin_estado_{selected_index}",
+                        periodo,
                     )
                     if linkedin_estado == CURATION_STATUS_REJECTED:
                         st.warning(
@@ -1093,12 +1187,11 @@ def main():
                 st.write(f"**Titular:** {newsletter['titular']}")
                 st.info("Resumen para incluir en el próximo correo semanal.")
                 newsletter_edited = st.text_area("Contenido Newsletter:", value=newsletter["resumen"], height=200, key=f"news_edit_{selected_index}", width="stretch")
-                newsletter_estado = st.radio(
-                    "Estado de curaduría:",
-                    options=CURATION_STATUSES,
-                    index=0,
-                    horizontal=True,
-                    key=f"news_estado_{selected_index}",
+                newsletter_estado = _curation_radio(
+                    "newsletter",
+                    _candidate_curation_key(candidatos, selected_index),
+                    f"news_estado_{selected_index}",
+                    periodo,
                 )
                 if newsletter_estado == CURATION_STATUS_REJECTED:
                     st.warning(
@@ -1155,12 +1248,11 @@ def main():
                     key="faq_edit",
                     width="stretch",
                 )
-                faq_estado = st.radio(
-                    "Estado de curaduría:",
-                    options=CURATION_STATUSES,
-                    index=0,
-                    horizontal=True,
-                    key="faq_estado",
+                faq_estado = _curation_radio(
+                    "faq",
+                    state._faq_key(sugerencia.get("tema")),
+                    "faq_estado",
+                    periodo,
                 )
                 if faq_estado == CURATION_STATUS_REJECTED:
                     st.warning(
@@ -1204,7 +1296,8 @@ def main():
             if mensajes_derivados:
                 st.write(
                     f"{len(mensajes_derivados)} mensaje(s) derivado(s) a revisión humana. "
-                    "El estado 'atendido' se guarda localmente entre sesiones."
+                    "El estado 'atendido' se guarda en OCI (con espejo local) "
+                    "y sobrevive a la recarga."
                 )
                 for entry in build_derivados_entries(mensajes_derivados, st.session_state):
                     key = entry["key"]
@@ -1228,7 +1321,8 @@ def main():
                             key=widget_key,
                         )
                         if atendido != entry["atendido"]:
-                            set_atendido(st.session_state, key, atendido)
+                            destino = state.set_atendido(st.session_state, key, atendido)
+                            _show_persist_destination(destino)
             else:
                 st.info("No hay mensajes derivados a revisión humana en este lote.")
 

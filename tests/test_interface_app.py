@@ -5,20 +5,46 @@ import altair as alt
 import pandas as pd
 import pytest
 from src.domain.models import CommunitySummary, OCIStorage, OutputBatch
-from src.interface import app
+from src.interface import app, state
+from src.oci.storage import PUT_LOCAL, PUT_OCI
+
+
+class _FakeOCIStorage:
+    """In-memory OCI JSON store for isolated dashboard-state tests.
+
+    The store lives on the CLASS: the state layer builds a fresh client on
+    every call, so a per-instance store would lose everything between two
+    calls. The autouse fixture clears it before each test.
+    """
+
+    store = {}
+
+    def put_json(self, bucket_name, key, data):
+        # Round-trip through JSON so stored values are plain dicts/lists.
+        self.store[(bucket_name, key)] = json.loads(json.dumps(data))
+        return PUT_OCI
+
+    def get_json(self, bucket_name, key, default=None):
+        return self.store.get((bucket_name, key), default)
 
 
 @pytest.fixture(autouse=True)
-def _isolate_attended_path(tmp_path, monkeypatch):
-    """Isolate the persisted attended-state file so tests never touch the repo.
+def _isolate_persisted_state(tmp_path, monkeypatch):
+    """Isolate persisted state and OCI so tests never touch the repo or cloud.
 
-    The override is set as an env var (not as a module attribute) because
-    `AppTest` executes the app script in its own context: the env var is the
-    only override that reaches those runs.
+    The seams live in ``src.interface.state`` and are patched THERE: the app
+    runs as a copy of ``app.py`` (Streamlit and ``AppTest`` both do it), so a
+    seam patched on ``app`` would never reach the script that actually runs.
     """
-    monkeypatch.setenv(
-        "COMMUNITYLAB_ATTENDED_PATH", str(tmp_path / "derivados-atendidos.json")
-    )
+    _FakeOCIStorage.store.clear()
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    monkeypatch.setattr(state, "CURATION_STATE_DIR", tmp_path / "curacion")
+    monkeypatch.setattr(state, "OCIStorageClient", _FakeOCIStorage)
+    monkeypatch.setattr(state, "DEFAULT_BUCKET", "test-bucket")
+    # The real .env is loaded into the process env by ``load_dotenv()`` (see
+    # ``src/oci/client.py``): without this, the bucket of a developer's machine
+    # would leak into the tests and point them at production.
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
 
 
 def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
@@ -858,7 +884,7 @@ def test_process_combined_sample_combines_sources_and_runs(tmp_path, monkeypatch
 
     captured = {}
 
-    def fake_process_json_input(content):
+    def fake_process_json_input(content, session_state=None):
         captured["content"] = content
         return {"status": "exito"}
 
@@ -912,7 +938,7 @@ def test_process_combined_sample_limits_trim_each_source(tmp_path, monkeypatch):
 
     captured = {}
 
-    def fake_process_json_input(content):
+    def fake_process_json_input(content, session_state=None):
         captured["content"] = content
         return {"status": "exito"}
 
@@ -1673,6 +1699,34 @@ def test_new_batch_does_not_inherit_previous_curation_state():
     assert _curation_radio(at, "linkedin_estado_0").value == app.CURATION_STATUS_PENDING
 
 
+def test_curation_change_confirms_saved_to_oci():
+    """Cambiar la curaduría muestra en pantalla que se guardó en OCI."""
+    at = _run_app_with_candidates()
+
+    _curation_radio(at, "linkedin_estado_0").set_value(app.CURATION_STATUS_APPROVED).run()
+    assert not at.exception
+
+    assert any("Guardado en OCI" in success.value for success in at.success)
+
+
+def test_curation_change_warns_when_only_local(monkeypatch):
+    """Sin OCI, el cambio de curaduría avisa que quedó solo en local."""
+    class LocalOnlyOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return PUT_LOCAL
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", LocalOnlyOCI)
+    at = _run_app_with_candidates()
+
+    _curation_radio(at, "linkedin_estado_0").set_value(app.CURATION_STATUS_APPROVED).run()
+    assert not at.exception
+
+    assert any("Guardado solo en local" in warning.value for warning in at.warning)
+
+
 def test_publish_button_disables_and_blocks_second_send(monkeypatch):
     """Tras un envío exitoso el botón queda deshabilitado para esa firma."""
     from streamlit.testing.v1 import AppTestError
@@ -1932,3 +1986,521 @@ def test_faq_tab_falls_back_to_tema_when_respuesta_is_empty():
 
     faq_editor = next(t for t in at.text_area if "FAQ" in t.label)
     assert faq_editor.value == "Tema sin respuesta"
+
+
+# ---------------------------------------------------------------------------
+# Domain B: globally persisted attended state (OCI-first, local fallback)
+# ---------------------------------------------------------------------------
+
+
+def test_load_attended_merges_oci_and_local_with_local_winning(tmp_path, monkeypatch):
+    """Local mirror wins over OCI so offline edits are not silently overwritten."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.OCIStorageClient().put_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json", {"m-1": True}
+    )
+    app.ATTENDED_PATH.write_text(json.dumps({"m-1": False, "m-2": True}), encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {"m-1": False, "m-2": True}
+
+
+def test_load_attended_empty_store_and_local_corrupt_returns_empty_dict(tmp_path, monkeypatch):
+    """A corrupt local mirror degrades to an empty dict."""
+    monkeypatch.setattr(state, "ATTENDED_PATH", tmp_path / "derivados-atendidos.json")
+    app.ATTENDED_PATH.write_text("not json", encoding="utf-8")
+
+    attended = app._load_attended()
+
+    assert attended == {}
+
+
+def test_set_atendido_writes_local_mirror_and_oci():
+    """Marking a derived message attended persists to both local and OCI stores."""
+    session_state = {}
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+    assert app.OCIStorageClient().get_json(
+        app.DEFAULT_BUCKET, "estado/derivados-atendidos.json"
+    ) == {"m-1": True}
+
+
+def test_set_atendido_reports_the_oci_destination():
+    """set_atendido returns where the mark landed so the UI can show it."""
+    result = app.set_atendido({}, "m-1", True)
+
+    assert result == PUT_OCI
+
+
+def test_set_atendido_oci_failure_does_not_raise(monkeypatch):
+    """An OCI write failure leaves the local mirror written and never raises."""
+    class BrokenOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return False
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", BrokenOCI)
+    session_state = {}
+
+    app.set_atendido(session_state, "m-1", True)
+
+    assert app.is_atendido(session_state, "m-1") is True
+    assert json.loads(app.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
+def test_set_atendido_rereads_before_writing_and_keeps_other_marks():
+    """Only this message's key changes: another operator's mark survives.
+
+    The session cache can be stale (it is loaded once per session), so writing
+    it back verbatim would drop a mark OCI already has.
+    """
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-2": True}
+    )
+    session_state = {"derivados_atendidos": {"m-1": True}}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    persisted = _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)]
+    assert persisted == {"m-1": True, "m-2": True}
+    assert session_state["derivados_atendidos"] == {"m-1": True, "m-2": True}
+
+
+def test_load_attended_heals_oci_with_the_merged_state():
+    """When the merge differs from OCI, the merged state is pushed back."""
+    state.OCIStorageClient().put_json(
+        state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY, {"m-1": True}
+    )
+    state.ATTENDED_PATH.write_text(json.dumps({"m-2": True}), encoding="utf-8")
+
+    state._load_attended()
+
+    assert _FakeOCIStorage.store[(state.DEFAULT_BUCKET, state.ATTENDED_OCI_KEY)] == {
+        "m-1": True,
+        "m-2": True,
+    }
+
+
+def test_set_atendido_oci_exception_does_not_raise(monkeypatch):
+    """An OCI client that raises (not just returns False) never reaches the UI."""
+
+    class ExplodingOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            raise RuntimeError("boom")
+
+    monkeypatch.setattr(state, "OCIStorageClient", ExplodingOCI)
+    session_state = {}
+
+    state.set_atendido(session_state, "m-1", True)
+
+    assert state.is_atendido(session_state, "m-1") is True
+    assert json.loads(state.ATTENDED_PATH.read_text(encoding="utf-8")) == {"m-1": True}
+
+
+def test_fresh_session_state_restores_persisted_attended_marks():
+    """Reload simulation: a brand new session_state restores saved attended marks."""
+    app.set_atendido({}, "m-1", True)
+
+    fresh_session_state = {}
+    assert app.is_atendido(fresh_session_state, "m-1") is True
+
+
+# ---------------------------------------------------------------------------
+# Domain C: per-batch curation decisions by candidate identity
+# ---------------------------------------------------------------------------
+
+
+def test_candidate_key_is_stable_for_same_content_and_distinct_otherwise():
+    """Curation identity binds to content, not widget index."""
+    key_1 = app._candidate_key("Mariana", "Consegui mi primer empleo")
+    key_2 = app._candidate_key("Mariana", "Consegui mi primer empleo")
+    key_3 = app._candidate_key("Mariana", "Aprobe la certificacion")
+    key_4 = app._candidate_key("Lucas", "Consegui mi primer empleo")
+
+    assert key_1 == key_2
+    assert len(key_1) == 12
+    assert key_1 != key_3
+    assert key_1 != key_4
+
+
+def test_faq_key_is_stable_for_same_theme_and_distinct_otherwise():
+    """FAQ curation identity binds to the theme, not the render order (D6)."""
+    key_1 = app._faq_key("¿Cómo armo mi CV?")
+    key_2 = app._faq_key("¿Cómo armo mi CV?")
+    key_3 = app._faq_key("¿Cómo preparo una entrevista?")
+    key_none = app._faq_key(None)
+
+    assert key_1 == key_2
+    assert len(key_1) == 12
+    assert key_1 != key_3
+    assert key_none == app._faq_key("")
+
+
+def test_load_set_curation_round_trips_approved_decision():
+    """An approved LinkedIn decision persists and reloads for the same period."""
+    periodo = "Semana_04"
+    key = app._candidate_key("Mariana", "Consegui mi primer empleo")
+
+    app.set_curation({}, periodo, "linkedin", key, app.CURATION_STATUS_APPROVED)
+
+    assert app.load_curation({}, periodo) == {
+        "linkedin": {key: app.CURATION_STATUS_APPROVED},
+        "newsletter": {},
+        "faq": {},
+    }
+
+
+def test_set_curation_reports_the_oci_destination():
+    """set_curation returns where the decision landed so the UI can show it."""
+    result = app.set_curation(
+        {}, "Semana_04", "linkedin", "key-x", app.CURATION_STATUS_APPROVED
+    )
+
+    assert result == PUT_OCI
+
+
+def test_set_curation_reports_local_when_oci_unavailable(monkeypatch):
+    """Without OCI, set_curation says 'local' instead of failing silently."""
+    class LocalOnlyOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return PUT_LOCAL
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", LocalOnlyOCI)
+
+    result = app.set_curation(
+        {}, "Semana_04", "linkedin", "key-x", app.CURATION_STATUS_APPROVED
+    )
+
+    assert result == PUT_LOCAL
+
+
+def test_curation_is_isolated_by_period():
+    """Decisions for one batch never leak into another batch's file."""
+    periodo_04 = "Semana_04"
+    periodo_05 = "Semana_05"
+    key = app._candidate_key("Mariana", "Consegui mi primer empleo")
+
+    app.set_curation({}, periodo_04, "linkedin", key, app.CURATION_STATUS_APPROVED)
+
+    assert app.load_curation({}, periodo_05) == {
+        "linkedin": {},
+        "newsletter": {},
+        "faq": {},
+    }
+
+
+def test_curation_persists_locally_when_oci_is_unavailable(monkeypatch):
+    """Without OCI, curation still round-trips through the local mirror."""
+    class BrokenOCI:
+        def put_json(self, *args, **kwargs):  # noqa: ARG002
+            return False
+
+        def get_json(self, *args, **kwargs):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr(state, "OCIStorageClient", BrokenOCI)
+    periodo = "Semana_04"
+    key = app._candidate_key("Mariana", "Consegui mi primer empleo")
+
+    app.set_curation({}, periodo, "linkedin", key, app.CURATION_STATUS_APPROVED)
+
+    assert app.load_curation({}, periodo) == {
+        "linkedin": {key: app.CURATION_STATUS_APPROVED},
+        "newsletter": {},
+        "faq": {},
+    }
+
+
+def test_process_json_input_stashes_periodo_referencia(monkeypatch):
+    """Processing a batch stashes its period in session_state for curation files."""
+    output = OutputBatch(
+        status="exito",
+        resumen_comunidad=CommunitySummary(
+            total_interacciones_procesadas=1,
+            sentimiento_predominante="positivo",
+            temas_principales=["aprendizaje"],
+        ),
+        activos_distribucion_generados={},
+        almacenamiento_oci=OCIStorage(
+            bucket="communitylab",
+            ruta_objeto="activos/2026-semana-04/paquete-distribucion.json",
+            status="guardado_con_exito",
+        ),
+    )
+
+    monkeypatch.setattr(app, "run_pipeline", lambda source: output)
+
+    session_state = {}
+    app.process_json_input(
+        '{"periodo_referencia": "Semana_04", "interacciones": []}',
+        session_state=session_state,
+    )
+
+    assert session_state.get("periodo_referencia") == "Semana_04"
+
+
+def test_reset_batch_state_clears_periodo_referencia():
+    """A new batch must not inherit the previous batch's curation file key."""
+    session_state = {"periodo_referencia": "Semana_04"}
+
+    app.reset_batch_state(session_state)
+
+    assert "periodo_referencia" not in session_state
+
+
+def test_extract_periodo_falls_back_to_object_path():
+    """When session_state lacks periodo_referencia, parse it from the OCI path."""
+    results = {
+        "almacenamiento_oci": {
+            "ruta_objeto": "activos/2026-semana-07/paquete-distribucion.json",
+        }
+    }
+
+    periodo = app._extract_periodo({}, results)
+
+    assert periodo == "2026-semana-07"
+
+
+def test_load_curation_merges_oci_and_local_keeping_both_decisions():
+    """A decision saved in one store survives the merge with the other store.
+
+    The merge is per channel AND per candidate: a whole-channel overwrite
+    would silently drop the decisions the other store still holds.
+    """
+    periodo = "Semana_04"
+    key_oci = app._candidate_key("Remoto", "Aprobado en OCI")
+    key_local = app._candidate_key("Local", "Aprobado en local")
+
+    app.OCIStorageClient().put_json(
+        app.DEFAULT_BUCKET,
+        "estado/curacion-Semana_04.json",
+        {"linkedin": {key_oci: app.CURATION_STATUS_APPROVED}},
+    )
+    local_path = state._curation_path(periodo)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    local_path.write_text(
+        json.dumps({"linkedin": {key_local: app.CURATION_STATUS_APPROVED}}),
+        encoding="utf-8",
+    )
+
+    merged = app.load_curation({}, periodo)
+
+    assert merged["linkedin"] == {
+        key_oci: app.CURATION_STATUS_APPROVED,
+        key_local: app.CURATION_STATUS_APPROVED,
+    }
+
+
+def test_curation_radio_ignores_unknown_persisted_status():
+    """A hand-edited status must not break the radio: it falls back to Pendiente."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    key = app._candidate_key(
+        "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
+    )
+    app.set_curation({}, periodo, "linkedin", key, "Aprobado por alguien")
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "linkedin_estado_0")
+    assert radio.value == app.CURATION_STATUS_PENDING
+
+
+def test_curation_radio_seeded_from_persisted_state():
+    """A persisted Aprobado decision seeds the LinkedIn radio before first render."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    key = app._candidate_key(
+        "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
+    )
+    app.set_curation({}, periodo, "linkedin", key, app.CURATION_STATUS_APPROVED)
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "linkedin_estado_0")
+    assert radio.value == app.CURATION_STATUS_APPROVED
+
+
+def test_newsletter_radio_seeded_from_persisted_state():
+    """A persisted newsletter decision seeds the newsletter radio before render."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    key = app._candidate_key(
+        "Mariana Souza", "Consegui mi primer empleo como desarrolladora junior"
+    )
+    app.set_curation({}, periodo, "newsletter", key, app.CURATION_STATUS_APPROVED)
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "news_estado_0")
+    assert radio.value == app.CURATION_STATUS_APPROVED
+
+
+def test_faq_radio_seeded_from_persisted_state():
+    """A persisted FAQ decision seeds the FAQ radio before render."""
+    from streamlit.testing.v1 import AppTest
+
+    periodo = "Semana_04"
+    faq_key = app._faq_key("q")
+    app.set_curation({}, periodo, "faq", faq_key, app.CURATION_STATUS_APPROVED)
+
+    at = AppTest.from_file(str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py"))
+    at.run()
+    assert not at.exception
+
+    at.session_state["processing_done"] = True
+    at.session_state["periodo_referencia"] = periodo
+    at.session_state["llm_results"] = _llm_results_with_candidates()
+    at.run()
+    assert not at.exception
+
+    radio = next(r for r in at.radio if r.key == "faq_estado")
+    assert radio.value == app.CURATION_STATUS_APPROVED
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: remediación de la auditoría del panel
+# ---------------------------------------------------------------------------
+
+def test_state_layer_targets_the_bucket_configured_by_env(monkeypatch):
+    """OCI_BUCKET_NAME manda sobre el bucket por defecto (design D2)."""
+    monkeypatch.setenv("OCI_BUCKET_NAME", "otro-bucket")
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("otro-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+
+def test_state_layer_falls_back_to_default_bucket_without_env(monkeypatch):
+    """Sin OCI_BUCKET_NAME se usa el bucket por defecto."""
+    monkeypatch.delenv("OCI_BUCKET_NAME", raising=False)
+
+    app.set_atendido({}, "m-1", True)
+
+    assert ("test-bucket", "estado/derivados-atendidos.json") in _FakeOCIStorage.store
+
+
+def _derived_message(message_id):
+    """One derived message, as the pipeline materializes it."""
+    return {
+        "message_id": message_id,
+        "autor": "Mariana Souza",
+        "canal": "#logros-y-empleos",
+        "texto_original": "Consegui mi primer empleo",
+        "razon": "Feedback negativo con alta confianza",
+        "confianza": 0.95,
+    }
+
+
+def _run_app_with_negative_feedback(feedback_negativo, mensajes_derivados):
+    """Render the dashboard with a batch that carries negative feedback."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(
+        str(Path(app.__file__).resolve().parents[2] / "src" / "interface" / "app.py")
+    )
+    at.run()
+    at.session_state["processing_done"] = True
+    at.session_state["llm_results"] = {
+        "status": "exito",
+        "resumen_comunidad": {
+            "total_interacciones_procesadas": feedback_negativo,
+            "sentimiento_predominante": "negativo",
+            "temas_principales": ["backend"],
+            "feedback_negativo": feedback_negativo,
+            "analisis_degradados": 0,
+            "distribucion_sentimiento": {"negativo": feedback_negativo},
+            "temas_principales_conteo": [{"tema": "backend", "conteo": 1}],
+        },
+        "activos_distribucion_generados": {
+            "post_linkedin": {
+                "titulo": "t",
+                "canal_recomendado": "linkedin",
+                "potencial_engagement": "alto",
+                "copy": "texto",
+            },
+            "destaque_newsletter_semanal": {
+                "seccion": "x",
+                "titular": "y",
+                "resumen": "z",
+            },
+            "sugerencia_contenido_faq": {"origen": "o", "status": "s", "tema": "q"},
+            "candidatos_post_linkedin": [],
+            "mensajes_derivados": mensajes_derivados,
+        },
+        "almacenamiento_oci": {
+            "bucket": "communitylab",
+            "ruta_objeto": "activos/2026-semana-43/paquete-distribucion.json",
+            "status": "guardado_con_exito",
+        },
+    }
+    at.run()
+    assert not at.exception
+    return at
+
+
+def _negative_feedback_notice(at):
+    """The notice rendered under the "Feedback negativo" subheader."""
+    notices = [warning.value for warning in at.warning if "feedback negativo" in warning.value]
+    assert notices, f"no negative-feedback notice rendered: {[w.value for w in at.warning]}"
+    return notices[0]
+
+
+def test_negative_feedback_notice_reports_the_real_derived_count():
+    """El aviso distingue cuántas fueron negativas de cuántas se derivaron."""
+    at = _run_app_with_negative_feedback(41, [_derived_message("m-1")])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "1 se derivó a revisión humana" in notice
+    assert "41 interacciones con feedback negativo se derivaron" not in notice
+
+
+def test_negative_feedback_notice_says_when_none_was_derived():
+    """Sin derivadas, el aviso lo dice en vez de insinuar que todas lo hicieron."""
+    at = _run_app_with_negative_feedback(41, [])
+
+    notice = _negative_feedback_notice(at)
+
+    assert "41 interacciones con feedback negativo" in notice
+    assert "ninguna" in notice.lower()
