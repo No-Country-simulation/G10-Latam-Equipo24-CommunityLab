@@ -102,6 +102,10 @@ La trazabilidad de cada decisión a sus casos de prueba vive en `docs/pruebas/an
 
 **Fecha:** 2026-10-09
 **Estado:** decidida — implementada en PR #98 (regla R4)
+
+> **Actualizado por D-I (orden y umbral de confianza).** Ver D-I: orden R1 → R4 → R2 → R3 y
+> umbral `CONFIDENCE_THRESHOLD = 0.8`.
+
 **Due:** @Rox-0864
 
 **Qué decide.** Qué hace el motor con un mensaje de **sentimiento negativo que no es pregunta
@@ -110,18 +114,20 @@ técnica**. Hoy cae en R3 (`descartar`) y se pierde.
 **Decisión.** Se agrega la regla **R4**:
 
 ```
-R4 (después de R2): sentimiento == negativo
+R4 (antes de R2): sentimiento == negativo y confianza > 0.8
     → action = DERIVAR, asset_type = None
     → reason = "Feedback negativo: requiere atención personalizada por el community manager"
 ```
 
 - **Sin umbral de relevancia.** El prompt de #85 define relevancia alta como "historia de éxito,
   hito o aporte de valor": una queja nunca califica. Exigir relevancia dejaría R4 como código
-  muerto, y lo que se quiere es rutear *todo* el feedback negativo.
+  muerto. R4 sí tiene **umbral de confianza** (`> 0.8`): solo el feedback negativo de alta
+  confianza se deriva (ver D-I).
 - **Destino del feedback: B.** Conteo aditivo en `resumen_comunidad` (`feedback_negativo: N`), sin
   exponer el contenido. Mismo patrón que `analisis_degradados`.
-- **Orden:** R1 → R2 → R4 → R3. La condición `!= pregunta_tecnica` del borrador original es
-  redundante: R2 ya captura las preguntas técnicas y retorna antes.
+- **Orden:** R1 → R4 → R2 → R3 (D-I). R4 evalúa antes que R2: una pregunta técnica negativa de
+  alta confianza se deriva a un humano en vez de quedar como FAQ. D-I reemplaza el orden
+  R1 → R2 → R4 → R3 que figuraba aquí.
 
 **Por qué.**
 
