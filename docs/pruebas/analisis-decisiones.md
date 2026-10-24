@@ -48,7 +48,7 @@ Estado del código al 30/9: en `main` ya está `RecurringTopicsDetector` (PR #64
 | Regla R1 | Testimonio o logro positivo con relevancia ≥ 0.6 → `action="publicar"`, `asset_type="linkedin"` (coincide con la Regla 1 de `docs/arquitectura-tecnica/analisis-arquitectura.md`) |
 | Regla R2 | Pregunta técnica (duda técnica / pregunta frecuente) → `action="crear_faq"`, `asset_type="faq"` |
 | Regla R3 | Mensaje neutral o de relevancia < 0.6 → `action="descartar"` |
-| Regla R4 | Feedback negativo con confianza > 0.8 → `action="derivar"`, `asset_type=None`, `reason="Feedback negativo: feedback negativo"` |
+| Regla R4 | Feedback negativo con confianza > 0.8 → `action="derivar"`, `asset_type=None`, `reason="Feedback negativo: requiere atención personalizada por el community manager"` |
 | Respuesta por defecto del analizador | Sentimiento `neutral`/0.5, categoría `otro`, sin topics ni entities, relevancia 0.0 y no publicable. Implementada así en la rama de Rox |
 
 **🟡 Propuesto (pendiente de las decisiones D-A, D-D y D-E de la sección 2):**
@@ -174,7 +174,7 @@ Formato de entrada de la tabla: `category · tipo · sentimiento · relevancia �
 | DEC-06 | pregunta_tecnica · pregunta_tecnica · neutral · 0.70 · sí | R2 | `crear_faq` / `faq` | — | `test_dec_06_…` · ⏳ |
 | DEC-07 | otro · otro · neutral · 0.50 · sí | La recurrencia por sí sola no genera FAQ si no es pregunta técnica | `descartar` | 🟡 Depende de D-A y D-D | `test_dec_07_…` · 🟡 |
 | DEC-08 | otro · otro · neutral · 0.50 · no | R3 | `descartar` | — | `test_dec_08_…` · ⏳ |
-| DEC-09 | feedback · feedback · negativo · 0.80 · no | R4 | `derivar` con `reason` "Feedback negativo: feedback negativo" | Hasta el PR #98 caía en R3 (hueco O-03); hoy R4 deriva el caso a un humano (equivalente: `test_negative_feedback_is_derived_to_human`) | `test_dec_09_…` · ⏳ |
+| DEC-09 | feedback · feedback · negativo · 0.80 · no | R4 | `derivar` con `reason` "Feedback negativo: requiere atención personalizada por el community manager" | Hasta el PR #98 caía en R3 (hueco O-03); hoy R4 deriva el caso a un humano (equivalente: `test_negative_feedback_is_derived_to_human`) | `test_dec_09_…` · ⏳ |
 | DEC-10 | feedback · feedback · positivo · 0.75 · no | Ninguna regla aplica (R1 es solo para testimonios) | `descartar` con `reason` "sin regla aplicable" | 🟡 El generador de newsletter salió del MVP (S3-002), así que descartar es coherente; ver O-14 | `test_dec_10_…` · 🟡 |
 | DEC-11 | discusion · discusion · neutral · 0.20 · no | R3 | `descartar` | — | `test_dec_11_…` · ⏳ |
 | DEC-12 | testimonio · pregunta_tecnica · positivo · 0.90 · no | Prevalece el `tipo` explícito y reconocido (D-B) | `crear_faq` / `faq` | La acción está decidida; mencionar la discrepancia en `reason` es una propuesta | `test_dec_12_…` · ⏳ |

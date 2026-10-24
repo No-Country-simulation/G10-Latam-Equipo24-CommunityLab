@@ -112,7 +112,7 @@ técnica**. Hoy cae en R3 (`descartar`) y se pierde.
 ```
 R4 (después de R2): sentimiento == negativo
     → action = DERIVAR, asset_type = None
-    → reason = "Feedback negativo: feedback negativo"
+    → reason = "Feedback negativo: requiere atención personalizada por el community manager"
 ```
 
 - **Sin umbral de relevancia.** El prompt de #85 define relevancia alta como "historia de éxito,

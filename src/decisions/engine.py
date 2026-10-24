@@ -85,7 +85,7 @@ class RuleBasedDecisionEngine(DecisionEngine):
                 message_id=message_id,
                 action=ActionType.DERIVAR,
                 asset_type=None,
-                reason="Feedback negativo: feedback negativo",
+                reason="Feedback negativo: requiere atención personalizada por el community manager",
             )
 
         # Rule 2: technical question -> FAQ. Every non-negative technical
