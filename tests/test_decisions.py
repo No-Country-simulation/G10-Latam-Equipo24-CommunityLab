@@ -297,6 +297,25 @@ def test_exact_threshold_negative_message_is_not_derived():
     assert result.asset_type is None
 
 
+def test_high_confidence_negative_high_relevance_derived():
+    # DEC-26: R4 fires on a negative `logro` with confidence > 0.8 even when
+    # relevance is high. is_relevant is irrelevant to R4: it captures first by
+    # is_negative + confidence, before R2/R3.
+    engine = RuleBasedDecisionEngine()
+    analysis = build_analysis(
+        category="logro",
+        sentiment=SentimentType.NEGATIVO,
+        relevance=0.85,
+        score=0.85,
+    )
+
+    message = build_message(tipo="logro")
+    result = engine.decide(message, analysis)
+
+    assert result.action == ActionType.DERIVAR
+    assert result.asset_type is None
+
+
 def test_high_relevance_low_confidence_negative_not_derived():
     # Relevance is ignored for the R4 derivation decision.
     engine = RuleBasedDecisionEngine()
