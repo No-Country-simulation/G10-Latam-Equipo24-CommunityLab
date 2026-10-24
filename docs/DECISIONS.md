@@ -150,12 +150,15 @@ backend `rule_based` (default de un clon limpio) sale `0`, porque ese cliente nu
 
 **Dónde vive.**
 
-- `src/decisions/engine.py` — regla R4
+- `src/decisions/engine.py` — regla R4 (orden R1 → R4 → R2 → R3, umbral `CONFIDENCE_THRESHOLD = 0.8`; ver **D-I**)
 - `src/domain/models.py` — `CommunitySummary.feedback_negativo` (aditivo, default `0`)
 - `src/pipeline.py` — conteo de `DERIVAR` en el resumen; `DERIVAR` excluido del fallback del newsletter
 - `data/sample/demo_fixed.json` — mensaje negativo de ejemplo
 - `scripts/run_demo.py` — muestra el conteo en el resumen del demo
 - `docs/fichas-historias-usuario.md` — ficha HU actualizada a R4/D-F (PR #98)
+- `docs/pruebas/analisis-decisiones.md` — DEC-22, DEC-09 actualizada, PIP de `feedback_negativo`
+
+> **Nota:** `feedback_negativo` cuenta **todos** los mensajes con sentimiento negativo; `mensajes_derivados` lista solo los que superaron el umbral de confianza (> 0.8). Son **dos poblaciones distintas**. Ver D-I.
 
 ---
 
