@@ -2,16 +2,93 @@ name: PR Validation
 
 on:
   pull_request:
-    # labeled/unlabeled hacen que el check se re-evalue cuando se tocan
-    # los labels, así un PR puede pasar a verde sin tocar código.
-    types: [opened, reopened, synchronize, labeled, unlabeled]
+    # labeled/unlabeled re-evaluan el check cuando se tocan los labels, asi
+    # un PR puede pasar a verde sin tocar codigo.
+    # edited re-evalua cuando se corrige el titulo (y por lo tanto el label).
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
 
 permissions:
+  contents: read
   pull-requests: read
 
 jobs:
+  autolabel:
+    name: Auto-label desde el titulo
+    runs-on: ubuntu-22.04
+    # gh usa la mutacion GraphQL addLabelsToLabelable, que requiere write
+    # sobre pull-requests (issues: write no alcanza para labels de PR).
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Aplicar el label type:* que corresponde al prefijo del titulo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          # Si un humano ya puso un label type:*, no lo pisamos. Para saberlo
+          # leemos el actor del evento `labeled` en el timeline: asi el bot solo
+          # reemplaza labels que el mismo puso, y corregir el titulo si re-etiqueta.
+          human_labels="$(gh api "repos/$REPO/issues/$PR_NUMBER/timeline" --paginate \
+            --jq '[.[] | select(.event == "labeled") | select((.label.name // "") | startswith("type:")) | select(.actor.login != "github-actions[bot]") | .label.name] | join(",")')" || human_labels=""
+
+          if [ -n "$human_labels" ]; then
+            echo "Un humano ya eligio label type:* ($human_labels); no se auto-etiqueta."
+            exit 0
+          fi
+
+          prefix="$(printf '%s' "$TITLE" \
+            | sed -nE 's/^([A-Za-z]+)(\([^)]*\))?!?:.*/\1/p' \
+            | tr '[:upper:]' '[:lower:]')"
+
+          case "$prefix" in
+            feat|feature) target="type:feature" ;;
+            fix)          target="type:bug" ;;
+            docs)         target="type:docs" ;;
+            refactor)     target="type:refactor" ;;
+            chore|ci|build|test|perf|style) target="type:chore" ;;
+            *)            target="" ;;
+          esac
+
+          if [ -z "$target" ]; then
+            echo "::warning::El titulo no arranca con un prefijo conocido (feat, fix, docs, refactor, chore, ci, build, test, perf, style). El PR necesita un label type:* puesto a mano."
+            exit 0
+          fi
+
+          # Labels type:* actuales. Si ya es el correcto, no hay nada que hacer.
+          current="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels \
+            --jq '[.labels[].name | select(startswith("type:"))] | join(",")')" || current=""
+
+          if [ "$current" = "$target" ]; then
+            echo "El label correcto ($target) ya esta puesto."
+            exit 0
+          fi
+
+          # Reemplazar los labels type:* del bot por el que corresponde al titulo.
+          args=(--add-label "$target")
+          if [ -n "$current" ]; then
+            IFS=',' read -r -a existing <<< "$current"
+            for label in "${existing[@]}"; do
+              args+=(--remove-label "$label")
+            done
+          fi
+
+          if gh pr edit "$PR_NUMBER" --repo "$REPO" "${args[@]}"; then
+            echo "Label aplicado: $target"
+          else
+            echo "::warning::No se pudo aplicar $target (por ejemplo, PR desde un fork). Agregalo a mano."
+          fi
+
   type-label:
     name: Check PR Has type:* Label
+    needs: autolabel
+    # always(): si autolabel fallara, el gate igual corre (y falla claro) en vez
+    # de quedar `skipped`, que a veces cuenta como verde en branch protection.
+    if: always()
     runs-on: ubuntu-22.04
     steps:
       - name: Check exactly one type:* label
@@ -26,7 +103,7 @@ jobs:
             --jq '[.labels[].name | select(startswith("type:"))] | join(",")')"
 
           if [ -z "$labels" ]; then
-            echo "::error::El PR no tiene ningún label type:*. Agregá exactamente uno de: type:bug, type:feature, type:docs, type:refactor, type:chore."
+            echo "::error::El PR no tiene ningún label type:*. Agregá exactamente uno de: type:bug, type:feature, type:docs, type:refactor, type:chore (o poné un título tipo 'feat: ...', 'fix: ...' para que se aplique solo)."
             exit 1
           fi
 
