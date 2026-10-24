@@ -51,6 +51,12 @@ OCI_TENANCY_ID = ""
 OCI_REGION = "sa-valparaiso-1"
 OCI_NAMESPACE = "axcyr94oehmi"
 OCI_BUCKET_NAME = "communitylab-activos-marketing"
+# La clave privada va como CONTENIDO (multilínea), no como ruta: la app la
+# escribe en un archivo temporal al arrancar (ver cloud_secrets.py).
+OCI_PRIVATE_KEY = """-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----
+"""
 ```
 
 `src/interface/cloud_secrets.py` copia cada entrada de `secrets.toml` a
@@ -61,12 +67,13 @@ mismo código que lee un `.env` local funciona en la nube.
 > credenciales reales. El archivo ya está excluido en `.gitignore`; verificá
 > igualmente antes de commitear.
 >
-> **Nota sobre `OCI_PRIVATE_KEY_PATH`:** la app espera una **ruta a un archivo
-> `.pem`**, que no existe en Community Cloud. Para subir a OCI desde la nube
-> hay que montar la clave dentro del contenedor de la app, por ejemplo
-> escribiendo el contenido PEM desde un secret a un archivo temporal en un
-> arranque previo. Si no se hace, el pipeline degrada a snapshot local con
-> status `pendiente` (nada falla).
+> **Clave privada de OCI.** El SDK de OCI pide una **ruta a un archivo
+> `.pem`**, que no existe tal cual en Community Cloud. Para cubrirlo,
+> `cloud_secrets.py` acepta `OCI_PRIVATE_KEY` (el contenido PEM, en un secret
+> multilínea) y lo escribe en un archivo temporal con permisos `0600`,
+> apuntando `OCI_PRIVATE_KEY_PATH` a esa ruta y limpiándolo al salir. En un
+> `.env` local podés usar `OCI_PRIVATE_KEY_PATH` (ruta) o `OCI_PRIVATE_KEY`
+> (contenido); en la nube, usá `OCI_PRIVATE_KEY` con el PEM completo.
 
 ### 2. Crear la app
 
@@ -112,7 +119,9 @@ PR → CI (lint + tests) → code owner review → merge a main → redeploy en 
 
 - **Repo público.** Todo el código queda visible (el repo ya es público).
   Los secrets no se exponen, pero el contenido de `data/` sí.
-- **Sin credenciales PEM** no se puede subir a OCI desde la nube.
+- **Sin credenciales OCI** (incluida la clave privada), el pipeline degrada a
+  snapshot local con `status: pendiente` (no falla). Con `OCI_PRIVATE_KEY`
+  (contenido) en los secrets, la subida a OCI funciona desde la nube.
 - **El webhook de Telegram no corre acá** (ver tabla inicial).
 - **Recursos compartidos:** las apps gratuitas pueden dormirse por inactividad.
 
