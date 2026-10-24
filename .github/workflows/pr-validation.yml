@@ -2,16 +2,70 @@ name: PR Validation
 
 on:
   pull_request:
-    # labeled/unlabeled hacen que el check se re-evalue cuando se tocan
-    # los labels, así un PR puede pasar a verde sin tocar código.
-    types: [opened, reopened, synchronize, labeled, unlabeled]
+    # labeled/unlabeled re-evaluan el check cuando se tocan los labels, asi
+    # un PR puede pasar a verde sin tocar codigo.
+    # edited re-evalua cuando se corrige el titulo (y por lo tanto el label).
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
 
 permissions:
+  contents: read
   pull-requests: read
 
 jobs:
+  autolabel:
+    name: Auto-label desde el titulo
+    runs-on: ubuntu-22.04
+    # gh usa la mutacion GraphQL addLabelsToLabelable, que requiere write
+    # sobre pull-requests (issues: write no alcanza para labels de PR).
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Aplicar el label type:* que corresponde al prefijo del titulo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          labels="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels \
+            --jq '[.labels[].name | select(startswith("type:"))] | join(",")')" || labels=""
+
+          # Si una persona ya eligio un label type:*, no lo pisamos.
+          if [ -n "$labels" ]; then
+            echo "Ya tiene label type:* ($labels); no se auto-etiqueta."
+            exit 0
+          fi
+
+          prefix="$(printf '%s' "$TITLE" \
+            | sed -nE 's/^([A-Za-z]+)(\([^)]*\))?!?:.*/\1/p' \
+            | tr '[:upper:]' '[:lower:]')"
+
+          case "$prefix" in
+            feat|feature) label="type:feature" ;;
+            fix)          label="type:bug" ;;
+            docs)         label="type:docs" ;;
+            refactor)     label="type:refactor" ;;
+            chore|ci|build|test|perf|style) label="type:chore" ;;
+            *)            label="" ;;
+          esac
+
+          if [ -z "$label" ]; then
+            echo "::warning::El titulo no arranca con un prefijo conocido (feat, fix, docs, refactor, chore, ci, build, test, perf, style). El PR necesita un label type:* puesto a mano."
+            exit 0
+          fi
+
+          if gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$label"; then
+            echo "Label aplicado: $label"
+          else
+            echo "::warning::No se pudo aplicar $label (por ejemplo, PR desde un fork). Agregalo a mano."
+          fi
+
   type-label:
     name: Check PR Has type:* Label
+    needs: autolabel
     runs-on: ubuntu-22.04
     steps:
       - name: Check exactly one type:* label
@@ -26,7 +80,7 @@ jobs:
             --jq '[.labels[].name | select(startswith("type:"))] | join(",")')"
 
           if [ -z "$labels" ]; then
-            echo "::error::El PR no tiene ningún label type:*. Agregá exactamente uno de: type:bug, type:feature, type:docs, type:refactor, type:chore."
+            echo "::error::El PR no tiene ningún label type:*. Agregá exactamente uno de: type:bug, type:feature, type:docs, type:refactor, type:chore (o poné un título tipo 'feat: ...', 'fix: ...' para que se aplique solo)."
             exit 1
           fi
 
