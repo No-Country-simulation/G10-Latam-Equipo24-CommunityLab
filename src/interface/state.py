@@ -319,8 +319,12 @@ def _extract_periodo(session_state, results) -> str:
 
 
 def _faq_key(tema) -> str:
-    """Key for an FAQ suggestion by theme (stable across runs)."""
+    """Key for an FAQ suggestion by theme (stable across runs).
+
+    Mirrors ``_candidate_key``: the identity is the content (the theme), not
+    the render order, and uses the repo's ``sha1(...)[:12]`` stable-id
+    convention (design D6).
+    """
     if tema is None:
         tema = ""
-    h = hashlib.sha256(str(tema).encode("utf-8")).hexdigest()
-    return h[:16]
+    return hashlib.sha1(str(tema).encode("utf-8")).hexdigest()[:12]
