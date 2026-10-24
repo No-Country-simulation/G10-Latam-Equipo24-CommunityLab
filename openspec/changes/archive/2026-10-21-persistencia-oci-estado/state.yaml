@@ -1,0 +1,20 @@
+change: persistencia-oci-estado
+artifact_store: openspec
+branch: feat/persistencia-oci-estado-bc
+phase: apply
+completed:
+  - explore
+  - proposal
+  - spec
+  - design
+  - tasks
+  - apply-domain-a
+  - apply-domain-d
+pending:
+  - apply-domain-b
+  - apply-domain-c
+  - verify
+  - archive
+delivery_strategy: ask-on-risk
+chain_strategy: stacked-to-main
+review_budget_lines: 400
