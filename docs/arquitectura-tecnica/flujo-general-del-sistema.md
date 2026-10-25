@@ -93,8 +93,7 @@ modelo, esta vez sí para escribir:
 - El **post de LinkedIn** y el **destaque de la newsletter** salen del
   testimonio o logro positivo que se decidió publicar.
 - La **sugerencia de FAQ** sale de la pregunta técnica elegida.
-- Lo derivado o descartado **no** genera ningún texto: solo queda registrado
-  en el informe.
+- Lo derivado se clasifica de acuerdo a su reelevancia y selecciona los de >0.8 y los deriva para atencion humana (Community Manager).
 
 Si la escritura de un producto falla, ese producto simplemente no se incluye y
 la corrida sigue: nunca se bloquea todo por un solo intento.
