@@ -27,3 +27,24 @@ def apply_backend(name: Optional[str] = None) -> str:
     backend = resolve_backend(name)
     os.environ["COMMUNITYLAB_LLM_BACKEND"] = backend
     return backend
+
+
+# Orden de los backends en el selector del panel: los LLM reales primero y
+# `rule_based` (el fallback determinista) al final.
+LLM_BACKEND_ORDER = ("ollama", "gemini", "openai", "rule_based")
+
+
+def available_backends() -> dict[str, bool]:
+    """Backends habilitados según las credenciales presentes.
+
+    `rule_based` y `ollama` están siempre habilitados: `rule_based` no necesita
+    credenciales y `ollama` funciona en local sin key o en la nube con
+    `OLLAMA_API_KEY`. `gemini` y `openai` requieren su API key, así que solo se
+    habilitan cuando la variable correspondiente está seteada.
+    """
+    return {
+        "ollama": True,
+        "gemini": bool(os.getenv("GEMINI_API_KEY")),
+        "openai": bool(os.getenv("OPENAI_API_KEY")),
+        "rule_based": True,
+    }

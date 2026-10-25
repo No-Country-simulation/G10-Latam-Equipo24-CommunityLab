@@ -28,6 +28,11 @@ import src.interface.cloud_secrets  # noqa: E402, F401  (side-effect import)
 from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
+from src.ingest.runtime import (  # noqa: E402
+    LLM_BACKEND_ORDER,
+    apply_backend,
+    available_backends,
+)
 from src.interface import state, telegram_publish  # noqa: E402
 from src.oci.storage import PUT_LOCAL, PUT_OCI  # noqa: E402
 from src.pipeline import run_pipeline  # noqa: E402
@@ -812,6 +817,32 @@ def main():
     st.header("1. Cargar Lote de Interacciones")
     st.write("Sube el archivo con los datos exportados de la comunidad (ej. Slack, Discord, Foro).")
 
+    # Proveedor de análisis: solo los backends con credenciales quedan
+    # habilitados; los demás se listan debajo para dejar claro que existen.
+    disponibles = available_backends()
+    proveedores_activos = [b for b in LLM_BACKEND_ORDER if disponibles.get(b, False)]
+    proveedores_inactivos = [b for b in LLM_BACKEND_ORDER if not disponibles.get(b, False)]
+    backend_labels = {
+        "ollama": "Ollama",
+        "gemini": "Gemini",
+        "openai": "OpenAI",
+        "rule_based": "Reglas (determinista)",
+    }
+    st.selectbox(
+        "Proveedor de análisis",
+        proveedores_activos,
+        index=0,
+        format_func=backend_labels.get,
+        key="proveedor_analisis",
+        help="Motor de IA que analiza el lote y genera los activos.",
+    )
+    if proveedores_inactivos:
+        st.caption(
+            "Requieren API key (se habilitan al configurarla en los secrets): "
+            + ", ".join(backend_labels.get(b, b) for b in proveedores_inactivos)
+            + "."
+        )
+
     col1, col2 = st.columns([1.2, 1], gap="large")
 
     with col1:
@@ -858,6 +889,7 @@ def main():
             disabled=not combined_available,
         ):
             reset_batch_state(st.session_state)
+            apply_backend(st.session_state["proveedor_analisis"])
             try:
                 with st.spinner("Procesando muestra demo combinada..."):
                     st.session_state.llm_results = process_combined_sample(
@@ -887,6 +919,7 @@ def main():
 
     if st.button("🧠 Procesar Interacciones con IA", type="primary", disabled=not data_ready, width="stretch"):
         reset_batch_state(st.session_state)
+        apply_backend(st.session_state["proveedor_analisis"])
         try:
             content = (
                 uploaded_file.getvalue().decode("utf-8")
