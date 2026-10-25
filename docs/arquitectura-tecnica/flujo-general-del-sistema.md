@@ -8,10 +8,10 @@ desde que entra a la comunidad hasta que aparece en el tablero web.
 ```mermaid
 flowchart TD
     subgraph F1["FASE 1 - INGESTA: recolectar y limpiar"]
-        T["Grupo de Telegram"] --> LIM
+        T["Grupo de Telegram<br/>(se saltea vacíos<br/>y comandos)"] --> LIM
         AF["Archivos CSV / JSON"] --> VIA{"¿El formato<br/>es correcto?"}
         VIA -- "No" --> ERR["La corrida se corta avisando<br/>en qué fila del archivo falló"]
-        VIA -- "Sí" --> LIM["Se prepara cada mensaje:<br/>autor, texto, fecha, enlace.<br/>Los vacíos y los comandos<br/>se descartan"]
+        VIA -- "Sí" --> LIM["Se prepara cada mensaje:<br/>autor, texto, fecha, enlace.<br/>Los archivos se toman<br/>tal cual vienen"]
     end
 
     LIM --> ANA
@@ -51,19 +51,21 @@ Los mensajes llegan por dos puertas:
   pregunta cada tanto si hay mensajes nuevos).
 - **Archivos**: el equipo sube archivos CSV o JSON con mensajes recolectados.
 
-Antes de gastar análisis, se descartan los mensajes vacíos y los comandos
-internos del grupo (los que empiezan con barras, como `/start`). Si un archivo
-trae errores de formato, la corrida corta en ese punto indicando la fila
-exacta, para que el equipo corrija y vuelva a intentar.
+Antes de gastar análisis, se limpia lo que llega por **Telegram**: se saltean los
+mensajes vacíos y los comandos internos del grupo (los que empiezan con barras,
+como `/start`). Los **archivos** CSV o JSON, en cambio, se toman tal cual vienen,
+sin descartar mensajes. Si un archivo trae errores de formato, la corrida corta
+en ese punto indicando la fila exacta, para que el equipo corrija y vuelva a
+intentar.
 
 ## Fase 2: Análisis y decisión (leer y decidir)
 
 El modelo de lenguaje es intercambiable por configuración: puede ser **Gemini**
-en la nube (pide una clave) o un **modelo abierto servido por Ollama**, que
-corre en la máquina o en la nube. Si no se configura ninguno, el análisis se
-hace con reglas fijas, sin inteligencia artificial. Ese modelo **no escribe
-nada todavía**: solo lee y clasifica. Por cada mensaje llena una planilla con
-tres campos:
+u **OpenAI** en la nube (piden una clave) o un **modelo abierto servido por
+Ollama**, que corre en la máquina o en la nube. Si no se configura ninguno, el
+análisis se hace con reglas fijas, sin inteligencia artificial. Ese modelo **no
+escribe nada todavía**: solo lee y clasifica. Por cada mensaje llena una
+planilla con tres campos:
 
 1. **Sentimiento**: positivo, negativo o neutro, con un puntaje de seguridad.
 2. **Tema**: testimonio, pregunta técnica, feedback, logro o discusión.
@@ -91,7 +93,9 @@ Solo los mensajes elegidos en la fase anterior hacen una **segunda** llamada al
 modelo, esta vez sí para escribir:
 
 - El **post de LinkedIn** y el **destaque de la newsletter** salen del
-  testimonio o logro positivo que se decidió publicar.
+  testimonio o logro positivo que se decidió publicar. Si no hay ninguno para
+  publicar, la newsletter toma el primer mensaje que no fue descartado ni
+  derivado.
 - La **sugerencia de FAQ** sale de la pregunta técnica elegida.
 - Lo **derivado** (feedback negativo con confianza mayor al 80%) y lo
   **descartado** no generan ningún texto: el derivado se enruta al community
