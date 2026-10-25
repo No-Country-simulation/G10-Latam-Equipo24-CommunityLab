@@ -34,17 +34,53 @@ def apply_backend(name: Optional[str] = None) -> str:
 LLM_BACKEND_ORDER = ("ollama", "gemini", "openai", "rule_based")
 
 
-def available_backends() -> dict[str, bool]:
-    """Backends habilitados según las credenciales presentes.
+def _ollama_importable() -> bool:
+    """Indica si el paquete Python `ollama` está instalado (modo local).
 
-    `rule_based` y `ollama` están siempre habilitados: `rule_based` no necesita
-    credenciales y `ollama` funciona en local sin key o en la nube con
-    `OLLAMA_API_KEY`. `gemini` y `openai` requieren su API key, así que solo se
-    habilitan cuando la variable correspondiente está seteada.
+    `OllamaClient` en modo local (sin `OLLAMA_API_KEY`) habla con `ollama
+    serve` a través del paquete `ollama`. Sin ese paquete el modo local falla
+    al correr aunque el binario de Ollama esté instalado, así que la opción no
+    debe figurar como habilitada.
+    """
+    try:
+        import ollama  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def _ollama_available() -> bool:
+    """`ollama` está habilitado en modo nube (key) o en modo local (paquete).
+
+    Son dos modos distintos de `OllamaClient`: con `OLLAMA_API_KEY` usa el SDK
+    `openai` contra `OLLAMA_BASE_URL`; sin key usa el paquete `ollama` contra
+    el servidor local. Se habilita si al menos uno de los dos está disponible.
+    """
+    return bool(os.getenv("OLLAMA_API_KEY")) or _ollama_importable()
+
+
+def available_backends() -> dict[str, bool]:
+    """Backends habilitados según las credenciales y dependencias presentes.
+
+    `rule_based` no necesita nada. `ollama` requiere la key (nube) o el paquete
+    Python `ollama` (local). `gemini` y `openai` requieren su API key.
     """
     return {
-        "ollama": True,
+        "ollama": _ollama_available(),
         "gemini": bool(os.getenv("GEMINI_API_KEY")),
         "openai": bool(os.getenv("OPENAI_API_KEY")),
         "rule_based": True,
     }
+
+
+def split_backends() -> tuple[list[str], list[str]]:
+    """Particiona los backends en (activos, inactivos) según `LLM_BACKEND_ORDER`.
+
+    Útil para el selector del panel: los activos van al `selectbox` y los
+    inactivos se listan debajo para dejar claro que el sistema los soporta
+    aunque hoy no estén disponibles.
+    """
+    disponibles = available_backends()
+    activos = [b for b in LLM_BACKEND_ORDER if disponibles.get(b, False)]
+    inactivos = [b for b in LLM_BACKEND_ORDER if not disponibles.get(b, False)]
+    return activos, inactivos

@@ -29,9 +29,9 @@ from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
 from src.ingest.runtime import (  # noqa: E402
-    LLM_BACKEND_ORDER,
     apply_backend,
-    available_backends,
+    resolve_backend,
+    split_backends,
 )
 from src.interface import state, telegram_publish  # noqa: E402
 from src.oci.storage import PUT_LOCAL, PUT_OCI  # noqa: E402
@@ -634,6 +634,9 @@ def reset_batch_state(session_state):
     # A new batch must not inherit which signatures were already published:
     # otherwise a fresh lot's candidate could be blocked as "already sent".
     session_state.pop("telegram_published_times", None)
+    # A new batch must not inherit which provider produced the previous
+    # results: traceability is per batch, not per session.
+    session_state.pop("proveedor_usado", None)
     session_state["processing_done"] = False
     session_state["llm_results"] = None
 
@@ -817,28 +820,38 @@ def main():
     st.header("1. Cargar Lote de Interacciones")
     st.write("Sube el archivo con los datos exportados de la comunidad (ej. Slack, Discord, Foro).")
 
-    # Proveedor de análisis: solo los backends con credenciales quedan
-    # habilitados; los demás se listan debajo para dejar claro que existen.
-    disponibles = available_backends()
-    proveedores_activos = [b for b in LLM_BACKEND_ORDER if disponibles.get(b, False)]
-    proveedores_inactivos = [b for b in LLM_BACKEND_ORDER if not disponibles.get(b, False)]
+    # Proveedor de análisis: solo los backends disponibles quedan habilitados;
+    # los demás se listan debajo para dejar claro que existen. El valor inicial
+    # respeta el backend ya configurado (env/secrets), con fallback a
+    # `rule_based`, para no cambiar el backend por defecto del despliegue.
+    proveedores_activos, proveedores_inactivos = split_backends()
     backend_labels = {
         "ollama": "Ollama",
         "gemini": "Gemini",
         "openai": "OpenAI",
         "rule_based": "Reglas (determinista)",
     }
+    backend_actual = resolve_backend(None)
+    indice_proveedor = (
+        proveedores_activos.index(backend_actual)
+        if backend_actual in proveedores_activos
+        else proveedores_activos.index("rule_based")
+    )
     st.selectbox(
         "Proveedor de análisis",
         proveedores_activos,
-        index=0,
+        index=indice_proveedor,
         format_func=backend_labels.get,
         key="proveedor_analisis",
-        help="Motor de IA que analiza el lote y genera los activos.",
+        help=(
+            "Motor de IA que analiza el lote y genera los activos. La elección "
+            "es por sesión: con varios usuarios procesando en el mismo proceso "
+            "una corrida puede pisar la de otra."
+        ),
     )
     if proveedores_inactivos:
         st.caption(
-            "Requieren API key (se habilitan al configurarla en los secrets): "
+            "No disponibles (requieren API key o dependencias): "
             + ", ".join(backend_labels.get(b, b) for b in proveedores_inactivos)
             + "."
         )
@@ -889,7 +902,9 @@ def main():
             disabled=not combined_available,
         ):
             reset_batch_state(st.session_state)
-            apply_backend(st.session_state["proveedor_analisis"])
+            st.session_state["proveedor_usado"] = apply_backend(
+                st.session_state["proveedor_analisis"]
+            )
             try:
                 with st.spinner("Procesando muestra demo combinada..."):
                     st.session_state.llm_results = process_combined_sample(
@@ -919,7 +934,9 @@ def main():
 
     if st.button("🧠 Procesar Interacciones con IA", type="primary", disabled=not data_ready, width="stretch"):
         reset_batch_state(st.session_state)
-        apply_backend(st.session_state["proveedor_analisis"])
+        st.session_state["proveedor_usado"] = apply_backend(
+            st.session_state["proveedor_analisis"]
+        )
         try:
             content = (
                 uploaded_file.getvalue().decode("utf-8")
@@ -947,6 +964,13 @@ def main():
         periodo = state._extract_periodo(st.session_state, results)
 
         st.success(f"Estado del lote: {results['status']}")
+
+        proveedor_usado = st.session_state.get("proveedor_usado")
+        if proveedor_usado:
+            st.caption(
+                "Proveedor de análisis: "
+                + backend_labels.get(proveedor_usado, proveedor_usado)
+            )
 
         st.subheader("📊 Resumen de la comunidad")
         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
