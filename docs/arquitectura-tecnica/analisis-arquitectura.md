@@ -14,7 +14,7 @@ src/
 ├── domain/       # Modelos Pydantic (Contratos de entrada/salida y Enums)
 ├── ingest/       # Carga, validación y normalización de interacciones crudas
 ├── analysis/     # Analizador unificado (sentimiento, categoría, relevancia)
-├── decisions/    # Motor de decisiones determinista y detector de dudas recurrentes
+├── decisions/    # Motor de decisiones determinista
 ├── generators/   # Generadores de contenido (LinkedIn, FAQ, Newsletter)
 ├── oci/          # Cliente y almacenamiento Object Storage (OCI)
 ├── interface/    # Aplicación web interactiva (Streamlit)

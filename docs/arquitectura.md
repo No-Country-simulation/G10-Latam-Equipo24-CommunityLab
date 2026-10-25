@@ -114,7 +114,6 @@ flowchart LR
 
     subgraph DEC["🧭 Decisions"]
         D_ENGINE["src/decisions/engine.py"]
-        D_REC["src/decisions/recurring_topics.py"]
     end
 
     subgraph OCI["☁️ OCI"]
@@ -139,7 +138,7 @@ flowchart LR
     DEC -->|"derivados"| OCI
     ANL -->|"prompt + respuesta"| LLMS
     GEN -->|"prompt + respuesta"| LLMS
-    LLMS -->|"cliente"| RUNTIME
+    RUNTIME -->|"elige backend"| LLMS
 ```
 
 ---
