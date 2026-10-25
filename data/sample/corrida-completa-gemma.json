@@ -6,50 +6,42 @@
     "temas_principales": [
       "python",
       "empleo",
+      "entrevista técnica",
       "estudio",
-      "reconocimiento",
-      "entrevista técnica"
+      "reconocimiento"
     ],
     "analisis_degradados": 0,
-    "feedback_negativo": 41,
-    "dudas_frecuentes": 74,
-    "tipos_discrepantes": 57,
+    "feedback_negativo": 37,
+    "dudas_frecuentes": 76,
+    "tipos_discrepantes": 56,
     "distribucion_sentimiento": {
-      "positivo": 106,
-      "neutral": 85,
-      "negativo": 41
+      "positivo": 108,
+      "neutral": 87,
+      "negativo": 37
     },
     "temas_principales_conteo": [
       {
         "tema": "python",
-        "conteo": 15
+        "conteo": 13
       },
       {
         "tema": "empleo",
         "conteo": 11
       },
       {
-        "tema": "estudio",
-        "conteo": 9
-      },
-      {
-        "tema": "reconocimiento",
-        "conteo": 9
-      },
-      {
         "tema": "entrevista técnica",
         "conteo": 8
       },
       {
-        "tema": "proyecto del curso",
+        "tema": "estudio",
         "conteo": 8
       },
       {
-        "tema": "autenticación",
-        "conteo": 7
+        "tema": "reconocimiento",
+        "conteo": 8
       },
       {
-        "tema": "automatización",
+        "tema": "ci pipeline",
         "conteo": 7
       },
       {
@@ -57,29 +49,37 @@
         "conteo": 7
       },
       {
-        "tema": "dependencia",
+        "tema": "subida de modelo",
+        "conteo": 7
+      },
+      {
+        "tema": "empleabilidad",
+        "conteo": 6
+      },
+      {
+        "tema": "migración de aplicación",
         "conteo": 6
       }
     ]
   },
   "activos_distribucion_generados": {
     "post_linkedin": {
-      "titulo": "Caso de éxito: De estudiante a Desarrolladora Junior de IA",
-      "copy": "🚀 ¿Qué es lo que realmente buscan las empresas en una entrevista técnica hoy en día?\n\nMariana Souza acaba de alcanzar un hito increíble: ¡fue seleccionada como Desarrolladora Junior de IA! 🌟\n\nLo más interesante de su camino es que no fue solo el conocimiento teórico lo que abrió la puerta. Fue la capacidad de aplicar lo aprendido. Mariana construyó un proyecto utilizando LangChain y OCI para su portfolio, y fue precisamente ese trabajo práctico el que marcó la diferencia decisiva durante su proceso de selección.\n\nEl gran aprendizaje aquí es claro: el portfolio es tu mejor carta de presentación. Construir proyectos reales y tangibles demuestra no solo qué sabes, sino cómo resuelves problemas reales con tecnología de vanguardia.\n\n¡Felicitaciones, Mariana, por este gran logro y gracias por compartir tu éxito con la comunidad! 🎉\n\n¿Estás trabajando en algún proyecto para tu portfolio? Contanos en los comentarios qué tecnologías estás usando. 👇\n\n#InteligenciaArtificial #LangChain #Empleabilidad #TechCareer #IA",
+      "titulo": "Caso de éxito: El poder de un portfolio práctico",
+      "copy": "¿Qué es lo que realmente convence a un reclutador técnico hoy en día? 🚀\n\nMariana Souza acaba de alcanzar un hito importante en su carrera: fue seleccionada para el puesto de Desarrolladora Junior de IA. Pero lo más interesante es el 'cómo'.\n\nDurante su proceso, no fue solo el conocimiento teórico lo que marcó la diferencia, sino un proyecto tangible. El desarrollo que construyó para su portfolio basándose en el curso de LangChain y OCI fue la pieza clave que destacó en su entrevista técnica y le abrió las puertas a esta oportunidad.\n\nEl aprendizaje es claro: en el mundo de la tecnología, saber hacer es tan importante como saber explicar. Un portfolio con proyectos reales y aplicados es la mejor carta de presentación para demostrar competencias técnicas en tiempo real.\n\n¡Felicitaciones, Mariana, por este gran logro! 🎉\n\n¿Y vos? ¿Estás construyendo proyectos que hablen por vos en tus entrevistas? Contanos en los comentarios qué estás desarrollando. 👇\n\n#InteligenciaArtificial #LangChain #DesarrolloSoftware #Empleabilidad #IA",
       "canal_recomendado": "LinkedIn Oficial",
       "potencial_engagement": "Alto"
     },
     "destaque_newsletter_semanal": {
       "seccion": "Logro de la Semana",
-      "titular": "Nuevo camino en IA para Mariana Souza",
-      "resumen": "Highlight: Mariana Souza ha sido seleccionada como Desarrolladora Junior de IA. Contexto: El anuncio fue compartido por la autora en el canal #logros-y-empleos. Aprendizaje / recurso: La importancia de contar con un portfolio sólido; en este caso, el proyecto desarrollado durante el curso de LangChain y OCI fue el factor determinante para superar la entrevista técnica."
+      "titular": "Nuevo paso profesional en IA",
+      "resumen": "Highlight: Mariana Souza ha sido seleccionada para el puesto de Desarrolladora Junior de IA. Contexto: Compartió esta gran noticia a través del canal #logros-y-empleos, destacando el apoyo recibido por la comunidad. Aprendizaje / recurso: El desarrollo de proyectos prácticos para el portfolio, específicamente el proyecto basado en el curso de LangChain y OCI, resultó ser el factor diferencial durante su entrevista técnica."
     },
     "sugerencia_contenido_faq": {
-      "tema": "Error 500 al subir el modelo entrenado",
+      "tema": "Errores de dependencias en el pipeline de CI",
       "origen": "ayuda",
       "status": "generado",
-      "respuesta": "Se ha reportado la incidencia de un error 500 al intentar cargar el modelo entrenado. Por favor, verifica la estabilidad de tu conexión o contacta al soporte técnico si el problema persiste.",
-      "pregunta_representativa": "Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser.",
+      "respuesta": "Si el pipeline de CI falla debido a un error de dependencias y los logs no son claros, se recomienda revisar la configuración de las dependencias del proyecto para identificar posibles conflictos o versiones incompatibles.",
+      "pregunta_representativa": "El pipeline de CI falla por un error de dependencias y no entiendo el log.",
       "total_preguntas": 7
     },
     "candidatos_post_linkedin": [
@@ -88,325 +88,325 @@
         "canal": "#logros-y-empleos",
         "texto_original": "Comunidad, quedé seleccionada para el puesto de Desarrolladora Junior de IA! El proyecto del curso de LangChain y OCI que construí en mi portfolio marcó toda la diferencia en la entrevista técnica. Muy agradecida con la comunidad por todo el apoyo!",
         "relevancia": 1.0,
-        "copy": "🚀 ¿Qué es lo que realmente buscan las empresas en una entrevista técnica hoy en día?\n\nMariana Souza acaba de alcanzar un hito increíble: ¡fue seleccionada como Desarrolladora Junior de IA! 🌟\n\nLo más interesante de su camino es que no fue solo el conocimiento teórico lo que abrió la puerta. Fue la capacidad de aplicar lo aprendido. Mariana construyó un proyecto utilizando LangChain y OCI para su portfolio, y fue precisamente ese trabajo práctico el que marcó la diferencia decisiva durante su proceso de selección.\n\nEl gran aprendizaje aquí es claro: el portfolio es tu mejor carta de presentación. Construir proyectos reales y tangibles demuestra no solo qué sabes, sino cómo resuelves problemas reales con tecnología de vanguardia.\n\n¡Felicitaciones, Mariana, por este gran logro y gracias por compartir tu éxito con la comunidad! 🎉\n\n¿Estás trabajando en algún proyecto para tu portfolio? Contanos en los comentarios qué tecnologías estás usando. 👇\n\n#InteligenciaArtificial #LangChain #Empleabilidad #TechCareer #IA",
-        "titulo": "Caso de éxito: De estudiante a Desarrolladora Junior de IA",
+        "copy": "¿Qué es lo que realmente convence a un reclutador técnico hoy en día? 🚀\n\nMariana Souza acaba de alcanzar un hito importante en su carrera: fue seleccionada para el puesto de Desarrolladora Junior de IA. Pero lo más interesante es el 'cómo'.\n\nDurante su proceso, no fue solo el conocimiento teórico lo que marcó la diferencia, sino un proyecto tangible. El desarrollo que construyó para su portfolio basándose en el curso de LangChain y OCI fue la pieza clave que destacó en su entrevista técnica y le abrió las puertas a esta oportunidad.\n\nEl aprendizaje es claro: en el mundo de la tecnología, saber hacer es tan importante como saber explicar. Un portfolio con proyectos reales y aplicados es la mejor carta de presentación para demostrar competencias técnicas en tiempo real.\n\n¡Felicitaciones, Mariana, por este gran logro! 🎉\n\n¿Y vos? ¿Estás construyendo proyectos que hablen por vos en tus entrevistas? Contanos en los comentarios qué estás desarrollando. 👇\n\n#InteligenciaArtificial #LangChain #DesarrolloSoftware #Empleabilidad #IA",
+        "titulo": "Caso de éxito: El poder de un portfolio práctico",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "Nuevo camino en IA para Mariana Souza",
-        "newsletter_resumen": "Highlight: Mariana Souza ha sido seleccionada como Desarrolladora Junior de IA. Contexto: El anuncio fue compartido por la autora en el canal #logros-y-empleos. Aprendizaje / recurso: La importancia de contar con un portfolio sólido; en este caso, el proyecto desarrollado durante el curso de LangChain y OCI fue el factor determinante para superar la entrevista técnica."
+        "newsletter_titular": "Nuevo paso profesional en IA",
+        "newsletter_resumen": "Highlight: Mariana Souza ha sido seleccionada para el puesto de Desarrolladora Junior de IA. Contexto: Compartió esta gran noticia a través del canal #logros-y-empleos, destacando el apoyo recibido por la comunidad. Aprendizaje / recurso: El desarrollo de proyectos prácticos para el portfolio, específicamente el proyecto basado en el curso de LangChain y OCI, resultó ser el factor diferencial durante su entrevista técnica."
       },
       {
         "autor": "Carlos Mendes",
         "canal": "#logros-y-empleos",
         "texto_original": "Después de ocho meses estudiando en ONE, hoy firmé contrato como Desarrollador Backend Junior. La API con OCI Object Storage que armé para el portfolio fue lo que más le gustó al recruiter. ¡Gracias a todos los que me dieron feedback en el canal!",
         "relevancia": 1.0,
-        "copy": "¿Qué es lo que realmente convence a un reclutador hoy en día? 🚀\n\nCarlos Mendes acaba de alcanzar un hito importante: después de ocho meses de estudio intenso en ONE, firmó su contrato como Desarrollador Backend Junior. \n\nLo más interesante de su proceso fue el factor diferencial. No fue solo el conocimiento teórico, sino la implementación práctica. Carlos desarrolló una API con OCI Object Storage para su portfolio, y fue precisamente este proyecto el que captó la atención del recruiter y marcó la diferencia en la selección. \n\nEste logro nos deja un aprendizaje claro: en el mundo del desarrollo, construir proyectos reales y tangibles es la mejor carta de presentación. Además, el feedback constante de la comunidad fue una pieza clave para pulir sus habilidades antes de dar el salto profesional. 💻\n\n¿Estás armando tu portfolio? Contanos en los comentarios qué proyecto estás desarrollando para destacar tu perfil. 👇\n\n#DesarrolloBackend #PrimerEmpleo #Programacion #Portfolio #TechCareer",
-        "titulo": "De estudiante a Desarrollador Backend Junior",
+        "copy": "¿Qué es lo que realmente mira un recruiter en un portfolio técnico? 🚀\n\nCarlos Mendes acaba de alcanzar un hito fundamental en su carrera: tras ocho meses de formación intensa en ONE, ha firmado su contrato como Desarrollador Backend Junior.\n\nLo más interesante de su proceso es que el factor decisivo no fue solo el título, sino un proyecto concreto. Carlos desarrolló una API utilizando OCI Object Storage para su portfolio, y fue precisamente esa implementación técnica lo que captó la atención del reclutador y marcó la diferencia en la selección.\n\nEste logro nos deja una lección clara: en el mundo IT, la capacidad de aplicar los conocimientos en proyectos reales y tangibles es la mejor carta de presentación. Además, el feedback constante de la comunidad es un acelerador invaluable en el camino al primer empleo. 💻\n\n¿Estás armando tu portfolio? Contanos en los comentarios qué proyecto estás desarrollando para destacar tu perfil. 👇\n\n#DesarrolloBackend #PrimerEmpleo #Programacion #TechCareer #JuniorDeveloper",
+        "titulo": "Caso de Éxito: De estudiante a Desarrollador Backend Junior",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nuevo Desarrollador Backend Junior en la comunidad!",
-        "newsletter_resumen": "Highlight: Carlos Mendes ha conseguido su primer empleo como Desarrollador Backend Junior tras ocho meses de formación en ONE. Contexto: Compartió su alegría en el canal #logros-y-empleos, agradeciendo el feedback recibido por sus compañeros. Aprendizaje / recurso: El proyecto clave para destacar en el portfolio fue la creación de una API integrada con OCI Object Storage, demostrando que la aplicación de conocimientos técnicos en proyectos reales es fundamental para atraer la atención de los reclutadores."
+        "newsletter_titular": "Nuevo Desarrollador Backend Junior",
+        "newsletter_resumen": "Highlight: Carlos Mendes logró insertarse laboralmente como Desarrollador Backend Junior tras ocho meses de formación en ONE. Contexto: El anuncio fue compartido por Carlos en el canal #logros-y-empleos. Aprendizaje / recurso: La creación de proyectos prácticos para el portfolio, específicamente una API con OCI Object Storage, resultó ser el factor determinante y más valorado por el reclutador durante el proceso de selección."
       },
       {
-        "autor": "Javier Prado",
+        "autor": "Diego Herrera",
         "canal": "#logros-y-empleos",
-        "texto_original": "No lo puedo creer, conseguí mi primera pasantía como Data Analyst. El dashboard que hice en el proyecto final fue decisivo en la entrevista. Sin esta comunidad no llegaba ni a la mitad.",
+        "texto_original": "Tercer mes de búsqueda y por fin se dio: quedé en una startup como DevOps. Todo lo de OCI y automatización que aprendí en el curso me sirvió para pasar la prueba técnica de una.",
         "relevancia": 1.0,
-        "copy": "🚀 ¡El esfuerzo tiene su recompensa!\n\nJavier Prado acaba de alcanzar un hito fundamental en su carrera: consiguió su primera pasantía como Data Analyst. Lo más interesante es que no fue solo el CV lo que abrió la puerta, sino la capacidad de demostrar sus habilidades con hechos concretos. \n\nDurante su entrevista, el dashboard que desarrolló para su proyecto final fue el factor decisivo. Haber transformado datos en visualizaciones claras y accionables permitió que el equipo reclutador viera exactamente de lo que es capaz. Además, Javier destaca que el apoyo de la comunidad fue clave para llegar a este objetivo. 📈\n\nLa lección es clara: en el mundo de los datos, mostrar es mucho más potente que decir. Un proyecto sólido y una red de apoyo son el combustible ideal para despegar profesionalmente. 💡\n\n¿Estás trabajando en tu portfolio o necesitas un empujón para lanzar tu primer proyecto? Te leo en los comentarios. 👇\n\n#DataAnalysis #PrimerEmpleo #DataAnalytics #Portfolio #CrecimientoProfesional",
-        "titulo": "El poder de un portfolio real",
+        "copy": "¿Vale la pena especializarse en tecnologías específicas para conseguir empleo? La respuesta es un rotundo sí. 🚀\n\nDiego Herrera estuvo tres meses en la búsqueda activa de nuevas oportunidades laborales. El camino no siempre es lineal, pero la preparación marca la diferencia. Gracias a sus conocimientos en OCI (Oracle Cloud Infrastructure) y automatización, Diego logró superar la prueba técnica sin complicaciones y acaba de integrarse a una startup como DevOps.\n\nEste logro nos deja una lección clara: la combinación de formación técnica actualizada y persistencia es la fórmula ganadora en el sector tecnológico. No se trata solo de buscar, sino de prepararse para cuando la oportunidad knocks a la puerta. 💡\n\n¿Estás capacitándote en alguna tecnología nueva para dar el siguiente salto en tu carrera? Contame en los comentarios. 👇\n\n#DevOps #OCI #CloudComputing #EmpleoIT #CrecimientoProfesional",
+        "titulo": "Caso de éxito: De la capacitación al empleo DevOps",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primera pasantía como Data Analyst!",
-        "newsletter_resumen": "Highlight: Javier Prado logró conseguir su primera pasantía como Analista de Datos, destacando que el dashboard de su proyecto final fue la pieza clave para superar la entrevista. Contexto: Javier compartió esta gran noticia a través del canal #logros-y-empleos, agradeciendo el apoyo fundamental de la comunidad en su proceso. Aprendizaje / recurso: Este logro resalta la importancia de desarrollar proyectos prácticos y visualizaciones de datos sólidas como herramienta decisiva para demostrar competencias técnicas ante los reclutadores."
+        "newsletter_titular": "Nueva oportunidad como DevOps",
+        "newsletter_resumen": "Highlight: Diego Herrera logró ingresar a una startup como DevOps tras tres meses de búsqueda. Contexto: Diego compartió su alegría en el canal #logros-y-empleos. Aprendizaje / recurso: El dominio de OCI y la automatización, reforzados a través de la formación del curso, fueron claves para superar con éxito la prueba técnica."
+      },
+      {
+        "autor": "Jorge",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¡El esfuerzo siempre tiene su recompensa! 🚀\n\nJorge compartió una noticia que nos llena de orgullo: después de seis meses de estudio intensivo y dedicación, logró conseguir su primer empleo como desarrolladora. \n\nEste hito no es solo la suma de horas frente al código, sino el resultado de la perseverancia y la disciplina necesarias para romper la barrera de entrada en el mundo tecnológico. \n\nLa gran enseñanza aquí es que la constancia es la clave. No importa el punto de partida, sino el compromiso con el aprendizaje continuo y la capacidad de mantenerse enfocado en el objetivo, incluso cuando el camino parece desafiante. 💡\n\n¿Estás empezando tu camino en la programación o acabas de conseguir tu primera oportunidad? ¡Contanos tu experiencia en los comentarios para inspirar a otros! 👇\n\n#PrimerEmpleo #DesarrolloWeb #Programacion #CrecimientoProfesional #TechCareer",
+        "titulo": "Logro profesional: Primer empleo en IT",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Primer empleo en desarrollo!",
+        "newsletter_resumen": "Highlight: Jorge alcanzó un hito fundamental en su carrera al conseguir su primer empleo como desarrolladora. Contexto: Este logro fue compartido por el autor en el canal general de nuestra comunidad. Aprendizaje / recurso: Su experiencia demuestra que la constancia y el estudio enfocado durante seis meses pueden abrir las puertas al mercado laboral tecnológico."
+      },
+      {
+        "autor": "Diego",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¡De los libros al código real! 💻\n\nDiego ha alcanzado un hito fundamental en su carrera profesional: consiguió su primer empleo como desarrolladora tras dedicar seis meses de estudio intensivo. \n\nEste logro no es casualidad, sino el resultado de la disciplina y la constancia necesarias para dominar nuevas tecnologías en un tiempo récord. Pasar de la teoría a la práctica en el mundo laboral es el paso más desafiante y gratificante de cualquier camino en tecnología.\n\nEl mayor aprendizaje aquí es que la intensidad y el enfoque pueden acelerar la curva de aprendizaje. No se trata solo de cuánto tiempo estudias, sino de cómo lo aplicas para volverte empleable.\n\n¿Estás en proceso de reconversión laboral o buscando tu primera oportunidad en tech? ¡Contame tu experiencia en los comentarios! 👇\n\n#PrimerEmpleo #DesarrolloSoftware #IT #CrecimientoProfesional #Coding",
+        "titulo": "Primer empleo en IT",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "Primer empleo tras seis meses de estudio",
+        "newsletter_resumen": "Highlight: Diego ha conseguido su primer empleo como desarrolladora, alcanzando un hito fundamental en su carrera profesional. Contexto: Este logro fue compartido por el autor en el canal general de nuestra comunidad. Aprendizaje / recurso: Este caso nos demuestra que la disciplina y el estudio enfocado durante medio año pueden abrir puertas reales en el mercado laboral, motivando a quienes siguen transitando su camino de aprendizaje."
       },
       {
         "autor": "Valentina",
         "canal": "general",
         "texto_original": "Quedé seleccionado para el puesto junior que recomendaron en la comunidad.",
         "relevancia": 1.0,
-        "copy": "¡El poder de una comunidad activa es increíble! 🚀\n\nValentina compartió una noticia que nos llena de orgullo: quedó seleccionada para el puesto junior que fue recomendado dentro de nuestra comunidad. \n\nEste logro no es casualidad. Es el resultado de estar en el lugar correcto, atento a las oportunidades y, sobre todo, de contar con una red de apoyo que impulsa el crecimiento de sus miembros. \n\nLa gran lección aquí es que el networking genuino y el intercambio de valor abren puertas que muchas veces no encontramos solos en los portales de empleo tradicionales. Estar conectado es tan importante como estar capacitado.\n\n¿Y vos, cómo estás potenciando tu red de contactos hoy? Te leo en los comentarios. 👇\n\n#Networking #OportunidadLaboral #Comunidad #CrecimientoProfesional #PrimerEmpleo",
+        "copy": "¡La fuerza de una red de apoyo hace la diferencia! 🚀\n\nEstamos muy contentos de compartir que Valentina ha sido seleccionada para el puesto junior que se recomendó a través de nuestra comunidad. Ver cómo el acceso a las oportunidades correctas impulsa carreras profesionales es lo que nos motiva a seguir creciendo juntos.\n\nEste logro nos deja una enseñanza clara: el networking y el sentido de comunidad no son solo palabras, son puentes reales hacia el primer empleo o el siguiente salto profesional. Estar en el lugar correcto, conectado con las personas correctas, acelera el camino al éxito.\n\n¡Felicitaciones, Valentina, por este gran paso! 👏\n\n¿Y vos, cómo sentís que tu red de contactos te ha ayudado en tu crecimiento profesional? Te leo en los comentarios. 👇\n\n#Networking #PrimerEmpleo #ComunidadIT #CrecimientoProfesional",
         "titulo": "Logro de comunidad: Nuevo puesto Junior",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nueva oportunidad laboral para la comunidad!",
-        "newsletter_resumen": "Highlight: Valentina ha sido seleccionada para un puesto junior gracias a una recomendación compartida en la comunidad.\nContexto: Este logro fue compartido por la autora en el canal general.\nAprendizaje / recurso: Este hito demuestra el valor de estar atentos a las vacantes recomendadas y el impacto positivo del networking dentro de nuestro ecosistema."
+        "newsletter_titular": "¡Nueva oportunidad laboral para Valentina!",
+        "newsletter_resumen": "Highlight: Valentina ha sido seleccionada para un puesto junior. Contexto: El logro fue compartido por la autora en el canal general, tras aprovechar una recomendación laboral difundida en la comunidad. Aprendizaje / recurso: Este caso demuestra el valor de estar atentos a las oportunidades compartidas y el impacto positivo del networking dentro de nuestra red."
+      },
+      {
+        "autor": "Luciana",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¿Cuánto tiempo toma cambiar tu trayectoria profesional? 🚀\n\nLuciana lo logró en seis meses. Después de un periodo de estudio intenso y dedicado, alcanzó una meta fundamental: conseguir su primer empleo como desarrolladora.\n\nDetrás de este logro no solo hay código, sino disciplina, constancia y la capacidad de absorber conocimientos en tiempo récord para insertarse en un mercado competitivo.\n\nEl aprendizaje aquí es claro: la intensidad del estudio y el enfoque correcto pueden acelerar los resultados. No se trata solo de cuánto tiempo estudias, sino de la determinación con la que persigues el objetivo. 💻\n\n¡Felicitaciones, Luciana, por este gran paso en tu carrera!\n\n¿Estás estudiando para dar tu primer salto al mundo tech? Contanos en los comentarios cómo viene tu proceso. 👇\n\n#DesarrolloWeb #PrimerEmpleo #IT #Programacion #CrecimientoProfesional",
+        "titulo": "Primer empleo en IT: El camino de Luciana",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Primer empleo en desarrollo!",
+        "newsletter_resumen": "Highlight: Luciana ha conseguido su primer puesto como desarrolladora tras seis meses de dedicación intensiva al estudio. Contexto: Esta gran noticia fue compartida por la autora en el canal general de nuestra comunidad. Aprendizaje / recurso: Este logro nos demuestra que la constancia y el estudio enfocado dan resultados tangibles, motivándonos a todos a seguir persiguiendo sus metas profesionales."
+      },
+      {
+        "autor": "Diego",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¿Es posible cambiar de carrera en pocos meses? La respuesta es sí, pero requiere disciplina y enfoque. 🚀\n\nDiego comparte un logro que inspira a cualquiera que esté comenzando en el mundo tech: consiguió su primer empleo como desarrolladora tras dedicar seis meses de estudio intenso. Pasar de la teoría a la primera oportunidad laboral es uno de los desafíos más grandes, pero también el más gratificante.\n\nEl mayor aprendizaje aquí es la importancia de la constancia. No se trata solo de cuántas horas estudias, sino de mantener la determinación y confiar en el proceso de aprendizaje continuo.\n\n¿Estás estudiando para dar tu primer salto al sector tecnológico o ya lo lograste? ¡Contanos tu experiencia en los comentarios! 👇\n\n#DesarrolloSoftware #PrimerEmpleo #TechCareer #AprendizajeContinuo #Programacion",
+        "titulo": "Primer empleo en IT",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Primer empleo en desarrollo!",
+        "newsletter_resumen": "Highlight: Diego alcanzó un hito fundamental en su carrera al conseguir su primer empleo como desarrolladora tras seis meses de estudio intenso.\n\nContexto: Este logro fue compartido por Diego en el canal general, inspirando a toda la comunidad.\n\nAprendizaje / recurso: Este caso demuestra que la disciplina y la constancia en el estudio pueden abrir puertas laborales en un periodo corto de tiempo."
+      },
+      {
+        "autor": "Elena",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¡El esfuerzo siempre tiene su recompensa! 🚀\n\nElena acaba de alcanzar un hito fundamental en su carrera: consiguió su primer empleo como desarrolladora después de dedicar seis meses de estudio intenso. Pasar de la teoría a la práctica en el mundo real es un salto emocionante y desafiante.\n\nEste logro nos deja una lección clara: la disciplina y la constancia son las claves para romper la barrera de entrada en el sector tecnológico. No se trata solo de cuánto tiempo estudies, sino de la determinación para mantener el enfoque hasta conseguir el objetivo. 📚\n\n¿Estás iniciando tu camino en el desarrollo o acabas de conseguir tu primera oportunidad? ¡Contanos tu experiencia en los comentarios! 👇\n\n#DesarrolloWeb #PrimerEmpleo #TechCareer #AprendizajeContinuo #Programacion",
+        "titulo": "Logro Profesional: Primer Empleo en Tech",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Primer empleo en desarrollo!",
+        "newsletter_resumen": "Highlight: Elena alcanzó su primer puesto como desarrolladora tras seis meses de estudio intenso. Contexto: Compartió esta gran noticia con la comunidad a través del canal general. Aprendizaje / recurso: Un ejemplo inspirador de que la constancia y el estudio enfocado dan frutos tangibles en el corto plazo."
+      },
+      {
+        "autor": "Federico",
+        "canal": "general",
+        "texto_original": "Quedé seleccionado para el puesto junior que recomendaron en la comunidad.",
+        "relevancia": 1.0,
+        "copy": "¡De la comunidad al primer empleo! 🚀\n\nFederico acaba de alcanzar un hito fundamental en su carrera: quedó seleccionado para el puesto junior que fue recomendado dentro de nuestra comunidad.\n\nEste logro no es casualidad. Es el resultado de estar atento a las oportunidades, participar activamente en los espacios adecuados y aprovechar el networking genuino para dar el salto al mundo laboral.\n\nLa gran lección aquí es que el entorno donde te mueves importa tanto como tus habilidades técnicas. Estar conectado con personas que comparten tus objetivos puede ser el acelerador que necesitas para conseguir tu primera oportunidad profesional.\n\n¿Estás buscando tu primer empleo o querés potenciar tu red de contactos? Contanos en los comentarios cómo te estás preparando. 👇\n\n#OportunidadesLaborales #PrimerEmpleo #Networking #ComunidadTech #CrecimientoProfesional",
+        "titulo": "Nueva oportunidad profesional",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Nueva oportunidad laboral para Federico!",
+        "newsletter_resumen": "Highlight: Federico ha sido seleccionado para un puesto junior. Contexto: El logro se compartió en el canal general, destacando que la oportunidad fue recomendada dentro de la comunidad. Aprendizaje / recurso: Este caso demuestra el valor de estar atentos a las recomendaciones internas y el impacto positivo del networking comunitario para iniciar la trayectoria profesional."
+      },
+      {
+        "autor": "Diego",
+        "canal": "general",
+        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "relevancia": 1.0,
+        "copy": "¿Es posible cambiar de carrera en pocos meses? 🚀\n\nDiego comparte un logro que demuestra que la disciplina y el enfoque dan resultados: consiguió su primer empleo como desarrolladora después de dedicar seis meses de estudio intenso.\n\nDetrás de este hito hay horas de código, frustraciones superadas y un aprendizaje constante. Pasar de la teoría al primer entorno laboral es uno de los saltos más desafiantes y gratificantes en el mundo de la tecnología.\n\nLa principal lección aquí es la constancia. No se trata de cuánto tiempo estudies, sino de la calidad de ese estudio y la determinación para aplicar los conocimientos en proyectos reales. 💻\n\n¿Estás empezando tu camino en IT o ya lograste tu primer empleo? ¡Contanos tu experiencia en los comentarios! 👇\n\n#Programacion #PrimerEmpleo #DesarrolloWeb #TechCareer #Aprendizaje",
+        "titulo": "Primer empleo en desarrollo",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "Primer empleo tras seis meses de estudio",
+        "newsletter_resumen": "Highlight: Diego ha conseguido su primer empleo como desarrolladora, marcando la culminación exitosa de su etapa de formación. Contexto: Este logro fue compartido por el autor en el canal general de la comunidad. Aprendizaje / recurso: Un testimonio motivador que demuestra que la disciplina y el estudio enfocado durante seis meses pueden abrir las puertas al mercado laboral tecnológico."
       },
       {
         "autor": "Ana Rodríguez",
         "canal": "#logros-y-empleos",
         "texto_original": "Acabo de aprobar la certificación Oracle Cloud Infrastructure Foundations. Los apuntes y los simulacros que compartieron acá me salvaron. ¡Próxima parada: la certificación de IA!",
         "relevancia": 0.9,
-        "copy": "¿Cuál es el secreto para conquistar una certificación tecnológica? 🚀\n\nAna Rodríguez acaba de alcanzar un hito importante: aprobó la certificación Oracle Cloud Infrastructure Foundations. Lo más interesante de su proceso es que no lo hizo sola; el apoyo de la comunidad, a través de apuntes compartidos y simulacros de examen, fue la clave para lograr este objetivo.\n\nEste logro nos deja una enseñanza fundamental: el aprendizaje colaborativo acelera los resultados. Cuando compartimos recursos y experiencias, el camino hacia la especialización se vuelve más eficiente para todos. 📚\n\nAhora, Ana ya tiene la mirada puesta en su siguiente desafío: la certificación de IA. ¡Un ejemplo de crecimiento continuo!\n\n¿Y vos, en qué certificación estás trabajando actualmente? Te leo en los comentarios. 👇\n\n#OracleCloud #OCI #Certificaciones #AprendizajeContinuo #CloudComputing",
+        "copy": "¿El secreto para escalar en el mundo de la nube? La colaboración y el estudio constante. 🚀\n\nAna Rodríguez acaba de alcanzar un hito importante en su carrera profesional al aprobar la certificación Oracle Cloud Infrastructure Foundations. Lo más destacable de su camino es que logró este objetivo apoyándose en el ecosistema: los apuntes y simulacros compartidos por su comunidad fueron la pieza clave para asegurar el éxito en el examen.\n\nEste logro nos deja un aprendizaje claro: el crecimiento individual se acelera cuando aprovechamos el conocimiento colectivo. Estudiar en red no solo facilita el proceso, sino que fortalece la confianza para ir por metas más ambiciosas. En el caso de Ana, la motivación ya está puesta en su próximo desafío: la certificación de IA. 💡\n\n¿Y vos, cuál es la próxima certificación que tenés en tu radar para este año? ¡Te leo en los comentarios! 👇\n\n#OracleCloud #Certificación #OCI #AprendizajeContinuo #CloudComputing",
         "titulo": "Logro de Certificación OCI",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "Nueva certificación en Oracle Cloud Infrastructure",
-        "newsletter_resumen": "Highlight: Ana Rodríguez ha logrado aprobar la certificación Oracle Cloud Infrastructure Foundations. \nContexto: El logro fue compartido por la autora en el canal #logros-y-empleos. \nAprendizaje / recurso: El éxito de Ana resalta el valor de los apuntes y simulacros compartidos por la comunidad, los cuales fueron fundamentales para su preparación."
+        "newsletter_resumen": "Highlight: Ana Rodríguez ha logrado aprobar la certificación Oracle Cloud Infrastructure Foundations. Contexto: Este hito fue compartido por Ana en el canal #logros-y-empleos. Aprendizaje / recurso: El éxito de este logro estuvo respaldado por el uso de apuntes y simulacros compartidos dentro de la comunidad, demostrando el valor del apoyo mutuo para alcanzar metas profesionales."
+      },
+      {
+        "autor": "Javier Prado",
+        "canal": "#logros-y-empleos",
+        "texto_original": "No lo puedo creer, conseguí mi primera pasantía como Data Analyst. El dashboard que hice en el proyecto final fue decisivo en la entrevista. Sin esta comunidad no llegaba ni a la mitad.",
+        "relevancia": 0.9,
+        "copy": "¿Cómo pasar de estudiar a conseguir tu primera oportunidad laboral en datos? 🚀\n\nJavier Prado lo logró y su historia es el ejemplo perfecto de cómo el portafolio habla por uno. Recientemente, Javier consiguió su primera pasantía como Data Analyst, y el factor decisivo no fue solo su CV, sino el dashboard que desarrolló para su proyecto final, el cual fue la pieza clave durante su entrevista.\n\nPero el camino no fue solitario. Javier destaca que el apoyo de la comunidad fue fundamental para alcanzar este objetivo, demostrando que el entorno correcto acelera el aprendizaje y abre puertas.\n\nLa gran lección aquí es clara: no basta con saber hacer las cosas, hay que saber mostrarlas. Un proyecto tangible y una red de apoyo sólida son los mejores aliados para quien busca insertarse en el mercado laboral. 📈\n\n¿Estás trabajando en tu portafolio o buscas tu primera oportunidad? ¡Contanos en los comentarios qué proyecto te está ayudando a destacar! 👇\n\n#DataAnalytics #PrimerEmpleo #DataViz #ComunidadTech #CrecimientoProfesional",
+        "titulo": "Logro de Pasantía - Javier Prado",
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "Alto",
+        "newsletter_seccion": "Logro de la Semana",
+        "newsletter_titular": "¡Primera pasantía como Data Analyst!",
+        "newsletter_resumen": "Highlight: Javier Prado logró conseguir su primera pasantía profesional como Data Analyst, destacando que su proyecto final fue la pieza clave para cerrar la oportunidad. \n\nContexto: Este hito fue compartido por Javier en el canal #logros-y-empleos, donde expresó su gratitud hacia el apoyo recibido por la comunidad. \n\nAprendizaje / recurso: La importancia de construir un portafolio sólido; en este caso, un dashboard bien ejecutado fue el recurso decisivo para demostrar competencias técnicas durante la entrevista laboral."
       },
       {
         "autor": "Lucía Fernández",
         "canal": "#logros-y-empleos",
         "texto_original": "Me ascendieron a líder técnica del equipo. El proyecto de LangChain que presenté acá para recibir feedback fue clave para demostrar lo que sabía. ¡Gracias por las devoluciones!",
         "relevancia": 0.9,
-        "copy": "🚀 ¿Cómo pasar de ejecutar tareas a liderar la estrategia técnica? \n\nLucía Fernández acaba de alcanzar un hito importante en su carrera: ha sido ascendida a líder técnica de su equipo. Pero este logro no ocurrió por azar, sino gracias a la proactividad y la búsqueda constante de mejora.\n\nEl punto de inflexión fue un proyecto de LangChain que Lucía desarrolló y presentó para recibir feedback. Al exponer su trabajo y abrirse a las devoluciones de sus colegas, no solo optimizó la solución técnica, sino que logró demostrar su capacidad de liderazgo y dominio tecnológico ante la organización.\n\nLa gran lección aquí es que el crecimiento profesional no depende solo del conocimiento técnico, sino de la capacidad de visibilizar el valor que aportamos y de utilizar el feedback como combustible para escalar. 📈\n\n¿Y vos? ¿Cuándo fue la última vez que compartiste un proyecto para recibir feedback y mejorar?\n\nTe leo en los comentarios. 👇\n\n#LiderazgoTécnico #CrecimientoProfesional #LangChain #TechLeadership #Feedback",
-        "titulo": "Ascenso a Líder Técnica",
+        "copy": "¿Cómo pasar de ejecutar tareas a liderar la visión técnica de un equipo? 🚀\n\nLucía Fernández lo logró recientemente y su historia nos deja una gran lección. El camino hacia su ascenso a Líder Técnica no fue casualidad: fue el resultado de tomar la iniciativa. \n\nLucía desarrolló un proyecto utilizando LangChain y, en lugar de mantenerlo en privado, decidió presentarlo para recibir feedback y validar sus ideas. Esa capacidad de exponer su trabajo, aceptar devoluciones y demostrar sus conocimientos técnicos fue la pieza clave para alcanzar este nuevo rol.\n\nEl aprendizaje es claro: la visibilidad es tan importante como la capacidad técnica. No basta con saber hacer las cosas; hay que animarse a mostrarlas, iterar con otros y convertir el aprendizaje colaborativo en una herramienta de crecimiento profesional. 💡\n\n¿Y vos? ¿Cuándo fue la última vez que compartiste un proyecto para recibir feedback?\n\nContame tu experiencia en los comentarios. 👇\n\n#LiderazgoTécnico #CrecimientoProfesional #LangChain #DesarrolloDeSoftware #TechLeadership",
+        "titulo": "Ascenso a Líder Técnica de Lucía Fernández",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "Ascenso a Líder Técnica",
-        "newsletter_resumen": "Highlight: Lucía Fernández ha sido ascendida a líder técnica de su equipo. Contexto: El logro fue compartido por Lucía en el canal #logros-y-empleos, destacando el apoyo de la comunidad. Aprendizaje / recurso: La presentación de proyectos para recibir feedback, como hizo Lucía con su implementación de LangChain, es una herramienta clave para visibilizar conocimientos y potenciar el crecimiento profesional."
-      },
-      {
-        "autor": "Diego Herrera",
-        "canal": "#logros-y-empleos",
-        "texto_original": "Tercer mes de búsqueda y por fin se dio: quedé en una startup como DevOps. Todo lo de OCI y automatización que aprendí en el curso me sirvió para pasar la prueba técnica de una.",
-        "relevancia": 0.9,
-        "copy": "¿Cuánto vale una capacitación enfocada en la práctica? 🚀\n\nDiego Herrera estuvo tres meses buscando su oportunidad en el mercado laboral. Tras un proceso de búsqueda activa, finalmente lo logró: se integró a una startup como DevOps.\n\nLo más destacable de su experiencia fue el momento de la verdad: la prueba técnica. Gracias a los conocimientos adquiridos en su curso sobre OCI (Oracle Cloud Infrastructure) y automatización, Diego pudo superar el desafío técnico con total seguridad y eficacia.\n\nEste logro nos deja un aprendizaje claro: en el mundo tecnológico, la especialización en herramientas demandadas y la capacidad de aplicarlas en escenarios reales son la llave para abrir puertas en startups y empresas de vanguardia. 💡\n\n¿Estás preparándote para tu próximo salto profesional o ya estás aplicando lo aprendido en tu rol actual? ¡Te leo en los comentarios! 👇\n\n#DevOps #OCI #CloudComputing #Empleabilidad #TechCareer",
-        "titulo": "Caso de éxito: De la formación al primer empleo DevOps",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "Nuevo DevOps en el ecosistema Startup",
-        "newsletter_resumen": "Highlight: Diego Herrera logró insertarse laboralmente como DevOps en una startup tras tres meses de búsqueda. Contexto: Diego compartió su alegría y éxito en el canal #logros-y-empleos. Aprendizaje / recurso: El dominio de OCI y las herramientas de automatización fueron los pilares clave que le permitieron superar la prueba técnica con éxito, demostrando el valor práctico de la formación especializada."
-      },
-      {
-        "autor": "Jorge",
-        "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
-        "relevancia": 0.9,
-        "copy": "¿Es posible dar el salto al mundo laboral en seis meses? 🚀\n\nJorge compartió un logro que inspira a cualquiera que esté empezando en el camino de la tecnología: consiguió su primer empleo como desarrolladora tras dedicarse intensamente al estudio durante medio año.\n\nDetrás de este resultado hay disciplina, horas de código y la determinación de transformar el aprendizaje en una oportunidad profesional real. Pasar de la teoría a la práctica es el desafío más grande, pero también el más gratificante.\n\nEl gran aprendizaje aquí es que la constancia y el enfoque estratégico en el estudio pueden acelerar la inserción laboral, incluso en un mercado competitivo. No se trata solo de cuánto tiempo estudias, sino de cómo aplicas ese conocimiento para resolver problemas.\n\n¿Estás estudiando para dar tu primer paso en IT? ¡Contanos en los comentarios cómo viene tu proceso! 👇\n\n#DesarrolloWeb #PrimerEmpleo #IT #AprendizajeContinuo #TechCareer",
-        "titulo": "De estudiante a profesional: El primer empleo en IT",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Jorge logró conseguir su primer empleo como desarrolladora tras seis meses de estudio intenso. Contexto: Este gran hito fue compartido por el autor en el canal general de nuestra comunidad. Aprendizaje / recurso: Un ejemplo motivador de que la constancia y la dedicación al estudio pueden abrir puertas laborales en el sector tecnológico en un tiempo récord."
-      },
-      {
-        "autor": "Diego",
-        "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
-        "relevancia": 0.9,
-        "copy": "¡El esfuerzo siempre tiene su recompensa! 🚀\n\nDiego logró alcanzar una meta fundamental en su carrera profesional: conseguir su primer empleo como desarrolladora. Este hito llega después de seis meses de estudio intenso, dedicación y aprendizaje constante.\n\nEste logro nos recuerda que la transición al mundo tecnológico no ocurre de la noche a la mañana, pero con disciplina y un plan de estudio claro, es totalmente posible dar el salto al mercado laboral en un tiempo récord.\n\nLa clave está en la persistencia y en convertir el estudio en una rutina diaria de crecimiento. 📚\n\n¿Estás empezando tu camino en la programación o acabas de conseguir tu primera oportunidad? ¡Contanos tu experiencia en los comentarios! 👇\n\n#Programacion #PrimerEmpleo #DesarrolloSoftware #TechCareer #Aprendizaje",
-        "titulo": "Primer empleo en IT: El camino de Diego",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Diego alcanzó el hito de conseguir su primer empleo como desarrollador tras seis meses de estudio dedicado. Contexto: Este logro fue compartido por el autor en el canal general, inspirando a otros miembros de la comunidad. Aprendizaje / recurso: Este caso demuestra que la disciplina y el enfoque constante en el estudio pueden dar resultados concretos en un periodo corto de tiempo."
-      },
-      {
-        "autor": "Luciana",
-        "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
-        "relevancia": 0.9,
-        "copy": "¿Se puede pasar del estudio al primer empleo en solo seis meses? 🚀\n\nLuciana lo logró. Después de medio año de dedicación intensa y estudio constante, alcanzó una meta que muchos consideran desafiante: consiguió su primer empleo como desarrolladora.\n\nEste hito no es solo una victoria personal, sino la prueba de que la disciplina y el enfoque correcto aceleran la curva de aprendizaje en el mundo de la tecnología. El camino del código requiere paciencia, pero los resultados llegan cuando hay constancia.\n\nEl mayor aprendizaje aquí es que no existe una fórmula mágica, sino un compromiso real con la formación continua y la capacidad de aplicar lo aprendido en contextos reales. ✨\n\n¿Estás empezando tu camino en el desarrollo o ya estás en el sector? ¡Contame tu experiencia en los comentarios! 👇\n\n#DesarrolloWeb #PrimerEmpleo #IT #AprendizajeContinuo #TechCareer",
-        "titulo": "Primer empleo en IT: El camino de Luciana",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primer empleo como desarrolladora!",
-        "newsletter_resumen": "Highlight: Luciana ha conseguido su primer puesto de trabajo en el mundo del desarrollo. \nContexto: Este gran hito fue compartido por Luciana en el canal general de nuestra comunidad. \nAprendizaje / recurso: Su logro demuestra que la constancia y el estudio enfocado durante seis meses dan resultados concretos, sirviendo de motivación para quienes están iniciando su camino en la programación."
+        "newsletter_resumen": "Highlight: Lucía Fernández ha sido ascendida a líder técnica de su equipo. \nContexto: Lucía compartió su logro en el canal #logros-y-empleos, destacando que el feedback recibido en la comunidad fue fundamental para su crecimiento. \nAprendizaje / recurso: Este caso demuestra el valor de presentar proyectos (como su implementación de LangChain) para recibir retroalimentación y validar competencias técnicas frente a la organización."
       },
       {
         "autor": "Ramiro",
         "canal": "general",
         "texto_original": "Quedé seleccionado para el puesto junior que recomendaron en la comunidad.",
         "relevancia": 0.9,
-        "copy": "¿El poder de una red de contactos? Aquí tenemos un ejemplo real. 🚀\n\nRamiro acaba de compartir una excelente noticia con nosotros: quedó seleccionado para el puesto junior que fue recomendado dentro de nuestra comunidad.\n\nEste logro no es casualidad. Es el resultado de estar en el lugar correcto, conectado con las personas adecuadas y atento a las oportunidades que surgen cuando el ecosistema colabora.\n\nEl gran aprendizaje aquí es que el networking no se trata solo de 'conocer gente', sino de construir puentes y confiar en el apoyo mutuo para impulsar el crecimiento profesional. Una recomendación puede ser la llave que abra la puerta al primer empleo. 🔑\n\n¡Felicitaciones, Ramiro, por este nuevo desafío!\n\n¿Y vos, cómo empezaste tu camino profesional o quién te dio ese primer empujón? Te leo en los comentarios. 👇\n\n#Networking #PrimerEmpleo #Comunidad #CrecimientoProfesional #Oportunidades",
+        "copy": "¡De la comunidad al primer empleo! 🚀\n\nHay momentos que marcan un antes y un después en la carrera de cualquier profesional, y hoy queremos celebrar uno de ellos. Ramiro acaba de compartir una noticia increíble: quedó seleccionado para el puesto junior que fue recomendado dentro de nuestra comunidad.\n\nEste logro no es casualidad. Es el resultado de estar atento a las oportunidades, participar activamente en el ecosistema y aprovechar las redes de contacto que se generan cuando compartimos valor.\n\nEl aprendizaje es claro: el networking y el apoyo mutuo son aceleradores reales de crecimiento. No se trata solo de buscar vacantes, sino de formar parte de un entorno que te impulse y te conecte con las oportunidades correctas. 📈\n\n¿Y vos, cómo estás potenciando tu red de contactos hoy? ¡Contanos en los comentarios! 👇\n\n#Networking #PrimerEmpleo #Comunidad #CrecimientoProfesional #TalentoJunior",
         "titulo": "Éxito en la comunidad",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nueva oportunidad laboral!",
-        "newsletter_resumen": "Highlight: Ramiro ha sido seleccionado para un puesto junior. Contexto: Este logro fue posible gracias a una recomendación compartida en el canal general de nuestra comunidad. Aprendizaje / recurso: Este caso demuestra el valor de estar atentos a las oportunidades y el impacto positivo de apoyarnos mutuamente para impulsar el crecimiento profesional de todos."
+        "newsletter_titular": "¡Nuevo empleo para un miembro de la comunidad!",
+        "newsletter_resumen": "Highlight: Ramiro ha sido seleccionado para un puesto junior gracias a una recomendación compartida en el grupo. Contexto: Este logro fue compartido por el autor en el canal general, demostrando el valor de la red de apoyo interna. Aprendizaje / recurso: Un recordatorio motivador sobre la importancia de estar atentos a las oportunidades y recomendaciones que circulan en nuestra comunidad para impulsar el crecimiento profesional."
       },
       {
         "autor": "Mariana",
         "canal": "general",
         "texto_original": "Quedé seleccionado para el puesto junior que recomendaron en la comunidad.",
         "relevancia": 0.9,
-        "copy": "¡Nada es más gratificante que ver el crecimiento de nuestra comunidad! 🚀\n\nMariana acaba de compartir una excelente noticia: quedó seleccionada para el puesto junior que fue recomendado a través de nuestro espacio. Saber que las conexiones y las oportunidades compartidas se transforman en empleos reales es lo que le da sentido a este ecosistema.\n\nEsta experiencia nos recuerda que el networking genuino y el apoyo mutuo son aceleradores fundamentales en el inicio de cualquier carrera profesional. No se trata solo de buscar trabajo, sino de estar en el lugar correcto con las personas correctas.\n\n¿Estás buscando tu primera oportunidad o conoces a alguien que pueda encajar en una vacante? ¡Contanos en los comentarios o compartí esa búsqueda! Ayudémonos a seguir creciendo juntos. 👇\n\n#Networking #PrimerEmpleo #Comunidad #CrecimientoProfesional #Oportunidades",
-        "titulo": "Logro de Comunidad",
+        "copy": "¡El networking y las comunidades activas dan resultados reales! 🚀\n\nQuiero compartirles una excelente noticia: Mariana ha sido seleccionada para el puesto junior que fue recomendado recientemente en nuestra comunidad. Este logro es el reflejo de estar en el lugar correcto, atento a las oportunidades y con la preparación necesaria para dar el salto.\n\nEsta experiencia nos deja un aprendizaje fundamental: el valor de pertenecer a ecosistemas de apoyo. Muchas veces, la oportunidad que buscamos no está en un portal de empleos genérico, sino en la recomendación de alguien que confía en nuestro potencial y en la visibilidad que nos brinda una comunidad comprometida.\n\n¿Estás aprovechando las redes y comunidades de tu sector para crecer profesionalmente? Te leo en los comentarios. 👇\n\n#CrecimientoProfesional #PrimerEmpleo #Networking #Comunidad #Oportunidades",
+        "titulo": "Éxito en la comunidad: Nuevo paso profesional",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nuevo empleo para un miembro de la comunidad!",
-        "newsletter_resumen": "Highlight: Mariana ha sido seleccionada para un puesto junior. Contexto: El logro fue compartido por la autora en el canal general, tras haber aplicado a una vacante recomendada dentro de la comunidad. Aprendizaje / recurso: Este éxito demuestra el valor de aprovechar las oportunidades laborales y el networking activo que se genera en nuestro espacio."
-      },
-      {
-        "autor": "Diego",
-        "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
-        "relevancia": 0.9,
-        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nDiego compartió un logro que marca un antes y un después en su carrera profesional: después de seis meses de estudio intensivo, consiguió su primer empleo como desarrolladora.\n\nDetrás de este resultado hay horas de código, frustraciones superadas y una disciplina constante para dominar nuevas herramientas en un tiempo récord. Pasar de la teoría a la práctica laboral es el desafío más grande de cualquier perfil técnico.\n\nEl mayor aprendizaje aquí es la constancia. No se trata solo de cuántas horas estudies, sino de la determinación para aplicar esos conocimientos y salir al mercado con confianza.\n\n¿Estás en camino a tu primer empleo en tech o ya lo lograste? ¡Contame tu experiencia en los comentarios! 👇\n\n#DesarrolloSoftware #PrimerEmpleo #IT #AprendizajeContinuo #TechCareer",
-        "titulo": "De estudiar a trabajar: El primer paso en IT",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Diego alcanzó un hito fundamental en su carrera al conseguir su primer empleo como desarrollador. Contexto: Compartido por el autor en el canal general, este logro refleja el fruto de seis meses de estudio intensivo. Aprendizaje / recurso: Esta experiencia demuestra que la constancia y la dedicación al estudio pueden abrir puertas laborales en el sector tecnológico en un tiempo récord."
+        "newsletter_titular": "¡Nueva oportunidad laboral!",
+        "newsletter_resumen": "Highlight: Mariana ha sido seleccionada para un puesto junior. \nContexto: Este logro surge a partir de una recomendación compartida en el canal general de la comunidad. \nAprendizaje / recurso: El valor de estar atentos a las oportunidades compartidas y el impacto positivo de la red de apoyo comunitaria para impulsar el crecimiento profesional."
       },
       {
         "autor": "Elena",
         "canal": "general",
         "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
         "relevancia": 0.9,
-        "copy": "¡El primer empleo es siempre el más difícil de conseguir! 🚀\n\nElena logró alcanzar una meta fundamental en su carrera: consiguió su primer puesto como desarrolladora después de seis meses de estudio intenso y dedicación.\n\nEste logro nos recuerda que el camino del aprendizaje técnico requiere disciplina y persistencia. No se trata solo de absorber conocimientos, sino de mantener el enfoque y la constancia hasta que las oportunidades comienzan a aparecer.\n\nLa clave está en confiar en el proceso y no rendirse ante la curva de aprendizaje inicial. El esfuerzo siempre encuentra su recompensa. 💻\n\n¿Estás empezando tu camino en el desarrollo o acabas de conseguir tu primer empleo? ¡Contanos tu experiencia en los comentarios! 👇\n\n#DesarrolloSoftware #PrimerEmpleo #TechCareer #Programacion #CrecimientoProfesional",
-        "titulo": "De estudiar a trabajar: el primer paso en Tech",
+        "copy": "¿Es posible cambiar de carrera en pocos meses? 🚀\n\nElena lo hizo realidad. Tras seis meses de estudio intenso y dedicación, logró alcanzar una meta fundamental en su camino profesional: conseguir su primer empleo como desarrolladora.\n\nEste logro no es solo la obtención de un puesto de trabajo, sino el resultado de la disciplina y la capacidad de aprendizaje acelerado que requiere el mundo de la tecnología. Nos demuestra que, con un enfoque claro y persistencia, la transición hacia el sector IT es posible.\n\nEl mayor aprendizaje aquí es que la constancia vence al miedo. No se trata de cuánto tiempo llevas estudiando, sino de cómo aplicas ese conocimiento para resolver problemas reales.\n\n¿Estás comenzando tu camino en la programación o acabas de conseguir tu primer desafío? ¡Contanos tu experiencia en los comentarios! 👇\n\n#DesarrolloWeb #PrimerEmpleo #TechCareer #AprendizajeContinuo #Programación",
+        "titulo": "Primer empleo en Tech: El camino de Elena",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Elena ha logrado conseguir su primer puesto como desarrolladora tras seis meses de estudio intenso. Contexto: Este hito fue compartido por la autora en el canal general de nuestra comunidad. Aprendizaje / recurso: Su experiencia nos demuestra que la constancia y el estudio enfocado rinden frutos en el corto plazo, motivándonos a seguir adelante en nuestro camino de aprendizaje."
+        "newsletter_resumen": "Highlight: Elena ha conseguido su primer puesto como desarrolladora tras seis meses de estudio intenso. Contexto: Compartido por Elena en el canal general, este hito celebra el paso de la formación al mundo profesional. Aprendizaje / recurso: Un ejemplo motivador de que la constancia y el estudio enfocado dan resultados concretos en el corto plazo."
       },
       {
         "autor": "Elena",
         "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
+        "texto_original": "El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.",
         "relevancia": 0.9,
-        "copy": "¡El esfuerzo rinde frutos! 🚀\n\nElena acaba de alcanzar un hito fundamental en su carrera profesional: consiguió su primer empleo como desarrolladora. Lo más inspirador es que lo logró tras seis meses de estudio intenso y dedicación constante.\n\nEste logro nos demuestra que, con una hoja de ruta clara y disciplina, es posible dar el salto al mundo laboral tecnológico en un tiempo récord. No se trata solo de aprender a programar, sino de la perseverancia para transformar el conocimiento en una oportunidad real de trabajo.\n\nEl aprendizaje es claro: la constancia es la clave para cerrar la brecha entre el estudio y la primera experiencia profesional. 💻\n\n¿Estás estudiando para dar tu primer paso en IT o ya lo lograste? ¡Contame tu experiencia en los comentarios! 👇\n\n#DesarrolloSoftware #PrimerEmpleo #TechCareer #AprendizajeContinuo #Programación",
-        "titulo": "De estudiante a Desarrolladora: El camino de Elena",
+        "copy": " ¿Sabés cuál es la diferencia entre decir que sabés algo y demostrarlo en una entrevista técnica? 🚀\n\nElena recientemente vivió esta experiencia. Durante su proceso de selección esta semana, el proyecto desarrollado en el curso fue la pieza clave para superar la entrevista técnica. No se trató solo de responder preguntas, sino de mostrar un trabajo tangible y aplicado.\n\nEsto nos deja un aprendizaje fundamental: en el mundo profesional, el portafolio y los proyectos reales tienen un peso decisivo. La teoría es la base, pero la capacidad de ejecutar y resolver problemas es lo que realmente convence a los reclutadores. 📈\n\n¿Estás construyendo proyectos que hablen por vos en tus entrevistas?\n\nContanos en los comentarios qué proyecto te ayudó a conseguir tu último desafío profesional. 👇\n\n#CrecimientoProfesional #Empleabilidad #AprendizajeActivo #TechCareers",
+        "titulo": "El valor de la práctica real en la búsqueda laboral",
         "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
+        "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "Primer empleo en desarrollo",
-        "newsletter_resumen": "Highlight: Elena ha conseguido su primer puesto como desarrolladora tras seis meses de estudio intenso. Contexto: Esta gran noticia fue compartida por la autora en el canal general de la comunidad. Aprendizaje / recurso: Su logro es un testimonio motivador sobre la efectividad de la disciplina y la constancia en el aprendizaje técnico para lograr la inserción laboral."
-      },
-      {
-        "autor": "Federico",
-        "canal": "general",
-        "texto_original": "Quedé seleccionado para el puesto junior que recomendaron en la comunidad.",
-        "relevancia": 0.9,
-        "copy": "¿Cuál es el verdadero valor de una comunidad profesional? 🚀\n\nHoy queremos compartir la alegría de Federico, quien acaba de alcanzar un hito fundamental en su carrera: quedó seleccionado para el puesto junior que fue recomendado dentro de nuestra comunidad.\n\nEste logro no es casualidad. Es el resultado de estar atento a las oportunidades, interactuar con pares y aprovechar los espacios de networking donde el talento y las vacantes se encuentran.\n\nEl aprendizaje es claro: el crecimiento profesional no ocurre en aislamiento. El apoyo mutuo y el acceso a recomendaciones directas pueden ser el acelerador que necesitas para dar el salto al mercado laboral.\n\n¡Felicitaciones, Federico! Estamos orgullosos de ser parte de tu camino. 👏\n\n¿Y vos? ¿Ya empezaste a conectar con personas de tu sector hoy? Contanos en los comentarios. 👇\n\n#Networking #PrimerEmpleo #ComunidadIT #CrecimientoProfesional #TalentoJunior",
-        "titulo": "Caso de éxito: De la comunidad al primer empleo",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nuevo empleo para un miembro de la comunidad!",
-        "newsletter_resumen": "Highlight: Federico ha sido seleccionado para un puesto junior. Contexto: El logro fue compartido por el autor en el canal general, tras aprovechar una recomendación laboral difundida en la comunidad. Aprendizaje / recurso: Este caso demuestra el valor de estar atentos a las oportunidades compartidas y el impacto positivo de la red de apoyo mutuo para impulsar el crecimiento profesional."
-      },
-      {
-        "autor": "Diego",
-        "canal": "general",
-        "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
-        "relevancia": 0.9,
-        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nDiego comparte un logro que inspira a cualquiera que esté iniciando su camino en la tecnología: consiguió su primer empleo como desarrolladora tras seis meses de estudio intensivo.\n\nNo se trata solo de aprender a programar, sino de la disciplina, la constancia y la capacidad de mantener el enfoque durante el proceso de formación hasta llegar a la primera oportunidad laboral.\n\nEl gran aprendizaje aquí es que la dedicación enfocada y la gestión del tiempo son claves para acelerar la inserción en el mundo IT. No importa el punto de partida, sino la determinación con la que se recorre el camino. 💡\n\n¿Estás estudiando para dar tu primer salto al mundo tech o ya lo lograste? ¡Contame tu experiencia en los comentarios! 👇\n\n#DesarrolloWeb #PrimerEmpleo #TechCareer #AprendizajeContinuo #Programacion",
-        "titulo": "De estudiante a desarrolladora: el camino al primer empleo",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Alto",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Diego alcanzó su primer objetivo profesional como desarrolladora tras seis meses de estudio intenso. Contexto: Este hito fue compartido por el autor en el canal general de la comunidad. Aprendizaje / recurso: Este logro demuestra que la constancia y el estudio enfocado permiten dar el salto al mundo laboral en tiempos cortos."
+        "newsletter_titular": "El impacto práctico de los proyectos del curso",
+        "newsletter_resumen": "Highlight: El proyecto final del curso fue una herramienta clave para superar una entrevista técnica. Contexto: Elena compartió esta experiencia en el canal general, demostrando la utilidad real de las actividades académicas. Aprendizaje / recurso: La aplicación práctica de los proyectos es fundamental para validar conocimientos y destacar frente a los reclutadores durante los procesos de selección."
       },
       {
         "autor": "Jorge",
         "canal": "general",
         "texto_original": "Conseguí mi primer empleo como desarrolladora después de seis meses de estudio.",
         "relevancia": 0.9,
-        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nJorge compartió un logro que marca un antes y un después en su carrera: consiguió su primer empleo como desarrolladora tras seis meses de estudio intenso.\n\nSabemos que el camino hacia el primer rol técnico puede sentirse cuesta arriba, lleno de dudas y horas de código. Sin embargo, la persistencia de Jorge demuestra que con disciplina y un enfoque claro, es posible hacer la transición profesional en un tiempo récord.\n\nEl gran aprendizaje aquí es la importancia de la constancia. No se trata solo de estudiar, sino de mantener el ritmo y confiar en el proceso de aprendizaje continuo.\n\n¿Estás estudiando para dar el salto al mundo tech o acabas de conseguir tu primer empleo? ¡Contanos tu experiencia en los comentarios! 👇\n\n#PrimerEmpleo #DesarrolloSoftware #TechCareer #AprendizajeContinuo #IT",
-        "titulo": "De estudiante a profesional: el primer paso en IT",
+        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nJorge ha compartido un hito fundamental en su carrera: después de seis meses de estudio intensivo y dedicación, logró conseguir su primer empleo como desarrolladora. \n\nDetrás de este logro hay horas de práctica, frustraciones superadas y un aprendizaje constante. Pasar de la teoría al primer desafío profesional es uno de los pasos más gratificantes y desafiantes en el mundo de la tecnología.\n\nLa gran lección aquí es la constancia. No se trata solo de estudiar, sino de mantener la disciplina y el enfoque durante los meses de transición hasta alcanzar el objetivo. El camino del aprendizaje es una carrera de resistencia, no de velocidad. 📚\n\n¿Estás empezando tu camino en IT o recordás cómo fue conseguir tu primer empleo? ¡Contame tu experiencia en los comentarios! 👇\n\n#DesarrolloWeb #PrimerEmpleo #IT #AprendizajeContinuo #TechCareer",
+        "titulo": "Primer empleo en desarrollo",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Alto",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "¡Primer empleo en desarrollo!",
-        "newsletter_resumen": "Highlight: Jorge logró insertarse en el mercado laboral consiguiendo su primer empleo como desarrolladora. Contexto: Compartió esta gran noticia con la comunidad a través del canal general. Aprendizaje / recurso: Un ejemplo motivador de que la constancia y seis meses de estudio enfocado pueden dar frutos concretos."
+        "newsletter_resumen": "Highlight: Jorge ha conseguido su primer empleo como desarrolladora tras dedicar seis meses intensos al estudio. Contexto: Este hito fue compartido por el autor en el canal general de la comunidad. Aprendizaje / recurso: Su logro sirve como motivación y prueba de que la constancia y el estudio enfocado permiten dar el salto al mundo laboral en el sector tecnológico."
       },
       {
         "autor": "Federico",
         "canal": "general",
         "texto_original": "Aprobé la certificación de la nube y lo festejo con el grupo.",
         "relevancia": 0.8,
-        "copy": "¡Meta alcanzada y camino recorrido! ☁️\n\nFederico acaba de aprobar su certificación de la nube, un hito que refleja dedicación y actualización constante en un ecosistema tecnológico que no deja de evolucionar.\n\nLo más valioso de este logro no es solo el diploma, sino el hecho de festejarlo en equipo. Alcanzar objetivos técnicos es fundamental, pero compartirlos con el grupo es lo que realmente impulsa el crecimiento colectivo y fortalece la cultura de aprendizaje continuo.\n\nLa clave del éxito profesional hoy no está solo en el estudio individual, sino en rodearse de personas que celebren tus victorias y te motiven a ir por la siguiente.\n\n¿Cuál fue la última certificación o habilidad que sumaste a tu perfil? ¡Te leo en los comentarios! 👇\n\n#CloudComputing #Certificacion #CrecimientoProfesional #Tecnologia #AprendizajeContinuo",
+        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nFederico acaba de alcanzar un hito fundamental en su crecimiento profesional: aprobó la certificación de la nube. Lo más destacado no es solo el título obtenido, sino que decidió festejar este logro junto a su grupo, transformando un éxito individual en una celebración colectiva.\n\nEste resultado nos recuerda que, aunque el estudio y el examen sean procesos personales, contar con una red de apoyo y compartir los éxitos con el equipo potencia la motivación de todos. El aprendizaje continuo es el motor de la industria tecnológica, pero el espíritu colaborativo es lo que realmente impulsa las carreras.\n\n¿Cuál fue la última certificación que obtuviste o cuál es tu próximo objetivo técnico? Te leo en los comentarios. 👇\n\n#CloudComputing #Certificación #CrecimientoProfesional #TechCommunity",
         "titulo": "Logro en Certificación Cloud",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nueva certificación de nube alcanzada!",
-        "newsletter_resumen": "Highlight: Federico ha logrado aprobar la certificación de la nube, marcando un hito importante en su crecimiento profesional. Contexto: Este logro fue compartido por el autor en el canal general para celebrarlo con toda la comunidad. Aprendizaje / recurso: Este hito nos motiva a seguir capacitándonos y buscando validaciones oficiales de nuestros conocimientos técnicos."
+        "newsletter_titular": "Nueva certificación de nube",
+        "newsletter_resumen": "Highlight: Federico ha logrado aprobar su certificación en tecnologías de la nube. Contexto: Este hito fue compartido por el autor en el canal general para celebrarlo con toda la comunidad. Aprendizaje / recurso: Un ejemplo de crecimiento profesional y superación técnica que motiva a otros miembros a pursuing sus propias certificaciones."
       },
       {
         "autor": "Carlos",
         "canal": "general",
         "texto_original": "El proyecto del curso fue clave en la entrevista técnica que tuve esta semana.",
         "relevancia": 0.8,
-        "copy": "¿Cómo transformar un proyecto de estudio en una oportunidad laboral real? 🚀\n\nCarlos recientemente compartió que el proyecto desarrollado durante su curso fue la pieza clave durante su entrevista técnica de esta semana. No se trató solo de completar una tarea, sino de tener un respaldo tangible de sus habilidades frente a los reclutadores.\n\nEste caso nos deja un aprendizaje fundamental: en el mundo técnico, demostrar el 'cómo' es tan importante como el 'qué'. Construir proyectos sólidos y saber defenderlos técnicamente es lo que marca la diferencia en un proceso de selección.\n\n¿Tenés algún proyecto del que te sientas orgulloso y que haya impulsado tu carrera? ¡Contanos en los comentarios! 👇\n\n#CrecimientoProfesional #EntrevistaTecnica #AprendizajeContinuo #Portfolio",
-        "titulo": "Impacto Real: Del Proyecto a la Entrevista",
+        "copy": "¿Qué es lo que realmente buscan los reclutadores en una entrevista técnica? 🚀\n\nCarlos recientemente compartió una experiencia que demuestra que la teoría no es suficiente. Durante su proceso de selección esta semana, el proyecto desarrollado en el curso fue la pieza clave para destacar en su entrevista técnica.\n\nTener un proyecto tangible permite pasar del \"sé hacer esto\" al \"aquí está cómo lo hice\". No se trata solo de completar un programa, sino de construir soluciones que validen tus habilidades frente a un evaluador.\n\nEl aprendizaje es claro: los proyectos prácticos son el puente más corto entre el estudio y el empleo. 🛠️\n\n¿Y vos? ¿Tenés un portafolio de proyectos que respalde tu conocimiento? Contame en los comentarios. 👇\n\n#Empleabilidad #EntrevistaTecnica #AprendizajePractico #CrecimientoProfesional",
+        "titulo": "El impacto de la práctica en la empleabilidad",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "El impacto real de los proyectos del curso",
-        "newsletter_resumen": "Highlight: Carlos logró destacar en su entrevista técnica gracias al proyecto desarrollado durante el curso. Contexto: Este testimonio fue compartido por el autor en el canal general. Aprendizaje / recurso: La aplicación práctica de los conocimientos en proyectos reales es una herramienta fundamental y un activo clave para enfrentar procesos de selección técnica con éxito."
+        "newsletter_titular": "Proyecto del curso impulsa éxito en entrevista técnica",
+        "newsletter_resumen": "Highlight: El proyecto desarrollado durante el curso fue una pieza fundamental para destacar en una entrevista técnica profesional. \n\nContexto: Carlos compartió este logro en el canal general, demostrando el valor práctico de lo aprendido. \n\nAprendizaje / recurso: La aplicación real de los proyectos académicos funciona como un respaldo sólido y un recurso clave para validar competencias técnicas frente a reclutadores."
       },
       {
         "autor": "Carlos",
         "canal": "general",
         "texto_original": "Publicaron mi proyecto en el newsletter de la comunidad.",
         "relevancia": 0.8,
-        "copy": "¿Qué pasa cuando el trabajo duro recibe visibilidad? 🚀\n\nCarlos acaba de alcanzar un hito emocionante: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. No es solo una mención, es la validación de que el esfuerzo y la calidad técnica generan impacto en el ecosistema.\n\nEste logro nos deja una gran lección: compartir lo que construimos y participar activamente en nuestras comunidades es la mejor forma de crecer profesionalmente y abrir puertas a nuevas oportunidades.\n\n¡Felicitaciones, Carlos, por este reconocimiento! 👏\n\n¿Y vos? ¿Tenés algún proyecto que estés desarrollando y te gustaría compartir con el mundo? Te leo en los comentarios. 👇",
-        "titulo": "Logro de visibilidad comunitaria",
+        "copy": "¿Qué se siente cuando tu trabajo llega a cientos de personas? 🚀\n\nCarlos acaba de vivir una experiencia increíble: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. No se trata solo de visibilidad, sino de validar que el esfuerzo y la dedicación dan frutos cuando se comparten con el ecosistema correcto.\n\nEl gran aprendizaje aquí es la importancia de hacer visible lo que construimos. A veces nos enfocamos tanto en la ejecución que olvidamos comunicar nuestros logros, pero es precisamente esa apertura la que genera nuevas oportunidades y conexiones valiosas.\n\n¡Felicitaciones, Carlos, por este hito! 👏\n\n¿Y vos? ¿Tenés algún proyecto que estés desarrollando y que el mundo debería conocer? Contanos en los comentarios. 👇",
+        "titulo": "Reconocimiento comunitario",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "Proyecto destacado en la comunidad",
-        "newsletter_resumen": "Highlight: El proyecto de Carlos ha sido seleccionado para ser publicado en el newsletter oficial. Contexto: Compartido por Carlos en el canal general. Aprendizaje / recurso: Un ejemplo motivador de cómo el trabajo personal puede ganar visibilidad y reconocimiento dentro de la comunidad."
+        "newsletter_titular": "Reconocimiento a proyecto comunitario",
+        "newsletter_resumen": "Highlight: El proyecto de Carlos ha sido seleccionado para ser publicado en el newsletter oficial de la comunidad. \n\nContexto: Este logro fue compartido por Carlos a través del canal general. \n\nAprendizaje / recurso: Un ejemplo motivador de cómo el trabajo individual puede ganar visibilidad y aportar valor a todo el ecosistema."
       },
       {
         "autor": "Ramiro",
         "canal": "general",
         "texto_original": "Aprobé la certificación de la nube y lo festejo con el grupo.",
         "relevancia": 0.8,
-        "copy": "¿Hay algo más satisfactorio que ver el esfuerzo convertido en un resultado tangible? 🚀\n\nQuiero compartirles que Ramiro ha alcanzado un hito importante en su crecimiento profesional: ¡aprobó la certificación de la nube! Lo más valioso de este logro es que no lo celebra solo, sino que comparte la alegría con su grupo, demostrando que el camino al aprendizaje es mucho más enriquecedor cuando se hace en equipo.\n\nEsta experiencia nos recuerda que la capacitación constante en tecnologías cloud no solo impulsa el perfil técnico, sino que fortalecer los vínculos con los colegas durante el proceso es clave para mantener la motivación.\n\n¡Felicitaciones, Ramiro, por este gran paso! ☁️\n\n¿Estás trabajando en alguna certificación actualmente o tienes alguna que recomiendes? Te leo en los comentarios. 👇\n\n#CloudComputing #Certificación #CrecimientoProfesional #TrabajoEnEquipo #AprendizajeContinuo",
-        "titulo": "Celebrando el logro de Ramiro",
+        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nQuiero compartirles que Ramiro acaba de aprobar su certificación de la nube, un hito que no solo representa un crecimiento técnico, sino también una gran dedicación al estudio y la actualización constante.\n\nLo más destacable es que este logro no se queda en lo individual; Ramiro decidió festejarlo junto a su grupo, demostrando que el camino al aprendizaje es mucho más enriquecedor cuando se comparte y se celebra en equipo. 🤝\n\nLa gran lección aquí es que la capacitación continua es la llave para abrir nuevas puertas profesionales, pero el apoyo del entorno es lo que impulsa la motivación para llegar a la meta.\n\n¿Y vos? ¿Cuál fue la última certificación o habilidad que sumaste a tu perfil? ¡Contame en los comentarios! 👇\n\n#CloudComputing #Certificacion #CrecimientoProfesional #AprendizajeContinuo",
+        "titulo": "Certificación de Nube Lograda",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "Nueva certificación en la nube",
-        "newsletter_resumen": "Highlight: Ramiro ha logrado aprobar su certificación de la nube, alcanzando un hito clave en su especialización técnica. Contexto: El anuncio fue compartido por el autor en el canal general para celebrar este éxito con toda la comunidad. Aprendizaje / recurso: Este logro motiva al grupo a seguir persiguiendo certificaciones oficiales para fortalecer sus competencias profesionales."
+        "newsletter_titular": "Nueva certificación de nube",
+        "newsletter_resumen": "Highlight: Ramiro ha logrado aprobar la certificación de la nube, marcando un hito importante en su especialización técnica.\n\nContexto: Este logro fue compartido por el autor en el canal general para celebrarlo junto a toda la comunidad.\n\nAprendizaje / recurso: Este hito motiva al equipo a continuar con su formación profesional y a buscar certificaciones oficiales para validar sus conocimientos tecnológicos."
       },
       {
         "autor": "Jorge",
         "canal": "general",
         "texto_original": "Publicaron mi proyecto en el newsletter de la comunidad.",
         "relevancia": 0.8,
-        "copy": "¡Cuando el esfuerzo se vuelve visible! 🚀\n\nJorge acaba de alcanzar un hito muy especial: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. No hay satisfacción más grande que ver cómo el trabajo propio aporta valor a otros y es reconocido por pares y referentes del sector.\n\nEste logro nos recuerda que compartir lo que hacemos no es solo cuestión de visibilidad, sino de generar impacto. La clave está en persistir, construir con calidad y animarse a mostrar los procesos al mundo.\n\n¿Tenés algún proyecto en el que estés trabajando y te gustaría compartir? Te leo en los comentarios. 👇\n\n#Comunidad #Logros #Networking #Proyectos",
-        "titulo": "Reconocimiento comunitario",
+        "copy": "¿Qué se siente cuando tu trabajo llega a cientos de personas? 🚀\n\nJorge acaba de alcanzar un hito importante: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. No es solo una mención, es la validación de que el esfuerzo y la dedicación dan frutos cuando se comparte el conocimiento con los demás.\n\nEste logro nos deja una gran enseñanza: la visibilidad no llega sola, es el resultado de construir, iterar y atreverse a mostrar lo que hacemos. Salir de la zona de confort y exponer nuestros proyectos es el camino más rápido para crecer profesionalmente y recibir feedback valioso.\n\n¡Felicitaciones, Jorge, por este reconocimiento! 👏\n\n¿Y vos? ¿Tenés algún proyecto que estés desarrollando y te gustaría compartir? Contanos en los comentarios. 👇\n\n#Comunidad #LogrosProfesionales #Networking #Desarrollo",
+        "titulo": "Reconocimiento en la comunidad",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "Proyecto destacado en la comunidad",
-        "newsletter_resumen": "Highlight: El proyecto de Jorge ha sido seleccionado y publicado en el newsletter oficial de la comunidad. Contexto: El autor compartió esta gran noticia a través del canal general. Aprendizaje / recurso: Este logro motiva a todos los integrantes a seguir desarrollando y compartiendo sus proyectos para ganar visibilidad dentro del ecosistema."
+        "newsletter_resumen": "Highlight: El proyecto desarrollado por Jorge ha sido seleccionado y publicado en el newsletter oficial de la comunidad. Contexto: Jorge compartió esta gran noticia a través del canal general. Aprendizaje / recurso: Este logro motiva a todos los miembros a seguir creando y compartiendo sus trabajos para ganar visibilidad dentro del ecosistema."
       },
       {
         "autor": "Elena",
         "canal": "general",
         "texto_original": "Publicaron mi proyecto en el newsletter de la comunidad.",
         "relevancia": 0.8,
-        "copy": "¿Qué se siente cuando tu trabajo llega a cientos de personas? 🚀\n\nElena acaba de alcanzar un hito emocionante: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. Lograr que un espacio de referencia reconozca tu esfuerzo es una validación increíble del camino recorrido y la calidad de lo implementado.\n\nEste logro nos deja una enseñanza clara: la importancia de compartir lo que hacemos y participar activamente en nuestros ecosistemas profesionales. La visibilidad no llega sola, es el resultado de construir, iterar y atreverse a mostrar el resultado final.\n\n¡Felicitaciones, Elena, por este reconocimiento! 👏\n\n¿Y vos? ¿Tenés algún proyecto que estés preparando para lanzar o compartir con el mundo? Contame en los comentarios. 👇\n\n#Comunidad #LogrosProfesionales #Networking #Visibilidad #Proyectos",
-        "titulo": "Logro de visibilidad en comunidad",
+        "copy": "¡No hay nada más gratificante que ver el trabajo propio reconocido por los colegas! 🚀\n\nElena ha alcanzado un hito emocionante en su camino profesional: su proyecto fue seleccionado y publicado en el newsletter de la comunidad. Este tipo de visibilidad no solo valida el esfuerzo técnico, sino que impulsa el crecimiento dentro del ecosistema profesional.\n\nLa gran lección aquí es la importancia de compartir lo que construimos. A veces, el miedo a exponer nuestro trabajo nos detiene, pero es precisamente la apertura y la colaboración lo que abre puertas a nuevas oportunidades y conexiones valiosas.\n\n¿Cuándo fue la última vez que compartiste un proyecto con tu comunidad? ¡Te leo en los comentarios! 👇\n\n#CrecimientoProfesional #ComunidadTech #Logros #Networking",
+        "titulo": "Reconocimiento comunitario para Elena",
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "Medio",
         "newsletter_seccion": "Logro de la Semana",
         "newsletter_titular": "Proyecto destacado en la comunidad",
-        "newsletter_resumen": "Highlight: Elena logró que su proyecto fuera publicado en el newsletter oficial de la comunidad. Contexto: Este reconocimiento fue compartido por la autora en el canal general. Aprendizaje / recurso: Un ejemplo motivador de visibilidad y validación externa para los proyectos desarrollados por los miembros."
-      },
-      {
-        "autor": "Federico",
-        "canal": "general",
-        "texto_original": "Aprobé la certificación de la nube y lo festejo con el grupo.",
-        "relevancia": 0.8,
-        "copy": "¡El esfuerzo tiene su recompensa! 🚀\n\nFederico acaba de alcanzar un hito importante en su carrera profesional: aprobó la certificación de la nube. Lo más destacado de este logro no es solo el título obtenido, sino que decidió celebrarlo junto a su grupo, reconociendo el valor del entorno compartido en el proceso de aprendizaje.\n\nEsta experiencia nos recuerda que, aunque el estudio sea un camino individual y exigente, contar con una comunidad de apoyo hace que el camino sea más llevadero y la victoria mucho más satisfactoria. El aprendizaje colaborativo es, sin duda, el acelerador más potente en el mundo tech. ☁️\n\n¿Estás trabajando en alguna certificación actualmente o tienes un grupo que te impulse a seguir creciendo?\n\n¡Contanos en los comentarios! 👇\n\n#CloudComputing #Certificación #CrecimientoProfesional #TechCommunity",
-        "titulo": "Logro de Certificación Cloud",
-        "canal_recomendado": "LinkedIn Oficial",
-        "potencial_engagement": "Medio",
-        "newsletter_seccion": "Logro de la Semana",
-        "newsletter_titular": "¡Nueva certificación de nube alcanzada!",
-        "newsletter_resumen": "Highlight: Federico ha logrado aprobar su certificación de la nube, marcando un hito importante en su especialización técnica. Contexto: Este logro fue compartido por el autor en el canal general para festejarlo junto a toda la comunidad. Aprendizaje / recurso: Este avance nos motiva a seguir impulsando nuestra capacitación continua y a validar nuestros conocimientos en tecnologías cloud."
+        "newsletter_resumen": "Highlight: El proyecto de Elena ha sido seleccionado y publicado en el newsletter oficial de la comunidad. Contexto: Este logro fue compartido por la autora en el canal general. Aprendizaje / recurso: Un ejemplo motivador de cómo la visibilidad y el reconocimiento llegan al compartir el trabajo propio con el grupo."
       }
     ],
     "candidatos_faq": [
@@ -429,20 +429,40 @@
         ]
       },
       {
+        "autor": "kentdev",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Need a Python scraper, n8n workflow, or API/webhook wired up this week?\nKent Dev (USA) — freelance automation, Telegram bots, Django/FastAPI, and small product glue.Competitive rates, fixed quotes OK. Email kent.dev.auto@ice.email\n#FediHire #Python #n8n #scraping #automation #freelance",
+        "relevancia": 0.1,
+        "topics": [
+          "oferta de servicios",
+          "freelance"
+        ]
+      },
+      {
+        "autor": "kentdev",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Need a Telegram bot, webhook glue, or Django/FastAPI endpoint shipped this week?\nKent Dev (USA) — short contracts for bots, API integrations, and light automation.~$55/hr or fixed quote. Email kent.dev.auto@ice.email\n#FediHire #TelegramBot #FastAPI #Django #Python #freelance",
+        "relevancia": 0.1,
+        "topics": [
+          "oferta de servicios",
+          "freelance"
+        ]
+      },
+      {
         "autor": "Reuven",
         "canal": "#python@mastodon.social",
         "texto_original": "Drop rows with *only* NaN values in a #Python #Pandas data frame with the how='all' keyword argument:\ndf.dropna(how='all')\nThis removes completely empty rows, leaving rows containing even one non-NaN value (aka thresh=1).",
-        "relevancia": 0.6,
+        "relevancia": 0.4,
         "topics": [
           "limpieza de datos",
-          "manejo de valores nulos"
+          "manipulación de dataframes"
         ]
       },
       {
         "autor": "Reuven",
         "canal": "#python@mastodon.social",
         "texto_original": "Drop rows containing NaN in a #Python #Pandas data frame, but only in specific columns, with \"subset\":\ndf.dropna()            # drops rows containing NaNdf.dropna(subset='x')  # drops rows where column x is NaNdf.dropna(subset=['x', 'y'])  # drops rows where x or y is NaN",
-        "relevancia": 0.6,
+        "relevancia": 0.4,
         "topics": [
           "limpieza de datos",
           "manejo de valores nulos"
@@ -452,7 +472,7 @@
         "autor": "haskman",
         "canal": "#python@mastodon.social",
         "texto_original": "What does #FunctionalProgramming and #Python have in common? A LOT apparently.\nCome join us for an offline joint #meetup between #FPIndia and #BangPypers, and find out more.\nAll skill levels welcome!\nhttps://luma.com/vcsaybf3\n#Haskell #Clojure #TypeScript #Rust #Elixir #FP",
-        "relevancia": 0.3,
+        "relevancia": 0.2,
         "topics": [
           "meetup",
           "functional programming"
@@ -462,32 +482,50 @@
         "autor": "fpindia.bsky.social",
         "canal": "#python@mastodon.social",
         "texto_original": "What does #FunctionalProgramming and #Python have in common? A LOT apparently.Come join us for an offline joint #meetup between #FPIndia and #BangPypers, and find out more.All skill levels welcome!luma.com/vcsaybf3#Haskell #Clojure #TypeScript #Rust #Elixir #FPFPIndia x BangPypers October M...",
-        "relevancia": 0.2,
+        "relevancia": 0.3,
         "topics": [
           "meetup",
           "programación funcional"
         ]
       },
       {
-        "autor": "treyhunner",
+        "autor": "zurich_pyladies",
         "canal": "#python@mastodon.social",
-        "texto_original": "Python Tip #271 (of 365):\nReturn, don't print.\nIf your function only seems to \"work\" in the REPL, it may be printing when it should be RETURNING.\nThe print function \"outputs\" to the TERMINAL.\nThe return statement \"outputs\" to the code that called your function.\nThe Python REPL blurs this distinction by printing every non-None return value:\n>>> nth_fibonacci(20)\n6765\nWas that printed, or returned? It's unclear.\n🧵 (1/3)\n#Python #DailyPythonTip",
-        "relevancia": 0.6,
+        "texto_original": "🎤 Looking forward to the talk \"Did we break up? Auditing Instagram data with Python\" by Almudena Barreiro Carrillo ✨\nat #swisspythonsummit in 3.5 weeks!\nCheck out the schedule and get your ticket 👇  \nhttps://www.python-summit.ch/program/\nDon't forget to register for the PyLadies lunch 🤗  \n#python #pyladies #conference #datascience #womenintech #genderminoritiesintech #responsibleai",
+        "relevancia": 0.2,
         "topics": [
-          "Python",
-          "buenas prácticas",
-          "funciones"
+          "conferencia",
+          "promoción de evento"
         ]
       },
       {
-        "autor": "Reuven",
+        "autor": "djangoconeurope",
         "canal": "#python@mastodon.social",
-        "texto_original": "Coding requires hands-on practice — and learning from your mistakes. That's doubly true when it comes to coding with AI.\nThat's why I'm excited to announce the next HOPPy (Hands-On Projects in #Python), a 5-week course in which you'll use #ClaudeCode to write a game that *you* design.\nAlong the way, I'll give you pointers, tips, and techniques. And our cohort will share progress each week.\nWant to hear more? Come to Tuesday's free HOPPy 5 info session: https://buff.ly/VvPbxHO",
+        "texto_original": "Why Innsbruck? 🏔️Because a DjangoCon should come with a pretty great backdrop.\n✨ A beautiful historic city 🏔️ The Alps right outside your door 🚋 Easy to get around ☕ Plenty of places to meet, chat and recharge 💻 And, of course, a whole community of Django people coming together\nReady to discover Innsbruck with us?\n#DjangoConEurope #Innsbruck #Django #Python",
+        "relevancia": 0.2,
+        "topics": [
+          "promoción de evento",
+          "turismo"
+        ]
+      },
+      {
+        "autor": "Jorge",
+        "canal": "ayuda",
+        "texto_original": "El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?",
+        "relevancia": 0.2,
+        "topics": [
+          "renovación de certificado TLS",
+          "disponibilidad de sitio"
+        ]
+      },
+      {
+        "autor": "Ana",
+        "canal": "ayuda",
+        "texto_original": "El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?",
         "relevancia": 0.3,
         "topics": [
-          "curso de programación",
-          "IA",
-          "Python"
+          "renovación de certificado TLS",
+          "caída de sitio"
         ]
       },
       {
@@ -505,38 +543,28 @@
         "autor": "Sofía Lima",
         "canal": "#dudas-langgraph",
         "texto_original": "¿Alguien me puede explicar cómo se manejan los reintentos en LangGraph? No entiendo bien cuándo usar nodos condicionales con un router para reintentar la llamada al modelo.",
-        "relevancia": 0.3,
+        "relevancia": 0.2,
         "topics": [
-          "manejo de reintentos",
+          "reintentos",
           "nodos condicionales",
           "router"
         ]
       },
       {
-        "autor": "Valentina",
-        "canal": "ayuda",
-        "texto_original": "El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?",
-        "relevancia": 0.3,
+        "autor": "artisan",
+        "canal": "#python@mastodon.social",
+        "texto_original": "artisan 4.2 has over 27k downloads so far. How many will our next version (one of our biggest updates ever) get?\nhttps://github.com/artisan-roaster-scope/artisan\n#openSource #foss  #github #python #coffeeroaster #coffee #cafe",
+        "relevancia": 0.6,
         "topics": [
-          "renovación de certificados",
-          "TLS"
-        ]
-      },
-      {
-        "autor": "Elena",
-        "canal": "ayuda",
-        "texto_original": "El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?",
-        "relevancia": 0.3,
-        "topics": [
-          "renovación de certificados",
-          "TLS"
+          "descargas de software",
+          "actualización de versión"
         ]
       },
       {
         "autor": "tinoeberl",
         "canal": "#python@mastodon.social",
         "texto_original": "#Steady #Klimacrew\nWie genau entwickelt sich der Ausbau von #Batteriespeicher​n in Deutschland – und was verraten die Rohdaten der #Bundesnetzagentur? Ich arbeite daran, die Daten des #Marktstammdatenregister​s für #Stromspeicher ähnlich wie bei #Balkonsolar und #Windenergie aufzubereiten. Mal sehen, was sich aus den Daten herauskitzeln lässt.\nhttps://tino-eberl.de/vibe-coding/batteriespeicher-in-deutschland-was-sagen-die-daten-der-bundesnetzagentur/\n#Energiewende #Datenanalyse #VibeCoding #Batterietechnologie #Python #OpenData #energy",
-        "relevancia": 0.6,
+        "relevancia": 0.7,
         "topics": [
           "análisis de datos",
           "almacenamiento de baterías",
@@ -544,30 +572,10 @@
         ]
       },
       {
-        "autor": "dijjnn",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Anyone have an in with the #npm team? I published github.com/bwthomas/vicary & while the #rubyists & #pythonistas can type `vicary` for cheaper, faster, & better anonymization than #bedrock guardrails, for #JS folk it's `@bwthomas/vicary` or nothing cuz, \"vicary\" ~ \"vary\" 🤷🤦‍♂️\n#python #ruby",
-        "relevancia": 0.3,
-        "topics": [
-          "npm package naming",
-          "anonymization tool"
-        ]
-      },
-      {
-        "autor": "djangoconeurope",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Why Innsbruck? 🏔️Because a DjangoCon should come with a pretty great backdrop.\n✨ A beautiful historic city 🏔️ The Alps right outside your door 🚋 Easy to get around ☕ Plenty of places to meet, chat and recharge 💻 And, of course, a whole community of Django people coming together\nReady to discover Innsbruck with us?\n#DjangoConEurope #Innsbruck #Django #Python",
-        "relevancia": 0.2,
-        "topics": [
-          "anuncio de evento",
-          "promoción de locación"
-        ]
-      },
-      {
         "autor": "Ana",
         "canal": "ayuda",
         "texto_original": "¿Cuál es la mejor forma de estructurar un proyecto grande en Python?",
-        "relevancia": 0.3,
+        "relevancia": 0.2,
         "topics": [
           "arquitectura de software",
           "estructuración de proyectos"
@@ -584,83 +592,34 @@
         ]
       },
       {
-        "autor": "Mariana",
-        "canal": "ayuda",
-        "texto_original": "¿Cómo conecto el backend con una base de datos en la nube?",
-        "relevancia": 0.2,
-        "topics": [
-          "conexión backend",
-          "base de datos en la nube"
-        ]
-      },
-      {
-        "autor": "artisan",
+        "autor": "shaharyarranjah1",
         "canal": "#python@mastodon.social",
-        "texto_original": "In a world where most people want the newest, flashiest equipment, there’s something to be said for those who choose a machine that’s built to last. \nTake for example this Probat GP-12 from 1978 that Jaruco Café in Oaxaca, Mexico restored and roasts on today. According to them “artisan gave it a new life.”\nDo you have a cool old roaster that artisan brought back to life? Tag us in your posts 🩵\n#coffee #coffeeroaster #mexico #opensource #foss #python",
-        "relevancia": 0.3,
-        "topics": [
-          "restauración de maquinaria",
-          "café"
-        ]
-      },
-      {
-        "autor": "Valentina",
-        "canal": "ayuda",
-        "texto_original": "El pipeline de CI falla por un error de dependencias y no entiendo el log.",
-        "relevancia": 0.3,
-        "topics": [
-          "CI pipeline",
-          "dependency error"
-        ]
-      },
-      {
-        "autor": "sxa",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Compiled #python from source today. Don't think I've had to do that before but it seemed the easiest way to get an earlier version than what was on my machine ...",
-        "relevancia": 0.2,
-        "topics": [
-          "compilación de software",
-          "gestión de versiones"
-        ]
-      },
-      {
-        "autor": "zurich_pyladies",
-        "canal": "#python@mastodon.social",
-        "texto_original": "🎤 Looking forward to the talk \"Did we break up? Auditing Instagram data with Python\" by Almudena Barreiro Carrillo ✨\nat #swisspythonsummit in 3.5 weeks!\nCheck out the schedule and get your ticket 👇  \nhttps://www.python-summit.ch/program/\nDon't forget to register for the PyLadies lunch 🤗  \n#python #pyladies #conference #datascience #womenintech #genderminoritiesintech #responsibleai",
-        "relevancia": 0.2,
-        "topics": [
-          "conferencia",
-          "promoción de evento"
-        ]
-      },
-      {
-        "autor": "driscollis",
-        "canal": "#python@mastodon.social",
-        "texto_original": "How to create a thumbnail image from any photo using #Python and Pillow!\nAnd you only need FOUR lines of code! 🐍🔥",
+        "texto_original": "Build a Mini Audio Visualizer with Python 🎵🐍 | Pygame Project\nWant to create a simple audio style visualizer using Python? 🎧💻\nThis mini project demonstrates how Python can be used with Pygame to create animated visual effects using bars that change height dynamically.\nThe project uses:\n🐍 Python for the main programming logic\n🎮 Pygame to create the graphical window and draw the bars\n🎲 Random to generate different bar heights\n⏱️ Time to control the animation speed\n#python #pythonprogramming",
         "relevancia": 0.4,
         "topics": [
-          "creación de miniaturas",
-          "procesamiento de imágenes"
+          "tutorial",
+          "audio visualizer"
         ]
       },
       {
-        "autor": "FunkyBob",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Does anyone know of an in-process #SQL  DBMS lib like #sqlite but that has real typed fields?\nBonus points if there's an existing #python driver.",
+        "autor": "Valeria Ríos",
+        "canal": "#dudas-oci",
+        "texto_original": "Me tira error al autenticar con el SDK de OCI. Ya puse las credenciales en el config pero sigue sin funcionar, ¿alguien tuvo el mismo problema y lo pudo resolver?",
         "relevancia": 0.2,
         "topics": [
-          "DBMS in-process",
-          "typed fields"
+          "autenticación",
+          "configuración de SDK"
         ]
       },
       {
-        "autor": "artisan",
+        "autor": "MScottBlake",
         "canal": "#python@mastodon.social",
-        "texto_original": "artisan 4.2 has over 27k downloads so far. How many will our next version (one of our biggest updates ever) get?\nhttps://github.com/artisan-roaster-scope/artisan\n#openSource #foss  #github #python #coffeeroaster #coffee #cafe",
-        "relevancia": 0.6,
+        "texto_original": "New post: Reduce Your AI Skill Costs\nIf a skill only runs a script and reads the output, it doesn't need a frontier model.\nOpus plans the script, Sonnet writes it and wraps it in a skill, and Haiku runs the skill. My routine tasks now run on my cheapest model, and output quality didn't change.\nIf a skill breaks on Haiku, it still has ambiguity in it. Now you know where to look.\nThe walkthrough uses the Fleet API to manage labels:https://macadminmusings.com/blog/2026/09/28/reduce-your-ai-skill-costs/\n#MacAdmins #ClaudeCode #Python",
+        "relevancia": 0.9,
         "topics": [
-          "descargas de software",
-          "actualización de versión"
+          "optimización de costos de IA",
+          "modelos de lenguaje",
+          "automatización de scripts"
         ]
       },
       {
@@ -674,44 +633,85 @@
         ]
       },
       {
-        "autor": "kentdev",
+        "autor": "artisan",
         "canal": "#python@mastodon.social",
-        "texto_original": "Need a Telegram bot, webhook glue, or Django/FastAPI endpoint shipped this week?\nKent Dev (USA) — short contracts for bots, API integrations, and light automation.~$55/hr or fixed quote. Email kent.dev.auto@ice.email\n#FediHire #TelegramBot #FastAPI #Django #Python #freelance",
-        "relevancia": 0.1,
-        "topics": [
-          "oferta de servicios",
-          "freelance"
-        ]
-      },
-      {
-        "autor": "moehrenfeld",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Anyone here have use for a 30% off coupon for a #Jetbrains All Product Individual license? I have a code that expires in two days. I use it daily for all my #Python and other coding needs.",
+        "texto_original": "In a world where most people want the newest, flashiest equipment, there’s something to be said for those who choose a machine that’s built to last. \nTake for example this Probat GP-12 from 1978 that Jaruco Café in Oaxaca, Mexico restored and roasts on today. According to them “artisan gave it a new life.”\nDo you have a cool old roaster that artisan brought back to life? Tag us in your posts 🩵\n#coffee #coffeeroaster #mexico #opensource #foss #python",
         "relevancia": 0.3,
         "topics": [
-          "promociones",
-          "herramientas de desarrollo"
-        ]
-      },
-      {
-        "autor": "bbelderbos",
-        "canal": "#python@mastodon.social",
-        "texto_original": "I am definitely leaning towards option 2 when teaching on video.\nBecause tools + speed ≠ learning.\nBut I’m curious to hear from you:\nDo you prefer videos that show raw, fast execution using modern tools like Claude?\nOr do you find more value in hand-coding, step-by-step problem-solving, showing errors, debugging, etc.?\nBasically, how good teaching has always worked, independent of AI.\nI’ve made up my mind, but I want to test my thinking.\n#softwareengineering #coding #developers #python",
-        "relevancia": 0.6,
-        "topics": [
-          "metodologías de enseñanza",
-          "programación",
-          "IA en educación"
+          "restauración de maquinaria",
+          "café"
         ]
       },
       {
         "autor": "Mariana",
         "canal": "ayuda",
         "texto_original": "¿Conviene migrar el servidor o empezar de cero en la nube?",
-        "relevancia": 0.3,
+        "relevancia": 0.2,
         "topics": [
           "migración de servidor",
-          "infraestructura cloud"
+          "cloud computing"
+        ]
+      },
+      {
+        "autor": "sxa",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Compiled #python from source today. Don't think I've had to do that before but it seemed the easiest way to get an earlier version than what was on my machine ...",
+        "relevancia": 0.2,
+        "topics": [
+          "compilación de software",
+          "gestión de versiones"
+        ]
+      },
+      {
+        "autor": "Miguel Torres",
+        "canal": "#dudas-oci",
+        "texto_original": "Estoy configurando el SDK de OCI en Python y no me reconoce la API key. ¿Alguien sabe cómo apuntar al archivo de configuración correctamente?",
+        "relevancia": 0.2,
+        "topics": [
+          "configuración de SDK",
+          "API key"
+        ]
+      },
+      {
+        "autor": "driscollis",
+        "canal": "#python@mastodon.social",
+        "texto_original": "How to create a thumbnail image from any photo using #Python and Pillow!\nAnd you only need FOUR lines of code! 🐍🔥",
+        "relevancia": 0.4,
+        "topics": [
+          "procesamiento de imágenes",
+          "creación de miniaturas"
+        ]
+      },
+      {
+        "autor": "moehrenfeld",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Anyone here have use for a 30% off coupon for a #Jetbrains All Product Individual license? I have a code that expires in two days. I use it daily for all my #Python and other coding needs.",
+        "relevancia": 0.2,
+        "topics": [
+          "cupón de descuento",
+          "licencia de software"
+        ]
+      },
+      {
+        "autor": "FunkyBob",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Does anyone know of an in-process #SQL  DBMS lib like #sqlite but that has real typed fields?\nBonus points if there's an existing #python driver.",
+        "relevancia": 0.3,
+        "topics": [
+          "DBMS",
+          "in-process database",
+          "typed fields"
+        ]
+      },
+      {
+        "autor": "bbelderbos",
+        "canal": "#python@mastodon.social",
+        "texto_original": "I am definitely leaning towards option 2 when teaching on video.\nBecause tools + speed ≠ learning.\nBut I’m curious to hear from you:\nDo you prefer videos that show raw, fast execution using modern tools like Claude?\nOr do you find more value in hand-coding, step-by-step problem-solving, showing errors, debugging, etc.?\nBasically, how good teaching has always worked, independent of AI.\nI’ve made up my mind, but I want to test my thinking.\n#softwareengineering #coding #developers #python",
+        "relevancia": 0.4,
+        "topics": [
+          "metodologías de enseñanza",
+          "IA en educación",
+          "desarrollo de software"
         ]
       },
       {
@@ -720,9 +720,47 @@
         "texto_original": "How to use a lambda to help sort named tuples in #Python in different ways 🐍🔥",
         "relevancia": 0.2,
         "topics": [
-          "sorting",
+          "ordenamiento de datos",
+          "funciones lambda"
+        ]
+      },
+      {
+        "autor": "delegatevoid",
+        "canal": "#python@mastodon.social",
+        "texto_original": "#python #dependency hell....",
+        "relevancia": 0.2,
+        "topics": [
+          "gestión de dependencias"
+        ]
+      },
+      {
+        "autor": "radwebhosting",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Install and Run Your Own Image and Video Sharing Platform on #Ubuntu #VPS This article provides a guide for how to install and run your own image and video sharing platform on Ubuntu VPS.\nWhat is Chevereto?\nChevereto is a self-hosted image hosting script that allows users to create their own image-sharing website. It provides ...\nContinued 👉 https://blog.radwebhosting.com/install-and-run-your-own-image-and-video-sharing-platform-on-ubuntu-vps/?utm_source=mastodon&utm_medium=social&utm_campaign=mastodon.social #installguide #selfhosting #python #certbot #imagehosting #social #vpsguide #mariadb #opensource #apache #selfhosted #letsencrypt",
+        "relevancia": 0.2,
+        "topics": [
+          "instalación de software",
+          "self-hosting"
+        ]
+      },
+      {
+        "autor": "driscollis",
+        "canal": "#python@mastodon.social",
+        "texto_original": "How to use a #Python lambda as a return value from a function",
+        "relevancia": 0.2,
+        "topics": [
           "lambda functions",
-          "named tuples"
+          "return values"
+        ]
+      },
+      {
+        "autor": "dijjnn",
+        "canal": "#python@mastodon.social",
+        "texto_original": "Anyone have an in with the #npm team? I published github.com/bwthomas/vicary & while the #rubyists & #pythonistas can type `vicary` for cheaper, faster, & better anonymization than #bedrock guardrails, for #JS folk it's `@bwthomas/vicary` or nothing cuz, \"vicary\" ~ \"vary\" 🤷🤦‍♂️\n#python #ruby",
+        "relevancia": 0.3,
+        "topics": [
+          "npm package naming",
+          "library publishing"
         ]
       },
       {
@@ -739,133 +777,85 @@
         "autor": "mdk",
         "canal": "#python@mastodon.social",
         "texto_original": "Je distribue 8 places gratuites¹ pour la #PyConFR 2026 à Barritz, partage pour tenter ta chance !\n¹ : En fait la PyConFR c’est gratuit, j’peux même pas jouer avec ces stratagèmes débiles de 1ère année en école de commerce, mais tu peux partager quand même ?\n#python",
-        "relevancia": 0.2,
+        "relevancia": 0.1,
         "topics": [
-          "PyConFR",
+          "PyConFR 2026",
           "promoción"
         ]
       },
       {
-        "autor": "radwebhosting",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Install and Run Your Own Image and Video Sharing Platform on #Ubuntu #VPS This article provides a guide for how to install and run your own image and video sharing platform on Ubuntu VPS.\nWhat is Chevereto?\nChevereto is a self-hosted image hosting script that allows users to create their own image-sharing website. It provides ...\nContinued 👉 https://blog.radwebhosting.com/install-and-run-your-own-image-and-video-sharing-platform-on-ubuntu-vps/?utm_source=mastodon&utm_medium=social&utm_campaign=mastodon.social #installguide #selfhosting #python #certbot #imagehosting #social #vpsguide #mariadb #opensource #apache #selfhosted #letsencrypt",
+        "autor": "Federico",
+        "canal": "ayuda",
+        "texto_original": "¿Cómo valido un token JWT en una API con FastAPI?",
         "relevancia": 0.2,
         "topics": [
-          "instalación de software",
-          "self-hosting"
-        ]
-      },
-      {
-        "autor": "kentdev",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Need a Python scraper, n8n workflow, or API/webhook wired up this week?\nKent Dev (USA) — freelance automation, Telegram bots, Django/FastAPI, and small product glue.Competitive rates, fixed quotes OK. Email kent.dev.auto@ice.email\n#FediHire #Python #n8n #scraping #automation #freelance",
-        "relevancia": 0.1,
-        "topics": [
-          "servicios freelance",
-          "automatización"
-        ]
-      },
-      {
-        "autor": "ubuntu_touch",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Incorporar un campo de fuerzas de viento en 3D en la trayectoria del proyectil\n#python #piedras #pelotas #bombas",
-        "relevancia": 0.3,
-        "topics": [
-          "simulación física",
-          "trayectoria de proyectiles"
-        ]
-      },
-      {
-        "autor": "shaharyarranjah1",
-        "canal": "#python@mastodon.social",
-        "texto_original": "Build a Mini Audio Visualizer with Python 🎵🐍 | Pygame Project\nWant to create a simple audio style visualizer using Python? 🎧💻\nThis mini project demonstrates how Python can be used with Pygame to create animated visual effects using bars that change height dynamically.\nThe project uses:\n🐍 Python for the main programming logic\n🎮 Pygame to create the graphical window and draw the bars\n🎲 Random to generate different bar heights\n⏱️ Time to control the animation speed\n#python #pythonprogramming",
-        "relevancia": 0.4,
-        "topics": [
-          "tutorial",
-          "proyecto de programación"
-        ]
-      },
-      {
-        "autor": "driscollis",
-        "canal": "#python@mastodon.social",
-        "texto_original": "How to use a #Python lambda as a return value from a function",
-        "relevancia": 0.3,
-        "topics": [
-          "funciones lambda",
-          "valores de retorno"
+          "validación de tokens",
+          "autenticación"
         ]
       }
     ],
     "temas_faq": [
       {
-        "tema": "Error 500 al subir el modelo entrenado",
-        "origen": "ayuda",
-        "status": "generado",
-        "respuesta": "Se ha reportado la incidencia de un error 500 al intentar cargar el modelo entrenado. Por favor, verifica la estabilidad de tu conexión o contacta al soporte técnico si el problema persiste.",
-        "pregunta_representativa": "Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser.",
-        "total_preguntas": 7
-      },
-      {
         "tema": "Errores de dependencias en el pipeline de CI",
         "origen": "ayuda",
         "status": "generado",
-        "respuesta": "Si el pipeline de CI falla debido a un error de dependencias y el log no es claro, se recomienda revisar la configuración de las dependencias del proyecto para asegurar que sean compatibles y estén correctamente declaradas.",
+        "respuesta": "Si el pipeline de CI falla debido a un error de dependencias y los logs no son claros, se recomienda revisar la configuración de las dependencias del proyecto para identificar posibles conflictos o versiones incompatibles.",
         "pregunta_representativa": "El pipeline de CI falla por un error de dependencias y no entiendo el log.",
-        "total_preguntas": 6
+        "total_preguntas": 7
+      },
+      {
+        "tema": "Error 500 al subir el modelo entrenado",
+        "origen": "ayuda",
+        "status": "generado",
+        "respuesta": "Se ha reportado la aparición de un error 500 durante el proceso de carga del modelo entrenado. Se recomienda revisar la estabilidad de la conexión o contactar al soporte técnico para analizar la causa del fallo en el servidor.",
+        "pregunta_representativa": "Me da error 500 al subir el modelo entrenado, alguien sabe por qué puede ser.",
+        "total_preguntas": 7
       },
       {
         "tema": "Migración de base de datos local a Autonomous Database",
         "origen": "ayuda",
         "status": "generado",
-        "respuesta": "Para migrar una base de datos local a Autonomous Database, es fundamental considerar los cuidados técnicos necesarios para asegurar una transición correcta de los datos y la configuración del entorno.",
+        "respuesta": "Para migrar una base de datos local a Autonomous Database, es necesario considerar los cuidados técnicos y las precauciones específicas del proceso de migración para asegurar una transición exitosa.",
         "pregunta_representativa": "¿Alguien migró una base local a Autonomous Database? ¿Qué cuidados hay que tener?",
         "total_preguntas": 5
-      },
-      {
-        "tema": "Configuración de autenticación y API keys en el SDK de OCI para Python",
-        "origen": "#dudas-oci",
-        "status": "generado",
-        "respuesta": "Si experimentas errores de autenticación o el SDK de OCI no reconoce tu API key, verifica que el archivo de configuración tenga las credenciales correctas y que el SDK esté apuntando a la ruta del archivo de configuración adecuada para validar la identidad.",
-        "pregunta_representativa": "¿Cómo valido un token JWT en una API con FastAPI?",
-        "total_preguntas": 4
       },
       {
         "tema": "Diferencia entre clases y funciones en Python",
         "origen": "ayuda",
         "status": "generado",
-        "respuesta": "Una función es un bloque de código reutilizable que realiza una tarea específica cuando se le llama, mientras que una clase es una plantilla para crear objetos que pueden agrupar datos (atributos) y comportamientos (métodos).",
+        "respuesta": "Una función es un bloque de código reutilizable que realiza una tarea específica, mientras que una clase es una estructura o molde que permite crear objetos, agrupando datos (atributos) y comportamientos (métodos) en una sola entidad.",
         "pregunta_representativa": "¿Cuál es la diferencia entre una clase y una función en Python?",
         "total_preguntas": 4
       },
       {
-        "tema": "Resolución de error 502 en el balanceador de OCI",
+        "tema": "Gestión de variables de entorno y validación de JWT en FastAPI",
         "origen": "ayuda",
         "status": "generado",
-        "respuesta": "Si el balanceador de carga de OCI devuelve un error 502 al desplegar una aplicación nueva, es necesario iniciar una revisión técnica de la conectividad y el estado de los backends para identificar la causa de la falla en la comunicación.",
+        "respuesta": "Para manejar variables de entorno sin exponer claves, se deben utilizar archivos de configuración protegidos o gestores de secretos. Para validar tokens JWT en una API con FastAPI, se implementan dependencias de seguridad que verifiquen la firma y validez del token en cada solicitud.",
+        "pregunta_representativa": "¿Cómo valido un token JWT en una API con FastAPI?",
+        "total_preguntas": 4
+      },
+      {
+        "tema": "Conexión del backend con bases de datos en la nube",
+        "origen": "ayuda",
+        "status": "generado",
+        "respuesta": "Para conectar el backend con una base de datos en la nube, es necesario configurar la cadena de conexión utilizando las credenciales proporcionadas por el proveedor del servicio y asegurar que las reglas de red permitan el acceso desde el servidor del backend.",
+        "pregunta_representativa": "¿Cómo conecto el backend con una base de datos en la nube?",
+        "total_preguntas": 3
+      },
+      {
+        "tema": "Solución de errores 502 en el balanceador de OCI",
+        "origen": "ayuda",
+        "status": "generado",
+        "respuesta": "Si el balanceador de OCI devuelve un error 502 al desplegar una aplicación nueva, se recomienda iniciar la revisión técnica verificando la conectividad y el estado de salud (health checks) de los servidores backend.",
         "pregunta_representativa": "El balanceador de OCI me devuelve error 502 con la app nueva, ¿por dónde empiezo?",
         "total_preguntas": 3
-      },
-      {
-        "tema": "Validación de tokens JWT en FastAPI",
-        "origen": "ayuda",
-        "status": "generado",
-        "respuesta": "Para validar un token JWT en una API desarrollada con FastAPI, se debe implementar un proceso de verificación del token dentro de las dependencias de la aplicación para asegurar la autenticidad y vigencia del mismo antes de conceder acceso a los endpoints.",
-        "pregunta_representativa": "¿Cómo valido un token JWT en una API con FastAPI?",
-        "total_preguntas": 3
-      },
-      {
-        "tema": "Conexión del backend con una base de datos en la nube",
-        "origen": "ayuda",
-        "status": "generado",
-        "respuesta": "Para conectar el backend con una base de datos en la nube, es necesario configurar la cadena de conexión utilizando las credenciales y el endpoint proporcionados por el proveedor del servicio de nube.",
-        "pregunta_representativa": "¿Cómo conecto el backend con una base de datos en la nube?",
-        "total_preguntas": 2
       },
       {
         "tema": "Renovación de certificados TLS en OCI",
         "origen": "ayuda",
         "status": "generado",
-        "respuesta": "Para evitar la caída del sitio debido al vencimiento del certificado TLS, es necesario realizar el proceso de renovación del mismo dentro de la consola de Oracle Cloud Infrastructure (OCI).",
+        "respuesta": "Para evitar la caída del sitio debido al vencimiento del certificado TLS, es necesario realizar el proceso de renovación del certificado directamente a través de la consola de Oracle Cloud Infrastructure (OCI).",
         "pregunta_representativa": "El certificado TLS venció y el sitio cae, ¿cómo lo renuevan en OCI?",
         "total_preguntas": 2
       }
@@ -904,14 +894,14 @@
         "canal": "feedback",
         "texto_original": "Las correcciones de los proyectos tardan demasiado: perdí dos semanas esperando.",
         "razon": "Feedback negativo: requiere atención personalizada por el community manager",
-        "confianza": 0.95,
+        "confianza": 0.9,
         "menciones": 7
       }
     ]
   },
   "almacenamiento_oci": {
     "bucket": "communitylab-activos-marketing",
-    "ruta_objeto": "storage/activos/paquete-distribucion-2026-10-20.json",
-    "status": "pendiente"
+    "ruta_objeto": "activos/2026-semana-43/paquete-distribucion.json",
+    "status": "guardado_con_exito"
   }
 }
