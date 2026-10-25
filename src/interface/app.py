@@ -29,7 +29,6 @@ from src.decisions.engine import RuleBasedDecisionEngine  # noqa: E402
 from src.domain.models import InputBatch  # noqa: E402
 from src.ingest.loader import load_batch  # noqa: E402
 from src.ingest.runtime import (  # noqa: E402
-    apply_backend,
     resolve_backend,
     split_backends,
 )
@@ -159,17 +158,21 @@ def _resolve_input_periodo(content, result):
     return state._extract_periodo(None, result)
 
 
-def process_json_input(content, session_state=None):
+def process_json_input(content, session_state=None, backend=None):
     """Procesa un lote JSON y devuelve la salida del contrato.
 
     Cuando se entrega ``session_state``, el periodo del lote queda
     registrado en él: es la clave del archivo de curaduría de ese lote, de
     modo que las decisiones de un lote no invaden al siguiente.
+
+    ``backend`` (opcional) se enhebra hasta ``run_pipeline`` para que la
+    corrida use explícitamente el proveedor elegido en el panel, sin depender
+    del ``COMMUNITYLAB_LLM_BACKEND`` global al proceso.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         source = Path(temp_dir) / "input.json"
         source.write_text(content, encoding="utf-8")
-        result = run_pipeline(str(source)).model_dump()
+        result = run_pipeline(str(source), backend=backend).model_dump()
 
     if result.get("status") != "exito":
         raise ValueError(f"El pipeline devolvió un estado inesperado: {result.get('status')!r}")
@@ -179,7 +182,7 @@ def process_json_input(content, session_state=None):
     return result
 
 
-def process_combined_sample(sources, limits=None, session_state=None):
+def process_combined_sample(sources, limits=None, session_state=None, backend=None):
     """Combines several sample sources (JSON/CSV) into one batch and runs the pipeline.
 
     Parameters
@@ -192,6 +195,8 @@ def process_combined_sample(sources, limits=None, session_state=None):
         every source keeps its full content.
     session_state : dict | None
         Optional session state that receives the merged batch's period.
+    backend : str | None
+        Optional provider name, threaded through to ``run_pipeline``.
 
     Returns
     -------
@@ -222,7 +227,9 @@ def process_combined_sample(sources, limits=None, session_state=None):
         interacciones=interacciones,
     )
     return process_json_input(
-        merged.model_dump_json(indent=2), session_state=session_state
+        merged.model_dump_json(indent=2),
+        session_state=session_state,
+        backend=backend,
     )
 
 
@@ -824,6 +831,14 @@ def main():
     # los demás se listan debajo para dejar claro que existen. El valor inicial
     # respeta el backend ya configurado (env/secrets), con fallback a
     # `rule_based`, para no cambiar el backend por defecto del despliegue.
+    #
+    # El backend se enhebra explícito por `run_pipeline(..., backend=...)` en
+    # cada botón, en vez de escribir `COMMUNITYLAB_LLM_BACKEND` en `os.environ`,
+    # que es global al proceso (no por sesión) y con Streamlit multiusuario
+    # dejaría que una corrida pise la de otra. El valor del selectbox queda en
+    # `st.session_state["proveedor_analisis"]`; `proveedor_usado` guarda el que
+    # efectivamente corrió, para trazabilidad entre corridas de una misma
+    # sesión.
     proveedores_activos, proveedores_inactivos = split_backends()
     backend_labels = {
         "ollama": "Ollama",
@@ -843,11 +858,7 @@ def main():
         index=indice_proveedor,
         format_func=backend_labels.get,
         key="proveedor_analisis",
-        help=(
-            "Motor de IA que analiza el lote y genera los activos. La elección "
-            "es por sesión: con varios usuarios procesando en el mismo proceso "
-            "una corrida puede pisar la de otra."
-        ),
+        help="Motor de IA que analiza el lote y genera los activos.",
     )
     if proveedores_inactivos:
         st.caption(
@@ -902,13 +913,13 @@ def main():
             disabled=not combined_available,
         ):
             reset_batch_state(st.session_state)
-            st.session_state["proveedor_usado"] = apply_backend(
-                st.session_state["proveedor_analisis"]
-            )
+            st.session_state["proveedor_usado"] = st.session_state["proveedor_analisis"]
             try:
                 with st.spinner("Procesando muestra demo combinada..."):
                     st.session_state.llm_results = process_combined_sample(
-                        combined_demo_sources, combined_limits
+                        combined_demo_sources,
+                        combined_limits,
+                        backend=st.session_state["proveedor_usado"],
                     )
                     st.session_state.processing_done = True
             except Exception as exc:
@@ -934,9 +945,7 @@ def main():
 
     if st.button("🧠 Procesar Interacciones con IA", type="primary", disabled=not data_ready, width="stretch"):
         reset_batch_state(st.session_state)
-        st.session_state["proveedor_usado"] = apply_backend(
-            st.session_state["proveedor_analisis"]
-        )
+        st.session_state["proveedor_usado"] = st.session_state["proveedor_analisis"]
         try:
             content = (
                 uploaded_file.getvalue().decode("utf-8")
@@ -944,7 +953,11 @@ def main():
                 else raw_json_input
             )
             with st.spinner("Analizando comunidad y generando activos..."):
-                st.session_state.llm_results = process_json_input(content, st.session_state)
+                st.session_state.llm_results = process_json_input(
+                    content,
+                    st.session_state,
+                    backend=st.session_state["proveedor_usado"],
+                )
                 st.session_state.processing_done = True
         except Exception as exc:
             st.error(f"No se pudo procesar el lote: {exc}")

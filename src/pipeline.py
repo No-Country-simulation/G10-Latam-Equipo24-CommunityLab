@@ -88,8 +88,15 @@ _SENTIMENT_PHRASES = {
 T = TypeVar("T")
 
 
-def run_pipeline(source: str) -> OutputBatch:
-    """Runs the full pipeline on a JSON file and returns the contract output."""
+def run_pipeline(source: str, backend: Optional[str] = None) -> OutputBatch:
+    """Runs the full pipeline on a JSON file and returns the contract output.
+
+    `backend`, when passed, is threaded explicitly to `get_llm_client(backend)`
+    and wins over the process-wide `COMMUNITYLAB_LLM_BACKEND`. Callers that
+    select a backend per run (e.g. the Streamlit panel) must pass it here
+    instead of relying on `os.environ`, which is shared across sessions and
+    would let one run clobber another's choice.
+    """
     # 0. Load environment variables from `.env` (if present) BEFORE any client
     # reads COMMUNITYLAB_LLM_BACKEND / *_API_KEY.
     load_dotenv()
@@ -98,19 +105,20 @@ def run_pipeline(source: str) -> OutputBatch:
     batch: InputBatch = load_batch(source)
 
     # 2-6. Analisis, decisiones, generadores y almacenamiento.
-    return _run_with_batch(batch)
+    return _run_with_batch(batch, backend=backend)
 
 
-def _run_with_batch(batch: InputBatch) -> OutputBatch:
+def _run_with_batch(batch: InputBatch, backend: Optional[str] = None) -> OutputBatch:
     """Corre el pipeline completo sobre un InputBatch ya cargado en memoria.
 
     Es el cuerpo post-ingesta de `run_pipeline`: el webhook de ingesta
     (src/ingest/webhook.py) arma el batch en memoria desde el request y lo
-    pasa acá, sin escribir archivos temporales. El backend lo sigue decidiendo
-    get_llm_client() a partir de COMMUNITYLAB_LLM_BACKEND.
+    pasa acá, sin escribir archivos temporales. El backend se resuelve así:
+    argumento explícito `backend` > `COMMUNITYLAB_LLM_BACKEND` > `rule_based`;
+    `get_llm_client()` ya implementa esa cascada cuando recibe `None`.
     """
     # 2. LLM client (gemini / ollama / rule_based via COMMUNITYLAB_LLM_BACKEND)
-    llm = get_llm_client()
+    llm = get_llm_client(backend)
     analyzer = GeminiUnifiedAnalyzer(client=llm)
 
     # 3-4. Analysis + decisions per message (one engine instance per batch)

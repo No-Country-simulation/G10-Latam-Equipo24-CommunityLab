@@ -64,7 +64,7 @@ def test_process_json_input_calls_pipeline_and_returns_output(monkeypatch):
     )
     pipeline_calls = []
 
-    def fake_run_pipeline(source):
+    def fake_run_pipeline(source, backend=None):
         pipeline_calls.append((source, Path(source).read_text(encoding="utf-8")))
         return output
 
@@ -94,7 +94,7 @@ def test_process_json_input_rejects_unexpected_pipeline_status(monkeypatch):
             status="pending",
         ),
     )
-    monkeypatch.setattr(app, "run_pipeline", lambda source: output)
+    monkeypatch.setattr(app, "run_pipeline", lambda source, backend=None: output)
 
     with pytest.raises(ValueError, match="estado inesperado"):
         app.process_json_input("{}")
@@ -884,7 +884,7 @@ def test_process_combined_sample_combines_sources_and_runs(tmp_path, monkeypatch
 
     captured = {}
 
-    def fake_process_json_input(content, session_state=None):
+    def fake_process_json_input(content, session_state=None, backend=None):
         captured["content"] = content
         return {"status": "exito"}
 
@@ -938,7 +938,7 @@ def test_process_combined_sample_limits_trim_each_source(tmp_path, monkeypatch):
 
     captured = {}
 
-    def fake_process_json_input(content, session_state=None):
+    def fake_process_json_input(content, session_state=None, backend=None):
         captured["content"] = content
         return {"status": "exito"}
 
@@ -2239,7 +2239,7 @@ def test_process_json_input_stashes_periodo_referencia(monkeypatch):
         ),
     )
 
-    monkeypatch.setattr(app, "run_pipeline", lambda source: output)
+    monkeypatch.setattr(app, "run_pipeline", lambda source, backend=None: output)
 
     session_state = {}
     app.process_json_input(
