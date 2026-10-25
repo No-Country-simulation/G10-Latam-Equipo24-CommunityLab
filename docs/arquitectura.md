@@ -10,85 +10,65 @@
 ```mermaid
 flowchart TB
     subgraph FUENTES["📡 Fuentes de Datos"]
-        DISCORD["Discord"]
-        SLACK["Slack / Foros"]
-        JSON["JSON / CSV"]
-        WEBHOOK["Webhook"]
+        TELEGRAM["Telegram\n(webhook / polling)"]
+        MASTODON["Mastodon\n(API pública)"]
+        CSV["CSV / JSON"]
     end
 
     subgraph INGEST["1️⃣ Ingestión"]
-        LOADER["Loader\n(JSON/CSV/API)"]
+        LOADER["Loader\n(JSON/CSV)"]
         NORMALIZER["Normalizador\n(formato estándar)"]
-        VALIDATOR["Validador\n(Pydantic)"]
-        LOADER --> NORMALIZER --> VALIDATOR
+        LOADER --> NORMALIZER
     end
 
-    subgraph ANALYSIS["2️⃣ Análisis IA"]
-        SENTIMENT["Análisis de\nSentimiento (LLM)"]
-        TOPICS["Categorización\nde Temas (LLM)"]
-        RELEVANCE["Puntuación de\nRelevancia (LLM)"]
-        SENTIMENT & TOPICS & RELEVANCE --> ANALYZER["Analizador\nConsolidado"]
+    subgraph ANALYSIS["2️⃣ Análisis IA (una sola llamada por mensaje)"]
+        ANALYZER["Analizador unificado\nsentimiento + categoría + relevancia"]
     end
 
-    subgraph DECISIONS["4️⃣ Motor de Decisiones"]
-        ENGINE["Decision Engine"]
-        RISK["Detector de\nMiembros en Riesgo"]
-        RECURRING["Detector de Dudas\nRecurrentes"]
-        ESCALATE["Reglas de\nEscalamiento"]
-        ENGINE --> RISK
-        ENGINE --> RECURRING
-        RECURRING --> ESCALATE
+    subgraph DECISIONS["3️⃣ Motor de Decisiones (reglas fijas, sin IA)"]
+        ENGINE["RuleBasedDecisionEngine"]
+        R1["R1: testimonio/logro\npositivo → publicar"]
+        R4["R4: feedback negativo\nconfianza > 0.8 → derivar"]
+        R2["R2: pregunta técnica\n→ crear FAQ"]
+        R3["R3: lo demás → descartar"]
+        ENGINE --> R1
+        ENGINE --> R4
+        ENGINE --> R2
+        ENGINE --> R3
     end
 
-    subgraph ROUTING["3️⃣ Ruteo Condicional"]
-        ROUTER["Content Router"]
-        ROUTER -->|"sentimiento positivo\n+ relevancia alta"| CASO["Caso de Éxito"]
-        ROUTER -->|"duda técnica"| FAQ["FAQ / Tip"]
-        ROUTER -->|"historia inspiradora"| NEWS["Newsletter\nHighlight"]
-        ROUTER -->|"negativo / riesgo"| ALERT["Alerta\nMember Risk"]
-    end
-
-    subgraph GENERATORS["5️⃣ Generadores de Activos"]
+    subgraph GENERATORS["4️⃣ Generadores de Activos"]
         LINKEDIN["Generador\nLinkedIn"]
         NEWSLETTER["Generador\nNewsletter"]
-        FAQGEN["Generador\nFAQ"]
-        TESTIMONIAL["Generador\nTestimonios"]
-        LINKEDIN & NEWSLETTER & FAQGEN & TESTIMONIAL --> PACKAGE["Empaquetador\nde Activos"]
+        FAQGEN["Generador\nFAQ (temas)"]
+        LINKEDIN & NEWSLETTER & FAQGEN --> PACKAGE["Empaquetador\nde Activos"]
     end
 
-    subgraph STORAGE["6️⃣ OCI Object Storage (Always Free)"]
-        BUCKET["communitylab-activos-marketing"]
-        PATH1["activos/2026-semana-04/\npaquete-distribucion.json"]
-        PATH2["decisiones/\nalertas-semana-04.json"]
-        BUCKET --> PATH1
-        BUCKET --> PATH2
+    subgraph STORAGE["5️⃣ Persistencia (OCI con degradación local)"]
+        OCI_BUCKET["communitylab-activos-marketing\n(OCI Object Storage)"]
+        LOCAL_MIRROR["storage/\n(snapshot local)"]
     end
 
-    subgraph INTERFACE["7️⃣ Interfaz Streamlit"]
-        DASH["📊 Dashboard\nMétricas y Sentimiento"]
-        CURADURIA["✍️ Panel de Curaduría\n(aprobar / editar)"]
-        ALERTS["🚨 Panel de Alertas\n(decisiones)"]
+    subgraph INTERFACE["6️⃣ Interfaz Streamlit"]
+        DASH["src/interface/app.py\nPanel de curaduría"]
     end
 
-    subgraph LLM["🧠 Proveedor LLM"]
-        GEMMA["Gemma (Ollama)\n(principal)"]
-        GEMINI["Google Gemini\n(segunda opción)"]
+    subgraph LLM["🧠 Proveedor LLM (intercambiable)"]
+        GEMMA["Gemini / OpenAI\n(nube)"]
+        OLLAMA["Ollama\n(local o nube)"]
+        RULE["rule_based\n(sin IA)"]
     end
 
     FUENTES --> INGEST
     INGEST --> ANALYSIS
     ANALYSIS --> DECISIONS
-    ANALYSIS --> ROUTING
-    DECISIONS --> ROUTING
-    ROUTING --> GENERATORS
+    DECISIONS --> GENERATORS
     GENERATORS --> PACKAGE
     PACKAGE --> STORAGE
     DECISIONS --> STORAGE
     STORAGE --> INTERFACE
-    ANALYSIS -->|"prompts"| LLM
-    ROUTING -->|"prompts"| LLM
-    GENERATORS -->|"prompts"| LLM
-    DECISIONS -->|"prompts"| LLM
+    ANALYSIS -->|"prompt"| LLM
+    GENERATORS -->|"prompt"| LLM
 ```
 
 ---
@@ -98,90 +78,68 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph FRONT["🎨 Frontend (Streamlit)"]
-        UI_APP["app.py"]
-        UI_DASH["pages/1_dashboard.py"]
-        UI_CUR["pages/2_curaduria.py"]
-        UI_GEN["pages/3_generar.py"]
-        UI_CFG["pages/4_config.py"]
+        UI_APP["src/interface/app.py"]
+        UI_STATE["src/interface/state.py"]
+        UI_PUB["src/interface/telegram_publish.py"]
     end
 
-    subgraph API["🔌 API Layer"]
-        API_EP["src/api/endpoints.py"]
-        API_HEALTH["src/api/health.py"]
-    end
-
-    subgraph CORE["⚙️ Core Pipeline"]
-        PIPE["src/orchestration/pipeline.py"]
-        ROUTER2["src/orchestration/router.py"]
-        STATE["src/orchestration/state.py"]
+    subgraph CORE["⚙️ Pipeline"]
+        PIPE["src/pipeline.py"]
     end
 
     subgraph ING["📥 Ingest"]
         LDR["src/ingest/loader.py"]
+        CSV["src/ingest/csv_loader.py"]
+        JSON["src/ingest/input_loader.py"]
         NRM["src/ingest/normalizer.py"]
-        VAL["src/ingest/validators.py"]
+        BOT["src/ingest/bot.py"]
+        WEB["src/ingest/webhook.py"]
+        RUNTIME["src/ingest/runtime.py"]
     end
 
     subgraph ANL["🧠 Analysis"]
-        SENT["src/analysis/sentiment.py"]
-        CAT["src/analysis/categorization.py"]
-        REL["src/analysis/relevance.py"]
-        ORCH["src/analysis/orchestrator.py"]
+        UNI["src/analysis/unified_analyzer.py"]
     end
 
     subgraph PRM["💬 Prompts"]
-        P_SENT["sentiment_prompts.py"]
-        P_LINK["linkedin_prompts.py"]
-        P_NEWS["newsletter_prompts.py"]
-        P_FAQ["faq_prompts.py"]
-        P_TMP["templates.py"]
+        P_TMP["src/prompts/templates.py"]
+        P_GEN["src/prompts/generators.py"]
     end
 
     subgraph GEN["✍️ Generators"]
-        G_LINK["linkedin_generator.py"]
-        G_NEWS["newsletter_generator.py"]
-        G_FAQ["faq_generator.py"]
-        G_TEST["testimonial_generator.py"]
+        G_LINK["src/generators/linkedin.py"]
+        G_NEWS["src/generators/newsletter.py"]
+        G_FAQ["src/generators/faq.py"]
     end
 
     subgraph DEC["🧭 Decisions"]
         D_ENGINE["src/decisions/engine.py"]
-        D_RISK["member_risk.py"]
-        D_REC["recurring_topics.py"]
-        D_ESC["escalation.py"]
-        D_NOTIF["notifications.py"]
+        D_REC["src/decisions/recurring_topics.py"]
     end
 
-    subgraph OCI["☁️ OCI (Always Free)"]
-        O_CLIENT["src/oci/oci_client.py"]
+    subgraph OCI["☁️ OCI"]
+        O_CLIENT["src/oci/client.py"]
         O_STORE["src/oci/storage.py"]
-        O_PERSIST["src/oci/persistence.py"]
-        O_BUCKET["📦 Bucket:\ncommunitylab-activos-marketing"]
     end
 
     subgraph LLMS["🌐 LLM Providers"]
-        L_GEMMA["Gemma (Ollama)"]
-        L_GEMINI["Gemini (resp)"]
+        L_FACTORY["src/utils/llm.py\n(gemini | openai | ollama | rule_based)"]
     end
 
-    FRONT -->|"HTTP"| API
-    API --> CORE
-    CORE --> ING
-    CORE --> ANL
-    CORE --> GEN
-    CORE --> DEC
+    FRONT --> PIPE
+    PIPE --> ING
+    PIPE --> ANL
+    PIPE --> GEN
+    PIPE --> DEC
     ANL --> PRM
     GEN --> PRM
-    DEC --> PRM
     ANL -->|"análisis"| DEC
-    DEC -->|"decisiones"| CORE
+    DEC -->|"decisiones"| GEN
     GEN -->|"activos"| OCI
-    DEC -->|"alertas"| OCI
-    PIPE --> O_PERSIST
-    O_CLIENT --> O_STORE --> O_BUCKET
-    ANL -->|"prompts + respuestas"| LLMS
-    GEN -->|"prompts + respuestas"| LLMS
-    DEC -->|"prompts + respuestas"| LLMS
+    DEC -->|"derivados"| OCI
+    ANL -->|"prompt + respuesta"| LLMS
+    GEN -->|"prompt + respuesta"| LLMS
+    LLMS -->|"cliente"| RUNTIME
 ```
 
 ---
@@ -191,40 +149,33 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant U as Usuario<br/>(Community Manager)
-    participant API as Webhook / API
-    participant ING as Ingest<br/>(loader+normalize)
-    participant ANL as Analysis<br/>(sentimiento+temas)
-    participant LLM as LLM<br/>(Gemma/Ollama)
+    participant ING as Ingest<br/>(loader + normalize)
+    participant ANL as Analysis<br/>(unificado)
+    participant LLM as LLM<br/>(intercambiable)
     participant DEC as Decision Engine
     participant GEN as Generators
-    participant OCI as OCI Object Storage
+    participant OCI as OCI / snapshot local
     participant UI as Streamlit
 
-    U->>API: POST /procesar<br/>{interacciones}
-    API->>ING: envia lote JSON
+    U->>ING: sube lote CSV/JSON<br/>o llega por Telegram
     ING->>ING: normaliza + valida
-    
+
     loop Cada mensaje
         ING->>ANL: mensaje normalizado
-        ANL->>LLM: prompt de sentimiento
-        LLM-->>ANL: {sentimiento, score}
-        ANL->>LLM: prompt de temas
-        LLM-->>ANL: {temas, entidades}
-        ANL->>LLM: prompt de relevancia
-        LLM-->>ANL: {score, razon}
+        ANL->>LLM: prompt unificado<br/>(sentimiento + categoría + relevancia)
+        LLM-->>ANL: JSON con los tres campos
         ANL-->>DEC: análisis completo
     end
 
-    DEC->>DEC: riesgo por autor<br/>dudas recurrentes
-    DEC-->>GEN: decision: publicar/casificar/derivar
-    GEN->>LLM: prompt de copywriting<br/>(LinkedIn/FAQ/Newsletter)
+    DEC->>DEC: reglas R1 → R4 → R2 → R3
+    DEC-->>GEN: decisión: publicar / crear FAQ
+    GEN->>LLM: prompt de copywriting<br/>(LinkedIn / Newsletter / FAQ)
     LLM-->>GEN: activo formateado
     GEN-->>OCI: paquete de activos
-    DEC-->>OCI: decisiones y alertas
+    DEC-->>OCI: mensajes derivados (revisión humana)
 
-    OCI-->>UI: datos para dashboard
+    OCI-->>UI: datos para el panel
     U->>UI: revisa, aprueba, publica ✅
-    UI-->>OCI: estado de aprobación
 ```
 
 ---
@@ -278,27 +229,16 @@ flowchart TB
 graph TD
     ROOT["communitylab-activos-marketing<br/>📦 Bucket Always Free"]
     ROOT --> S1["activos/"]
-    ROOT --> S2["decisiones/"]
-    ROOT --> S3["informes/"]
-    ROOT --> S4["datasets/"]
-    ROOT --> S5["estado/"]
+    ROOT --> S2["estado/"]
     S1 --> S1A["activos/2026-semana-04/"]
     S1 --> S1B["activos/2026-semana-05/"]
     S1A --> S1A1["paquete-distribucion.json"]
-    S1A --> S1A2["post-linkedin.json"]
-    S1A --> S1A3["newsletter-highlight.json"]
-    S1A --> S1A4["faq-tips.json"]
-    S2 --> S2A["alertas-miembros/"]
-    S2 --> S2B["derivaciones-mentoria/"]
-    S2A --> S2A1["2026-semana-04.json"]
-    S2B --> S2B1["2026-semana-04.json"]
-    S3 --> S3A["sentimiento-mensual.csv"]
-    S3 --> S3B["temas-tendencia.json"]
-    S4 --> S4A["raw-discord-sample.json"]
-    S4 --> S4B["raw-github-issues.json"]
-    S5 --> S5A["aprobaciones.json"]
-    S5 --> S5B["historial-pipeline.log"]
+    S2 --> S2A["estado/derivados-atendidos.json"]
+    S2 --> S2B["estado/curacion-2026-semana-04.json"]
 ```
+
+> Nota: sin credenciales OCI, el pipeline degrada a un snapshot local bajo
+> `storage/activos/` y `storage/estado/` (mismas claves, espejo local).
 
 ---
 
