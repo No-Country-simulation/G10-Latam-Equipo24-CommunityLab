@@ -13,8 +13,8 @@ El proyecto CommunityLab adopta una arquitectura modular basada en separación d
 src/
 ├── domain/       # Modelos Pydantic (Contratos de entrada/salida y Enums)
 ├── ingest/       # Carga, validación y normalización de interacciones crudas
-├── analysis/     # Analizador unificado con Gemini (Sentimiento, Categoría, Relevancia)
-├── decisions/    # Motor de decisiones determinista y detector de dudas recurrentes
+├── analysis/     # Analizador unificado (sentimiento, categoría, relevancia)
+├── decisions/    # Motor de decisiones determinista
 ├── generators/   # Generadores de contenido (LinkedIn, FAQ, Newsletter)
 ├── oci/          # Cliente y almacenamiento Object Storage (OCI)
 ├── interface/    # Aplicación web interactiva (Streamlit)
@@ -30,7 +30,8 @@ src/
 - Establece el vocabulario canónico mediante enumeraciones (`InteractionType`, `SentimentType`, `ActionType`, `AssetType`).
 
 ### Capa 2: Ingesta y Normalización (`src/ingest/`)
-- Se encarga de leer los archivos JSON de origen (mastodon o dataset de demo).
+- Se encarga de leer los archivos JSON o CSV de origen (mastodon, dataset de demo
+  o mensajes de Telegram).
 - Utiliza el `InputNormalizer` para asegurar que los campos opcionales o variantes idiomáticas (inglés/español) se mapen correctamente a los campos obligatorios del contrato.
 
 ### Capa 3: Análisis de IA (`src/analysis/`)
@@ -43,14 +44,17 @@ src/
 
 ### Capa 4: Decisiones y Ruteo (`src/decisions/`)
 - El motor determinista (`RuleBasedDecisionEngine`) evalúa los resultados del análisis sin consumir cuotas de LLM.
-- Aplica las reglas del negocio:
+- Aplica las reglas del negocio en este orden:
   - **Regla 1 (R1):** Testimonio o logro positivo y relevante ($\ge 0.6$) $\rightarrow$ Publicar en LinkedIn.
+  - **Regla 4 (R4):** Feedback negativo con confianza mayor a 0.8 $\rightarrow$ Derivar a un humano (community manager) para atención personalizada.
   - **Regla 2 (R2):** Duda técnica o pregunta frecuente $\rightarrow$ Crear FAQ.
-  - **Regla 3 (R3):** Baja relevancia o neutral $\rightarrow$ Descartar.
-- El `RecurringTopicsDetector` agrupa consultas similares con un umbral configurable para facilitar la curaduría.
+  - **Regla 3 (R3):** Los casos restantes $\rightarrow$ Descartar.
+- Las preguntas que terminan en "crear FAQ" se agrupan después por tema con
+  `cluster_faq_targets` (en `src/generators/faq.py`), que consolida las
+  preguntas similares en temas con respuesta generada.
 
 ### Capa 5: Generadores de Contenido (`src/generators/`)
-- Con base en las decisiones del motor, clases especializadas como `LinkedInGenerator` y `FAQGenerator` solicitan al LLM la redacción final de los copys optimizados.
+- Con base en las decisiones del motor, clases especializadas como `LinkedInGenerator`, `NewsletterGenerator` y `FAQThemeGenerator` solicitan al LLM la redacción final de los copys optimizados.
 
 ### Capa 6: Persistencia Cloud (`src/oci/`)
 - A través de `OCIStorage`, el pipeline empaqueta la salida completa del sistema y la persiste de forma remota en OCI Object Storage bajo la ruta estructurada:

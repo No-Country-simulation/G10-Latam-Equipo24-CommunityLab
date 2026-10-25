@@ -20,10 +20,18 @@ el sistema lo borra en vez de enrutarlo.
 
 ## Propuesta: regla R4 — DERIVAR
 
+> **Nota (implementación final):** esta regla se implementó con un criterio
+> distinto al propuesto acá. El código (`src/decisions/engine.py`) deriva por
+> **confianza del sentimiento negativo mayor a 0.8** (`CONFIDENCE_THRESHOLD`),
+> no por relevancia, y **sin excluir** las preguntas técnicas: R4 se evalúa
+> antes que R2, así que una pregunta técnica con feedback negativo de alta
+> confianza también se deriva. El umbral de "alta relevancia" discutido abajo
+> quedó descartado; el umbral que quedó es el de confianza.
+
 ```
-R4: sentiment == NEGATIVO AND category != "pregunta_tecnica"
+R4 (implementado): sentiment == NEGATIVO AND confianza > 0.8
     → action = DERIVAR, asset_type = None
-    → reason = "Feedback negativo: requiere atención humana"
+    → reason = "Feedback negativo: requiere atención personalizada por el community manager"
 ```
 
 ## Qué significa "derivar"
