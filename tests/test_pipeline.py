@@ -100,7 +100,7 @@ def pipeline_env(monkeypatch, tmp_path):
     - OCI credentials are removed, so storage always degrades locally.
     """
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: FakeLLMClient())
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda backend=None: FakeLLMClient())
     # A real .env must not leak into the tests: run_pipeline() calls
     # load_dotenv() again, which would re-populate the credentials.
     # Neutralize it so the isolation holds.
@@ -120,6 +120,50 @@ def _write_batch(tmp_path, interacciones, name="batch.json") -> str:
     path = tmp_path / name
     path.write_text(json.dumps(batch, ensure_ascii=False), encoding="utf-8")
     return str(path)
+
+
+def test_run_pipeline_threads_explicit_backend(monkeypatch, tmp_path):
+    """An explicit `backend` reaches get_llm_client instead of the env var.
+
+    This is the contract behind the panel: the selected provider must be
+    passed down the chain (`run_pipeline` -> `_run_with_batch` ->
+    `get_llm_client`), so one Streamlit session cannot clobber another's
+    choice through the process-global `os.environ`.
+    """
+    received = []
+
+    def spy_get_llm_client(backend=None):
+        received.append(backend)
+        return FakeLLMClient()
+
+    monkeypatch.setattr("src.pipeline.get_llm_client", spy_get_llm_client)
+    monkeypatch.setattr("src.pipeline.load_dotenv", lambda: None)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
+
+    source = _write_batch(tmp_path, [])
+    run_pipeline(source, backend="ollama")
+
+    assert received == ["ollama"]
+
+
+def test_run_pipeline_backend_defaults_to_none(monkeypatch, tmp_path):
+    """Without an explicit backend, get_llm_client receives None (env cascade)."""
+    received = []
+
+    def spy_get_llm_client(backend=None):
+        received.append(backend)
+        return FakeLLMClient()
+
+    monkeypatch.setattr("src.pipeline.get_llm_client", spy_get_llm_client)
+    monkeypatch.setattr("src.pipeline.load_dotenv", lambda: None)
+    for var in OCI_REQUIRED_ENV:
+        monkeypatch.setenv(var, "")
+
+    source = _write_batch(tmp_path, [])
+    run_pipeline(source)
+
+    assert received == [None]
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +313,7 @@ class DivergentLinkedInClient(FakeLLMClient):
 
 def test_first_candidate_reuses_the_published_post(monkeypatch):
     client = DivergentLinkedInClient()
-    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda backend=None: client)
 
     output = run_pipeline(str(SAMPLE))
     assets = output.activos_distribucion_generados
@@ -312,7 +356,7 @@ def test_faq_candidates_list_all_questions_with_single_generation(monkeypatch, t
     # generator runs ONCE per cluster (all share the same fake topic), so one
     # LLM call produces both the single suggestion and the themes list.
     client = CountingFAQClient()
-    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda backend=None: client)
 
     source = _write_batch(
         tmp_path,
@@ -348,7 +392,7 @@ def test_faq_semantic_consolidation_groups_same_topic_questions(monkeypatch, tmp
     # Three technical questions with the same fake topic collapse into one
     # FAQ theme; the published suggestion equals the first (and only) theme.
     client = CountingFAQClient()
-    monkeypatch.setattr("src.pipeline.get_llm_client", lambda: client)
+    monkeypatch.setattr("src.pipeline.get_llm_client", lambda backend=None: client)
 
     source = _write_batch(
         tmp_path,
