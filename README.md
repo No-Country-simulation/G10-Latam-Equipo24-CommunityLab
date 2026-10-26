@@ -5,9 +5,9 @@
 
 **Pruébalo en línea**
 
-- 🖥️ Panel de curaduría (Streamlit Community Cloud): https://g10-latam-equipo24-communitylab-fw6yecvhzpqe8fqpdovhiw.streamlit.app/
-- 🤖 Webhook del bot de Telegram (Render): https://g10-latam-equipo24-communitylab.onrender.com/health
-- 🎬 Video de la demostración: <!-- TODO(cierre): enlace final del video del equipo -->
+- 🖥️ Panel de curaduría (Streamlit Community Cloud): https://g10-latam-equipo24-communitylab-9kngbpffazuc5cwtjakwsr.streamlit.app/
+- 🤖 Bot de Telegram: https://t.me/CommunityLabG10_bot
+- 🎬 Video de la demostración: https://youtu.be/MO0ocl6fr2c
 
 ---
 
